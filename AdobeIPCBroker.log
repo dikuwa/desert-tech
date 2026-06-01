@@ -1,0 +1,82 @@
+[2026-06-01 15:19:59.661] [IPC] [error] INFO CSXSEventQueueManager::CreateEventQueueIfNotExist: create queue 47600.1780319999 (ILST)...
+[2026-06-01 15:20:14.283] [IPC] [error] INFO CSXSEventQueueManager::CreateEventQueueIfNotExist: create queue 47719.1780320014 (ROBN)...
+[2026-06-01 15:20:20.272] [IPC] [error] INFO CSXSEventQueueManager::CreateEventQueueIfNotExist: create queue 47741.1780320020 (LIBS)...
+[2026-06-01 15:20:23.088] [IPC] [error] INFO CSXSEventQueueManager::CreateEventQueueIfNotExist: create queue 47763.1780320023 (CCXP)...
+[2026-06-01 15:56:09.073] [IPC] [error] INFO CSXSEventQueueManager::RemoveEventQueueByChannel: remove queue 47600.1780319999 (ILST) for channel 6...
+[2026-06-01 15:56:09.107] [IPC] [error] vcfoundation::io::VCEndOfFile: <End Of File>
+Trace: 0   AdobeIPCBroker                      0x000000010a0cb0b6 _ZN12vcfoundation2io11VCEndOfFileC1EPNS_4data9IVCStringEi + 18
+1   AdobeIPCBroker                      0x000000010a0cb05d _ZN12vcfoundation2io10IVCChannel9ReadFullyEPvm + 129
+2   AdobeIPCBroker                      0x000000010a0cbccf _ZN12vcfoundation2io10Serializer19InternalDeserializeEv + 35
+3   AdobeIPCBroker                      0x000000010a0cb653 _ZN12vcfoundation2io10Serializer11DeserializeEv + 9
+4   AdobeIPCBroker                      0x000000010a0cd012 _ZN12vcfoundation5ncomm6NCHost6Worker13HandleRequestEv + 52
+5   AdobeIPCBroker                      0x000000010a0cce2e _ZN12vcfoundation5ncomm6NCHost6Worker3RunEv + 50
+6   AdobeIPCBroker                      0x000000010a0ce7ef _ZN12vcfoundation6thread14AbstractThread3RunEv + 65
+7   AdobeIPCBroker                      0x000000010a0ee7e3 _ZN12vcfoundation6thread6Thread10ThreadProcEPv + 9
+8   libsystem_pthread.dylib             0x00007ff80313de05 _pthread_start + 115
+9   libsystem_pthread.dylib             0x00007ff803139857 thread_start + 15
+
+[2026-06-01 15:56:09.108] [IPC] [error] vcfoundation::io::VCEndOfFile: send() failed <32: Broken pipe>
+Trace: 0   AdobeIPCBroker                      0x000000010a0cb0b6 _ZN12vcfoundation2io11VCEndOfFileC1EPNS_4data9IVCStringEi + 18
+1   AdobeIPCBroker                      0x000000010a0cde75 _ZN12vcfoundation6system10PosixError5ThrowERKNS1_4DataEPKc + 143
+2   AdobeIPCBroker                      0x000000010a0ed808 _ZN12vcfoundation3net3Bsd4RecvEiPvii + 0
+3   AdobeIPCBroker                      0x000000010a0ed13d _ZN12vcfoundation2io12BSDNamedPipe5WriteEPKvm + 23
+4   AdobeIPCBroker                      0x000000010a0caf69 _ZN12vcfoundation2io14BufferedWriter5FlushEv + 37
+5   AdobeIPCBroker                      0x000000010a0cd0d9 _ZN12vcfoundation5ncomm6NCHost6Worker13HandleRequestEv + 251
+6   AdobeIPCBroker                      0x000000010a0cce2e _ZN12vcfoundation5ncomm6NCHost6Worker3RunEv + 50
+7   AdobeIPCBroker                      0x000000010a0ce7ef _ZN12vcfoundation6thread14AbstractThread3RunEv + 65
+8   AdobeIPCBroker                      0x000000010a0ee7e3 _ZN12vcfoundation6thread6Thread10ThreadProcEPv + 9
+9   libsystem_pthread.dylib             0x00007ff80313de05 _pthread_start + 115
+10  libsystem_pthread.dylib             0x00007ff803139857 thread_start + 15
+
+[2026-06-01 15:56:09.148] [IPC] [error] INFO CSXSEventQueueManager::RemoveEventQueueByChannel: remove queue 47719.1780320014 (ROBN) for channel 12...
+[2026-06-01 15:56:09.149] [IPC] [error] vcfoundation::io::VCEndOfFile: <End Of File>
+Trace: 0   AdobeIPCBroker                      0x000000010a0cb0b6 _ZN12vcfoundation2io11VCEndOfFileC1EPNS_4data9IVCStringEi + 18
+1   AdobeIPCBroker                      0x000000010a0cb05d _ZN12vcfoundation2io10IVCChannel9ReadFullyEPvm + 129
+2   AdobeIPCBroker                      0x000000010a0cbccf _ZN12vcfoundation2io10Serializer19InternalDeserializeEv + 35
+3   AdobeIPCBroker                      0x000000010a0cb653 _ZN12vcfoundation2io10Serializer11DeserializeEv + 9
+4   AdobeIPCBroker                      0x000000010a0cd012 _ZN12vcfoundation5ncomm6NCHost6Worker13HandleRequestEv + 52
+5   AdobeIPCBroker                      0x000000010a0cce2e _ZN12vcfoundation5ncomm6NCHost6Worker3RunEv + 50
+6   AdobeIPCBroker                      0x000000010a0ce7ef _ZN12vcfoundation6thread14AbstractThread3RunEv + 65
+7   AdobeIPCBroker                      0x000000010a0ee7e3 _ZN12vcfoundation6thread6Thread10ThreadProcEPv + 9
+8   libsystem_pthread.dylib             0x00007ff80313de05 _pthread_start + 115
+9   libsystem_pthread.dylib             0x00007ff803139857 thread_start + 15
+
+[2026-06-01 15:56:09.151] [IPC] [error] vcfoundation::io::VCEndOfFile: send() failed <32: Broken pipe>
+Trace: 0   AdobeIPCBroker                      0x000000010a0cb0b6 _ZN12vcfoundation2io11VCEndOfFileC1EPNS_4data9IVCStringEi + 18
+1   AdobeIPCBroker                      0x000000010a0cde75 _ZN12vcfoundation6system10PosixError5ThrowERKNS1_4DataEPKc + 143
+2   AdobeIPCBroker                      0x000000010a0ed808 _ZN12vcfoundation3net3Bsd4RecvEiPvii + 0
+3   AdobeIPCBroker                      0x000000010a0ed13d _ZN12vcfoundation2io12BSDNamedPipe5WriteEPKvm + 23
+4   AdobeIPCBroker                      0x000000010a0caf69 _ZN12vcfoundation2io14BufferedWriter5FlushEv + 37
+5   AdobeIPCBroker                      0x000000010a0cd0d9 _ZN12vcfoundation5ncomm6NCHost6Worker13HandleRequestEv + 251
+6   AdobeIPCBroker                      0x000000010a0cce2e _ZN12vcfoundation5ncomm6NCHost6Worker3RunEv + 50
+7   AdobeIPCBroker                      0x000000010a0ce7ef _ZN12vcfoundation6thread14AbstractThread3RunEv + 65
+8   AdobeIPCBroker                      0x000000010a0ee7e3 _ZN12vcfoundation6thread6Thread10ThreadProcEPv + 9
+9   libsystem_pthread.dylib             0x00007ff80313de05 _pthread_start + 115
+10  libsystem_pthread.dylib             0x00007ff803139857 thread_start + 15
+
+[2026-06-01 16:11:09.294] [IPC] [error] INFO CSXSEventQueueManager::RemoveEventQueueByChannel: remove queue 47741.1780320020 (LIBS) for channel 9...
+[2026-06-01 16:11:09.295] [IPC] [error] vcfoundation::io::VCEndOfFile: <End Of File>
+Trace: 0   AdobeIPCBroker                      0x000000010a0cb0b6 _ZN12vcfoundation2io11VCEndOfFileC1EPNS_4data9IVCStringEi + 18
+1   AdobeIPCBroker                      0x000000010a0cb05d _ZN12vcfoundation2io10IVCChannel9ReadFullyEPvm + 129
+2   AdobeIPCBroker                      0x000000010a0cbccf _ZN12vcfoundation2io10Serializer19InternalDeserializeEv + 35
+3   AdobeIPCBroker                      0x000000010a0cb653 _ZN12vcfoundation2io10Serializer11DeserializeEv + 9
+4   AdobeIPCBroker                      0x000000010a0cd012 _ZN12vcfoundation5ncomm6NCHost6Worker13HandleRequestEv + 52
+5   AdobeIPCBroker                      0x000000010a0cce2e _ZN12vcfoundation5ncomm6NCHost6Worker3RunEv + 50
+6   AdobeIPCBroker                      0x000000010a0ce7ef _ZN12vcfoundation6thread14AbstractThread3RunEv + 65
+7   AdobeIPCBroker                      0x000000010a0ee7e3 _ZN12vcfoundation6thread6Thread10ThreadProcEPv + 9
+8   libsystem_pthread.dylib             0x00007ff80313de05 _pthread_start + 115
+9   libsystem_pthread.dylib             0x00007ff803139857 thread_start + 15
+
+[2026-06-01 16:11:09.295] [IPC] [error] vcfoundation::io::VCEndOfFile: send() failed <32: Broken pipe>
+Trace: 0   AdobeIPCBroker                      0x000000010a0cb0b6 _ZN12vcfoundation2io11VCEndOfFileC1EPNS_4data9IVCStringEi + 18
+1   AdobeIPCBroker                      0x000000010a0cde75 _ZN12vcfoundation6system10PosixError5ThrowERKNS1_4DataEPKc + 143
+2   AdobeIPCBroker                      0x000000010a0ed808 _ZN12vcfoundation3net3Bsd4RecvEiPvii + 0
+3   AdobeIPCBroker                      0x000000010a0ed13d _ZN12vcfoundation2io12BSDNamedPipe5WriteEPKvm + 23
+4   AdobeIPCBroker                      0x000000010a0caf69 _ZN12vcfoundation2io14BufferedWriter5FlushEv + 37
+5   AdobeIPCBroker                      0x000000010a0cd0d9 _ZN12vcfoundation5ncomm6NCHost6Worker13HandleRequestEv + 251
+6   AdobeIPCBroker                      0x000000010a0cce2e _ZN12vcfoundation5ncomm6NCHost6Worker3RunEv + 50
+7   AdobeIPCBroker                      0x000000010a0ce7ef _ZN12vcfoundation6thread14AbstractThread3RunEv + 65
+8   AdobeIPCBroker                      0x000000010a0ee7e3 _ZN12vcfoundation6thread6Thread10ThreadProcEPv + 9
+9   libsystem_pthread.dylib             0x00007ff80313de05 _pthread_start + 115
+10  libsystem_pthread.dylib             0x00007ff803139857 thread_start + 15
+

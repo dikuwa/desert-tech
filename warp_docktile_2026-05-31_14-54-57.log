@@ -1,0 +1,7 @@
+[2026-05-31 14:54:57.314] WarpDockTilePlugin initialized
+[2026-05-31 14:54:57.320] setDockTile called with tile: valid
+[2026-05-31 14:54:57.321] Main app bundleId: dev.warp.Warp-Stable
+[2026-05-31 14:54:57.327] Host defaults: <NSUserDefaults: 0x7fc49510be90>
+[2026-05-31 14:54:57.328] updateAppIcon called
+[2026-05-31 14:54:57.329] Plugin Bundle ID: dev.warp.Warp-Stable
+[2026-05-31 14:54:57.330] User has default icon, resetting dock tile to system default

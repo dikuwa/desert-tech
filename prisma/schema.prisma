@@ -1,0 +1,271 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  emailVerified Boolean @default(false)
+  image        String?
+  password     String?
+  role         String   @default("staff")
+  permissions  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sessions      Session[]
+  accounts      Account[]
+  notifications Notification[]
+  payments      PaymentRecord[]
+  receipts      Receipt[]
+  followUps     FollowUp[]
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  email        String?
+  token        String   @unique
+  expiresAt    DateTime
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  id              String  @id @default(cuid())
+  userId          String
+  accountId       String
+  providerId      String
+  accessToken     String?
+  refreshToken    String?
+  accessTokenExpiresAt DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope           String?
+  idToken         String?
+  password        String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+}
+
+model Customer {
+  id               String   @id @default(cuid())
+  fullName         String
+  phone            String
+  whatsapp         String?
+  email            String?
+  preferredContact String   @default("WhatsApp")
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  orders Order[]
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  parentId    String?
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryHierarchy")
+  products Product[]
+}
+
+model Product {
+  id                  String   @id @default(cuid())
+  name                String
+  slug                String   @unique
+  sku                 String?
+  brand               String?
+  categoryId          String
+  condition           String   @default("New")
+  description         String
+  specifications      String?
+  priceCents          Int
+  compareAtPriceCents Int?
+  currency            String   @default("NAD")
+  stockQuantity       Int      @default(0)
+  lowStockThreshold   Int      @default(5)
+  availability        String   @default("InStock")
+  warranty            String?
+  isFeatured          Boolean  @default(false)
+  isPublished         Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  category     Category        @relation(fields: [categoryId], references: [id])
+  images       ProductImage[]
+  orderItems   OrderItem[]
+  promotions   PromotionProduct[]
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  url       String
+  altText   String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Promotion {
+  id             String   @id @default(cuid())
+  title          String
+  slug           String   @unique
+  description    String?
+  bannerImageUrl String?
+  discountLabel  String?
+  startsAt       DateTime?
+  endsAt         DateTime?
+  isActive       Boolean  @default(true)
+  placement      String   @default("FeaturedSection")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  products PromotionProduct[]
+}
+
+model PromotionProduct {
+  id          String @id @default(cuid())
+  promotionId String
+  productId   String
+
+  promotion Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([promotionId, productId])
+}
+
+model Order {
+  id               String   @id @default(cuid())
+  orderNumber      String   @unique
+  customerId       String
+  status           String   @default("PendingContact")
+  paymentStatus    String   @default("Unpaid")
+  preferredContact String   @default("WhatsApp")
+  subtotalCents    Int      @default(0)
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  customer      Customer       @relation(fields: [customerId], references: [id])
+  items         OrderItem[]
+  payments      PaymentRecord[]
+  receipts      Receipt[]
+  followUps     FollowUp[]
+}
+
+model OrderItem {
+  id            String @id @default(cuid())
+  orderId       String
+  productId     String
+  productName   String
+  quantity      Int
+  unitPriceCents Int
+  totalCents    Int
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+}
+
+model PaymentRecord {
+  id           String   @id @default(cuid())
+  orderId      String
+  amountCents  Int
+  method       String   @default("Cash")
+  status       String   @default("Pending")
+  recordedById String
+  note         String?
+  recordedAt   DateTime @default(now())
+
+  order    Order @relation(fields: [orderId], references: [id])
+  recordedBy User @relation(fields: [recordedById], references: [id])
+}
+
+model Receipt {
+  id           String   @id @default(cuid())
+  orderId      String
+  receiptNumber String  @unique
+  pdfUrl       String?
+  issuedById   String
+  sentVia      String   @default("NotSent")
+  sentAt       DateTime?
+  issuedAt     DateTime @default(now())
+
+  order    Order @relation(fields: [orderId], references: [id])
+  issuedBy User  @relation(fields: [issuedById], references: [id])
+}
+
+model FollowUp {
+  id           String   @id @default(cuid())
+  orderId      String
+  assignedToId String?
+  type         String   @default("WhatsApp")
+  status       String   @default("Pending")
+  note         String
+  dueAt        DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime @default(now())
+
+  order      Order @relation(fields: [orderId], references: [id])
+  assignedTo User? @relation(fields: [assignedToId], references: [id])
+}
+
+model Notification {
+  id                String   @id @default(cuid())
+  userId            String
+  type              String
+  title             String
+  message           String
+  isRead            Boolean  @default(false)
+  relatedEntityType String?
+  relatedEntityId   String?
+  createdAt         DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  fullName  String
+  phone     String?
+  whatsapp  String?
+  email     String?
+  subject   String?
+  message   String
+  status    String   @default("New")
+  createdAt DateTime @default(now())
+}
+
+model StoreSetting {
+  id    String @id @default("default")
+  data  String
+}
