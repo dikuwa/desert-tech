@@ -17,7 +17,7 @@ export function HeroSection() {
   const [heroImgError, setHeroImgError] = useState(false);
 
   return (
-    <section className="bg-background">
+    <section className="bg-background bg-noise relative">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row lg:items-center gap-10 lg:gap-16 py-10 lg:py-20">
           {/* Left: Content */}

@@ -112,7 +112,7 @@ export default function HomePage() {
     <div>
       <HeroSection />
       <CategoryCards />
-      <section className="py-12 bg-muted border-t border-border">
+      <section className="py-12 bg-muted border-t border-border bg-noise">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-6">
             <div>

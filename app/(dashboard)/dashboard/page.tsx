@@ -29,7 +29,7 @@ export default function DashboardPage() {
         <p className="text-sm text-muted-foreground mt-1">Overview of your store operations.</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 bg-noise rounded-xl p-4">
         {stats.map((stat, idx) => {
           const Icon = stat.icon;
           return (
@@ -52,7 +52,7 @@ export default function DashboardPage() {
         })}
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-2 gap-6 bg-noise rounded-xl p-4">
         <div className="rounded-xl border border-border bg-card">
           <div className="flex items-center justify-between p-5 border-b border-border">
             <h2 className="text-base font-semibold text-foreground">Recent Orders</h2>

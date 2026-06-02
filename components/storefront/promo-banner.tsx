@@ -36,7 +36,7 @@ export function PromoBanner() {
           </div>
 
           {/* CCTV Installation Service */}
-          <div className="relative overflow-hidden rounded-lg border border-border bg-gray-50 p-8">
+          <div className="relative overflow-hidden rounded-lg border border-border bg-gray-50 p-8 bg-noise">
             <div className="flex items-start justify-between">
               <div className="relative z-10">
                 <div className="inline-flex items-center gap-1.5 rounded-md bg-secondary px-3 py-1 text-xs font-bold text-secondary-foreground mb-4">

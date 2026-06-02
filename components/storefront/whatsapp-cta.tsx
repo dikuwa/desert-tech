@@ -5,7 +5,7 @@ const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
 
 export function WhatsAppCTA() {
   return (
-    <section className="py-10 bg-background">
+    <section className="py-10 bg-background bg-noise">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 rounded-lg border border-border bg-muted p-6 sm:p-8">
           <div className="flex items-center gap-4">

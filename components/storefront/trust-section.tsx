@@ -25,7 +25,7 @@ const reasons = [
 
 export function TrustSection() {
   return (
-    <section className="py-14 bg-muted border-t border-border">
+    <section className="py-14 bg-muted border-t border-border bg-noise">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-10">
           <h2 className="text-2xl font-bold tracking-tight text-foreground">
