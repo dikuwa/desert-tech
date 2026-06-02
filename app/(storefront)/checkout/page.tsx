@@ -1,23 +1,373 @@
-import { Card } from "@/components/ui/card";
-import { ShoppingBag } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import {
+  ShoppingBag,
+  ArrowLeft,
+  MessageCircle,
+  Phone,
+  Check,
+  ChevronRight,
+  CreditCard,
+} from "lucide-react";
+import { useCart } from "@/lib/store/cart";
+import { formatNAD } from "@/lib/data";
+import { cn } from "@/lib/utils";
+
+const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
+const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
+
+const checkoutSchema = z.object({
+  fullName: z.string().min(2, "Full name is required").max(100),
+  phone: z.string().min(5, "Phone number is required").max(20),
+  whatsapp: z.string().optional().or(z.literal("")),
+  email: z.string().email("Invalid email").optional().or(z.literal("")),
+  preferredContact: z.enum(["WhatsApp", "Phone", "Email"]),
+  notes: z.string().max(500).optional(),
+});
+
+type CheckoutFormData = z.infer<typeof checkoutSchema>;
 
 export default function CheckoutPage() {
-  return (
-    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
-      <h1 className="text-2xl font-bold tracking-tight text-foreground">Checkout</h1>
+  const router = useRouter();
+  const { items, getSubtotal, clearCart } = useCart();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-      <Card className="mt-8 p-12 text-center">
-        <ShoppingBag className="mx-auto h-12 w-12 text-muted-foreground" />
-        <h2 className="mt-4 text-lg font-semibold text-foreground">No items to checkout</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Add products to your cart before checking out.
-        </p>
-        <Link href="/shop" className="mt-6 inline-block">
-          <Button>Browse Products</Button>
+  const subtotal = getSubtotal();
+  const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm<CheckoutFormData>({
+    resolver: zodResolver(checkoutSchema),
+    defaultValues: {
+      preferredContact: "WhatsApp",
+    },
+  });
+
+  const preferredContact = watch("preferredContact");
+
+  const onSubmit = async (data: CheckoutFormData) => {
+    if (items.length === 0) return;
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      // Generate order number
+      const timestamp = Date.now().toString(36).toUpperCase();
+      const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+      const orderNumber = `DT-${timestamp}${random}`;
+
+      // In a real app, this would POST to an API route that creates the order in the DB
+      // For now, we simulate and redirect
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      // Store order data in sessionStorage for the success page
+      const orderData = {
+        orderNumber,
+        fullName: data.fullName,
+        phone: data.phone,
+        preferredContact: data.preferredContact,
+        itemCount,
+        subtotal,
+        items: items.map((i) => ({
+          name: i.name,
+          quantity: i.quantity,
+          priceCents: i.priceCents,
+        })),
+        createdAt: new Date().toISOString(),
+      };
+      sessionStorage.setItem("lastOrder", JSON.stringify(orderData));
+
+      clearCart();
+      router.push(`/order-success/${orderNumber}`);
+    } catch {
+      setSubmitError("Something went wrong. Please try again or contact us directly.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (items.length === 0) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8 text-center">
+        <div className="flex flex-col items-center justify-center py-16">
+          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-muted mb-6">
+            <ShoppingBag className="h-10 w-10 text-muted-foreground" />
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Nothing to checkout</h1>
+          <p className="mt-3 text-sm text-muted-foreground max-w-sm">
+            Add some products to your cart first, then come back here to submit your order request.
+          </p>
+          <Link
+            href="/shop"
+            className="mt-8 inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90"
+          >
+            Browse Products
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+      {/* Header */}
+      <div className="flex items-center gap-2 mb-8">
+        <Link
+          href="/cart"
+          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Cart
         </Link>
-      </Card>
+      </div>
+
+      <div className="grid lg:grid-cols-5 gap-8">
+        {/* Form */}
+        <div className="lg:col-span-3">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground mb-2">Checkout</h1>
+          <p className="text-sm text-muted-foreground mb-8">
+            Submit your order request and we&apos;ll contact you to confirm.
+          </p>
+
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            {/* Contact Information */}
+            <div className="rounded-xl border border-border bg-card p-6 space-y-5">
+              <h2 className="text-base font-semibold text-foreground">Contact Information</h2>
+
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Full Name <span className="text-destructive">*</span>
+                </label>
+                <input
+                  {...register("fullName")}
+                  className={cn(
+                    "mt-1.5 h-11 w-full rounded-lg border bg-background px-3 text-sm focus:outline-none focus:ring-1",
+                    errors.fullName
+                      ? "border-destructive focus:border-destructive focus:ring-destructive/30"
+                      : "border-border focus:border-primary focus:ring-primary/30",
+                  )}
+                  placeholder="Your full name"
+                />
+                {errors.fullName && (
+                  <p className="mt-1 text-xs text-destructive">{errors.fullName.message}</p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-foreground">
+                    Phone Number <span className="text-destructive">*</span>
+                  </label>
+                  <input
+                    {...register("phone")}
+                    className={cn(
+                      "mt-1.5 h-11 w-full rounded-lg border bg-background px-3 text-sm focus:outline-none focus:ring-1",
+                      errors.phone
+                        ? "border-destructive focus:border-destructive focus:ring-destructive/30"
+                        : "border-border focus:border-primary focus:ring-primary/30",
+                    )}
+                    placeholder="+264 81 234 5678"
+                  />
+                  {errors.phone && (
+                    <p className="mt-1 text-xs text-destructive">{errors.phone.message}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground">WhatsApp Number</label>
+                  <input
+                    {...register("whatsapp")}
+                    className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    placeholder="Same as phone if not specified"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground">Email (optional)</label>
+                <input
+                  {...register("email")}
+                  className={cn(
+                    "mt-1.5 h-11 w-full rounded-lg border bg-background px-3 text-sm focus:outline-none focus:ring-1",
+                    errors.email
+                      ? "border-destructive focus:border-destructive focus:ring-destructive/30"
+                      : "border-border focus:border-primary focus:ring-primary/30",
+                  )}
+                  placeholder="your@email.com"
+                />
+                {errors.email && (
+                  <p className="mt-1 text-xs text-destructive">{errors.email.message}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Preferred Contact */}
+            <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+              <h2 className="text-base font-semibold text-foreground">Preferred Contact Method</h2>
+              <div className="grid grid-cols-3 gap-3">
+                {(["WhatsApp", "Phone", "Email"] as const).map((method) => (
+                  <label
+                    key={method}
+                    className={cn(
+                      "flex cursor-pointer flex-col items-center gap-2 rounded-lg border p-4 transition-all",
+                      preferredContact === method
+                        ? "border-primary bg-accent text-primary"
+                        : "border-border text-muted-foreground hover:text-foreground hover:bg-muted",
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      value={method}
+                      {...register("preferredContact")}
+                      className="sr-only"
+                    />
+                    {method === "WhatsApp" ? (
+                      <MessageCircle className="h-5 w-5" />
+                    ) : method === "Phone" ? (
+                      <Phone className="h-5 w-5" />
+                    ) : (
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                    )}
+                    <span className="text-xs font-semibold">{method}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div className="rounded-xl border border-border bg-card p-6">
+              <h2 className="text-base font-semibold text-foreground mb-4">
+                Additional Notes (optional)
+              </h2>
+              <textarea
+                {...register("notes")}
+                rows={3}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                placeholder="Collection preferences, questions, or any other details..."
+              />
+            </div>
+
+            {/* Payment Note */}
+            <div className="rounded-xl border border-border bg-accent/50 p-4">
+              <div className="flex items-start gap-3">
+                <CreditCard className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Payment Information</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    We accept cash at our store or bank transfer. We&apos;ll confirm payment details
+                    when we contact you. No online payment required.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Error */}
+            {submitError && (
+              <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-4 text-sm text-destructive">
+                {submitError}
+              </div>
+            )}
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-md active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  <Check className="h-5 w-5" />
+                  Submit Order Request
+                </>
+              )}
+            </button>
+
+            <p className="text-xs text-center text-muted-foreground">
+              By submitting, you agree that we&apos;ll contact you using your preferred method to
+              confirm your order.
+            </p>
+          </form>
+        </div>
+
+        {/* Order Summary Sidebar */}
+        <div className="lg:col-span-2">
+          <div className="sticky top-24 rounded-xl border border-border bg-card p-6 space-y-4">
+            <h2 className="text-base font-bold text-foreground">Order Summary</h2>
+
+            <div className="space-y-3">
+              {items.map((item) => (
+                <div key={item.productId} className="flex gap-3">
+                  <div className="flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 border border-border">
+                    <img
+                      src={item.imageUrl}
+                      alt={item.name}
+                      className="w-full h-full object-contain p-1.5"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-foreground line-clamp-1">{item.name}</p>
+                    <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
+                    <p className="text-xs font-bold text-foreground mt-0.5">
+                      {formatNAD(item.priceCents * item.quantity)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="border-t border-border pt-4 space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span className="font-semibold text-foreground">{formatNAD(subtotal)}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Collection</span>
+                <span className="font-semibold text-success">Free</span>
+              </div>
+              <div className="border-t border-border pt-2 flex items-center justify-between">
+                <span className="text-base font-bold text-foreground">Total</span>
+                <span className="text-lg font-bold text-foreground">{formatNAD(subtotal)}</span>
+              </div>
+            </div>
+
+            <div className="pt-2 space-y-2">
+              <a
+                href={`https://wa.me/${WHATSAPP_NUMBER}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 rounded-lg bg-whatsapp px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-whatsapp-hover"
+              >
+                <MessageCircle className="h-4 w-4" />
+                Chat on WhatsApp
+              </a>
+              <a
+                href={`tel:${PHONE_NUMBER}`}
+                className="flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-foreground transition-all hover:bg-muted"
+              >
+                <Phone className="h-4 w-4" />
+                {PHONE_NUMBER}
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

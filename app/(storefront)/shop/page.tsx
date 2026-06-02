@@ -1,41 +1,457 @@
-import { Card } from "@/components/ui/card";
-import { Search, SlidersHorizontal } from "lucide-react";
-import { Button } from "@/components/ui/button";
+"use client";
+
+import { useState, useMemo, useCallback } from "react";
+import Link from "next/link";
+import {
+  Search,
+  SlidersHorizontal,
+  X,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Grid3X3,
+  List,
+} from "lucide-react";
+import { ProductCard } from "@/components/storefront/product-card";
+import type { ProductData } from "@/components/storefront/product-card";
+import {
+  products as allProducts,
+  categories,
+  ALL_BRANDS,
+  ALL_AVAILABILITY,
+  ALL_CONDITIONS,
+  filterProducts,
+} from "@/lib/data";
+
+const ITEMS_PER_PAGE = 12;
+
+const SORT_OPTIONS = [
+  { value: "featured", label: "Featured" },
+  { value: "newest", label: "Newest" },
+  { value: "price-asc", label: "Price: Low to High" },
+  { value: "price-desc", label: "Price: High to Low" },
+  { value: "rating", label: "Highest Rated" },
+];
 
 export default function ShopPage() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedBrand, setSelectedBrand] = useState("all");
+  const [selectedAvailability, setSelectedAvailability] = useState("all");
+  const [selectedCondition, setSelectedCondition] = useState("all");
+  const [selectedSort, setSelectedSort] = useState("featured");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [showSort, setShowSort] = useState(false);
+
+  const filtered = useMemo(() => {
+    return filterProducts({
+      search: searchQuery || undefined,
+      category: selectedCategory !== "all" ? selectedCategory : undefined,
+      brand: selectedBrand !== "all" ? selectedBrand : undefined,
+      availability: selectedAvailability !== "all" ? selectedAvailability : undefined,
+      condition: selectedCondition !== "all" ? selectedCondition : undefined,
+      sort: selectedSort,
+    });
+  }, [searchQuery, selectedCategory, selectedBrand, selectedAvailability, selectedCondition, selectedSort]);
+
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginatedProducts = filtered.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE,
+  );
+
+  const hasActiveFilters =
+    selectedCategory !== "all" ||
+    selectedBrand !== "all" ||
+    selectedAvailability !== "all" ||
+    selectedCondition !== "all";
+
+  const clearFilters = useCallback(() => {
+    setSelectedCategory("all");
+    setSelectedBrand("all");
+    setSelectedAvailability("all");
+    setSelectedCondition("all");
+    setSearchQuery("");
+    setCurrentPage(1);
+  }, []);
+
+  const handleCategoryChange = (slug: string) => {
+    setSelectedCategory(slug);
+    setCurrentPage(1);
+  };
+
+  // Category stats
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: allProducts.length };
+    categories.forEach((cat) => {
+      counts[cat.slug] = allProducts.filter((p) => p.categorySlug === cat.slug).length;
+    });
+    return counts;
+  }, []);
+
+  const FilterSidebar = () => (
+    <div className="space-y-6">
+      {/* Category Filter */}
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-3">Category</h3>
+        <div className="space-y-1">
+          <button
+            onClick={() => handleCategoryChange("all")}
+            className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors ${
+              selectedCategory === "all"
+                ? "bg-accent text-primary font-semibold"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            }`}
+          >
+            <span>All Products</span>
+            <span className="text-xs text-muted-foreground">{categoryCounts.all}</span>
+          </button>
+          {categories.map((cat) => (
+            <button
+              key={cat.slug}
+              onClick={() => handleCategoryChange(cat.slug)}
+              className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors ${
+                selectedCategory === cat.slug
+                  ? "bg-accent text-primary font-semibold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              }`}
+            >
+              <span>{cat.name}</span>
+              <span className="text-xs text-muted-foreground">
+                {categoryCounts[cat.slug] || 0}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Brand Filter */}
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-3">Brand</h3>
+        <div className="space-y-1">
+          <button
+            onClick={() => { setSelectedBrand("all"); setCurrentPage(1); }}
+            className={`flex w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors ${
+              selectedBrand === "all"
+                ? "bg-accent text-primary font-semibold"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            }`}
+          >
+            All Brands
+          </button>
+          {ALL_BRANDS.map((brand) => (
+            <button
+              key={brand}
+              onClick={() => { setSelectedBrand(brand); setCurrentPage(1); }}
+              className={`flex w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors ${
+                selectedBrand === brand
+                  ? "bg-accent text-primary font-semibold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              }`}
+            >
+              {brand}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Availability Filter */}
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-3">Availability</h3>
+        <div className="space-y-1">
+          <button
+            onClick={() => { setSelectedAvailability("all"); setCurrentPage(1); }}
+            className={`flex w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors ${
+              selectedAvailability === "all"
+                ? "bg-accent text-primary font-semibold"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            }`}
+          >
+            All Items
+          </button>
+          {ALL_AVAILABILITY.map((avail) => (
+            <button
+              key={avail.value}
+              onClick={() => { setSelectedAvailability(avail.value); setCurrentPage(1); }}
+              className={`flex w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors ${
+                selectedAvailability === avail.value
+                  ? "bg-accent text-primary font-semibold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              }`}
+            >
+              {avail.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Condition Filter */}
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-3">Condition</h3>
+        <div className="space-y-1">
+          <button
+            onClick={() => { setSelectedCondition("all"); setCurrentPage(1); }}
+            className={`flex w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors ${
+              selectedCondition === "all"
+                ? "bg-accent text-primary font-semibold"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            }`}
+          >
+            All Conditions
+          </button>
+          {ALL_CONDITIONS.map((cond) => (
+            <button
+              key={cond}
+              onClick={() => { setSelectedCondition(cond); setCurrentPage(1); }}
+              className={`flex w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors ${
+                selectedCondition === cond
+                  ? "bg-accent text-primary font-semibold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              }`}
+            >
+              {cond}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {hasActiveFilters && (
+        <button
+          onClick={clearFilters}
+          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        >
+          <X className="h-4 w-4" />
+          Clear All Filters
+        </button>
+      )}
+    </div>
+  );
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="flex items-center justify-between">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Shop Products</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Browse our catalog of new, pre-owned, and refurbished tech.
+            {filtered.length} product{filtered.length !== 1 ? "s" : ""} found
           </p>
         </div>
-        <Button variant="outline" className="gap-2">
-          <SlidersHorizontal className="h-4 w-4" />
-          Filters
-        </Button>
-      </div>
 
-      {/* Search */}
-      <div className="mt-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search products by name, brand, or category..."
-            className="h-11 w-full rounded-md border border-input bg-background pl-10 pr-4 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-          />
+        <div className="flex items-center gap-3">
+          {/* Mobile filter toggle */}
+          <button
+            onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
+            className="flex lg:hidden items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+            Filters
+            {hasActiveFilters && (
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                !
+              </span>
+            )}
+          </button>
+
+          {/* Sort dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setShowSort(!showSort)}
+              className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+            >
+              {SORT_OPTIONS.find((o) => o.value === selectedSort)?.label || "Sort"}
+              <ChevronDown className="h-4 w-4" />
+            </button>
+            {showSort && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setShowSort(false)} />
+                <div className="absolute right-0 top-full mt-1 z-20 min-w-[200px] rounded-lg border border-border bg-card shadow-lg p-1">
+                  {SORT_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => {
+                        setSelectedSort(opt.value);
+                        setShowSort(false);
+                        setCurrentPage(1);
+                      }}
+                      className={`flex w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors ${
+                        selectedSort === opt.value
+                          ? "bg-accent text-primary font-semibold"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Placeholder */}
-      <Card className="mt-8 p-12 text-center">
-        <p className="text-sm text-muted-foreground">
-          Product catalog coming soon. Check back for our full selection of products.
-        </p>
-      </Card>
+      <div className="flex gap-8">
+        {/* Desktop Sidebar */}
+        <aside className="hidden lg:block w-64 flex-shrink-0">
+          <div className="sticky top-24">
+            <FilterSidebar />
+          </div>
+        </aside>
+
+        {/* Mobile Filter Drawer */}
+        {mobileFiltersOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden">
+            <div className="fixed inset-0 bg-black/50" onClick={() => setMobileFiltersOpen(false)} />
+            <div className="fixed inset-y-0 left-0 w-80 max-w-[85vw] bg-background border-r border-border overflow-y-auto p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-bold text-foreground">Filters</h2>
+                <button
+                  onClick={() => setMobileFiltersOpen(false)}
+                  className="rounded-md p-2 text-muted-foreground hover:text-foreground hover:bg-muted"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <FilterSidebar />
+            </div>
+          </div>
+        )}
+
+        {/* Product Grid */}
+        <div className="flex-1">
+          {/* Search Bar */}
+          <div className="relative mb-6">
+            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              placeholder="Search by name, brand, or category..."
+              className="h-11 w-full rounded-lg border border-border bg-background pl-10 pr-4 text-sm placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+
+          {/* Active filter chips */}
+          {hasActiveFilters && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {selectedCategory !== "all" && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-accent text-primary px-2.5 py-1 text-xs font-medium">
+                  {categories.find((c) => c.slug === selectedCategory)?.name}
+                  <button onClick={() => handleCategoryChange("all")}><X className="h-3 w-3" /></button>
+                </span>
+              )}
+              {selectedBrand !== "all" && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-accent text-primary px-2.5 py-1 text-xs font-medium">
+                  {selectedBrand}
+                  <button onClick={() => { setSelectedBrand("all"); setCurrentPage(1); }}><X className="h-3 w-3" /></button>
+                </span>
+              )}
+              {selectedAvailability !== "all" && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-accent text-primary px-2.5 py-1 text-xs font-medium">
+                  {ALL_AVAILABILITY.find((a) => a.value === selectedAvailability)?.label}
+                  <button onClick={() => { setSelectedAvailability("all"); setCurrentPage(1); }}><X className="h-3 w-3" /></button>
+                </span>
+              )}
+              {selectedCondition !== "all" && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-accent text-primary px-2.5 py-1 text-xs font-medium">
+                  {selectedCondition}
+                  <button onClick={() => { setSelectedCondition("all"); setCurrentPage(1); }}><X className="h-3 w-3" /></button>
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Empty state */}
+          {paginatedProducts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <Search className="h-12 w-12 text-muted-foreground/40 mb-4" />
+              <h3 className="text-lg font-semibold text-foreground">No products found</h3>
+              <p className="mt-2 text-sm text-muted-foreground max-w-sm">
+                Try adjusting your search or filters to find what you&apos;re looking for.
+              </p>
+              <button
+                onClick={clearFilters}
+                className="mt-4 rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                Clear Filters
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-4">
+                {paginatedProducts.map((product: ProductData) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-10">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </button>
+
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter((page) => {
+                        if (totalPages <= 7) return true;
+                        if (page === 1 || page === totalPages) return true;
+                        if (Math.abs(page - currentPage) <= 1) return true;
+                        return false;
+                      })
+                      .map((page, idx, arr) => {
+                        const content = (
+                          <>
+                            {idx > 0 && arr[idx - 1] !== page - 1 && (
+                              <span className="px-2 text-muted-foreground">...</span>
+                            )}
+                            <button
+                              onClick={() => setCurrentPage(page)}
+                              className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                                currentPage === page
+                                  ? "bg-primary text-primary-foreground"
+                                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          </>
+                        );
+                        return <div key={page}>{content}</div>;
+                      })}
+                  </div>
+
+                  <button
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

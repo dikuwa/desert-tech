@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-background: #ffffff;
+  --color-background: #fcfcf9;
   --color-foreground: #111111;
   --color-card: #ffffff;
   --color-card-foreground: #111111;
@@ -9,16 +9,16 @@
   --color-popover-foreground: #111111;
   --color-primary: #f68923;
   --color-primary-foreground: #ffffff;
-  --color-secondary: #111111;
+  --color-secondary: #0b0b0b;
   --color-secondary-foreground: #ffffff;
-  --color-muted: #f7f7f7;
-  --color-muted-foreground: #6f6f6f;
+  --color-muted: #f2f2ed;
+  --color-muted-foreground: #505050;
   --color-accent: #fff3e8;
   --color-accent-foreground: #111111;
   --color-destructive: #dc2626;
   --color-destructive-foreground: #ffffff;
-  --color-border: #e8e8e8;
-  --color-input: #e8e8e8;
+  --color-border: #e2e2dd;
+  --color-input: #e2e2dd;
   --color-ring: #f68923;
   --color-success: #16a34a;
   --color-success-soft: #ecfdf3;
@@ -28,11 +28,22 @@
   --color-info-soft: #eff6ff;
   --color-whatsapp: #25d366;
   --color-whatsapp-hover: #1ebe5d;
+  --color-whatsapp-soft: #e8fcf0;
+  --color-gray-50: #fafaf7;
+  --color-gray-100: #f2f2ed;
+  --color-gray-200: #e2e2dd;
+  --color-gray-300: #d4d4cf;
+  --color-gray-400: #a3a39f;
+  --color-gray-500: #737370;
+  --color-gray-600: #525250;
+  --color-gray-700: #40403d;
+  --color-gray-800: #262625;
+  --color-gray-900: #171716;
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 10px;
   --radius-xl: 14px;
-  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-sans: var(--font-space-grotesk), "Space Grotesk", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", monospace;
 }
 
@@ -44,6 +55,9 @@
   --text-xl: 1.25rem;
   --text-2xl: 1.5rem;
   --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --text-5xl: 3rem;
+  --text-6xl: 3.75rem;
   --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.04);
   --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.04);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.06), 0 2px 4px -2px rgb(0 0 0 / 0.04);
@@ -58,15 +72,32 @@
 html {
   font-size: 16px;
   -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
 }
 
 body {
   font-family: var(--font-sans);
-  background: var(--color-muted);
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(246, 137, 35, 0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 20%, rgba(246, 137, 35, 0.03) 0%, transparent 50%),
+    var(--color-background);
   color: var(--color-foreground);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  letter-spacing: 0.01em;
+}
+
+/* Subtle noise texture overlay on sections that need depth */
+.bg-noise {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Cpath d='M1 0h1v1H1zM2 2h1v1H2zM0 3h1v1H0z' fill='rgba(0,0,0,0.03)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  letter-spacing: -0.02em;
+  font-weight: 600;
+  line-height: 1.15;
 }
 
 :focus-visible {
