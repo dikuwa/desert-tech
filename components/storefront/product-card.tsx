@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { Heart, ShoppingCart, Bell, Star, ImageOff } from "lucide-react";
+import { Bell, Check, Heart, ImageOff, ShoppingCart, Star, Tag } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useCart } from "@/lib/store/cart";
+import { useWishlist } from "@/lib/store/wishlist";
 
 export interface ProductData {
   id: string;
@@ -17,6 +19,7 @@ export interface ProductData {
   imageUrl?: string;
   availability: "in_stock" | "low_stock" | "sold_out";
   stockCount?: number;
+  condition?: "New" | "Refurbished" | "Pre-Owned";
   rating?: number;
   reviewCount?: number;
 }
@@ -45,11 +48,29 @@ const availabilityConfig = {
 };
 
 export function ProductCard({ product }: ProductCardProps) {
-  const [wishlisted, setWishlisted] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const [addedToCart, setAddedToCart] = useState(false);
+  const { addItem } = useCart();
+  const { toggleItem, isWishlisted } = useWishlist();
+  const wishlisted = isWishlisted(product.id);
   const isSoldOut = product.availability === "sold_out";
   const isLowStock = product.availability === "low_stock";
   const avail = availabilityConfig[product.availability];
+
+  const handleAddToCart = () => {
+    addItem({
+      id: product.id,
+      productId: product.id,
+      name: product.name,
+      slug: product.slug,
+      imageUrl: product.imageUrl || "",
+      priceCents: product.priceCents,
+      specs: product.specs,
+      availability: product.availability,
+    });
+    setAddedToCart(true);
+    setTimeout(() => setAddedToCart(false), 2000);
+  };
 
   return (
     <motion.div
@@ -57,47 +78,51 @@ export function ProductCard({ product }: ProductCardProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
       className={cn(
-        "group relative flex flex-col rounded-lg border bg-card transition-all hover:shadow-md",
-        isSoldOut ? "border-gray-200 opacity-70" : "border-border hover:-translate-y-0.5",
+        "group relative flex min-h-full flex-col overflow-hidden rounded-lg border bg-card transition-all hover:shadow-md",
+        isSoldOut ? "border-gray-200 opacity-75" : "border-border hover:-translate-y-0.5",
       )}
     >
-      {/* Discount Badge */}
-      {product.discountPercent && !isSoldOut && (
-        <div className="absolute top-2 left-2 z-10 rounded-md bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">
-          -{product.discountPercent}%
-        </div>
-      )}
-
-      {/* Wishlist Button */}
       <button
-        onClick={() => setWishlisted(!wishlisted)}
+        onClick={() => toggleItem({
+          productId: product.id,
+          name: product.name,
+          slug: product.slug,
+          imageUrl: product.imageUrl || "",
+          priceCents: product.priceCents,
+          specs: product.specs,
+        })}
         className={cn(
-          "absolute top-2 right-2 z-20 flex h-7 w-7 items-center justify-center rounded-md transition-colors",
-          isSoldOut ? "hidden" : "opacity-0 group-hover:opacity-100",
-          wishlisted ? "text-destructive" : "text-muted-foreground hover:text-destructive",
+          "absolute right-3 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card/95 text-muted-foreground shadow-xs transition-all hover:text-destructive",
+          isSoldOut && "hidden",
+          wishlisted && "border-destructive/20 bg-destructive/10 text-destructive",
         )}
+        aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
       >
         <Heart className={cn("h-4 w-4", wishlisted && "fill-current")} />
       </button>
 
-      {/* Availability Badge */}
-      <div
-        className={cn(
-          "absolute top-2 right-2 z-10 rounded-md border px-2 py-0.5 text-[11px] font-semibold",
-          isSoldOut && "opacity-0",
-          avail.class,
-        )}
+      <Link
+        href={`/shop/${product.slug}`}
+        className="relative flex aspect-[4/3] items-center justify-center bg-gray-100 p-5"
       >
-        {typeof avail.label === "function" ? avail.label(product.stockCount) : avail.label}
-      </div>
-
-      {/* Product Image */}
-      <div className="aspect-square rounded-t-lg bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-6">
+        <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-1.5 pr-12">
+          {product.discountPercent && !isSoldOut && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-[11px] font-bold text-primary-foreground">
+              <Tag className="h-3 w-3" />
+              -{product.discountPercent}%
+            </span>
+          )}
+          {product.condition && (
+            <span className="rounded-md border border-border bg-card/95 px-2 py-1 text-[11px] font-semibold text-muted-foreground">
+              {product.condition}
+            </span>
+          )}
+        </div>
         {product.imageUrl && !imgError ? (
           <img
             src={product.imageUrl}
             alt={product.name}
-            className="w-full h-full object-contain transition-transform group-hover:scale-105 duration-300"
+            className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
             onError={() => setImgError(true)}
           />
         ) : (
@@ -106,33 +131,43 @@ export function ProductCard({ product }: ProductCardProps) {
             <span className="text-[11px] font-medium">{product.name}</span>
           </div>
         )}
-      </div>
+      </Link>
 
-      {/* Content */}
-      <div className="flex flex-1 flex-col gap-2 p-4">
-        {/* Name */}
-        <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-2">
+      <div className="flex flex-1 flex-col gap-3 p-4">
+        <div className="flex items-start justify-between gap-2">
+          <div
+            className={cn(
+              "rounded-md border px-2 py-1 text-[11px] font-semibold",
+              avail.class,
+            )}
+          >
+            {typeof avail.label === "function" ? avail.label(product.stockCount) : avail.label}
+          </div>
+          {product.rating && (
+            <div className="flex items-center gap-1 rounded-md bg-muted px-2 py-1">
+              <Star className="h-3 w-3 fill-warning text-warning" />
+              <span className="text-[11px] font-semibold text-foreground">{product.rating}</span>
+            </div>
+          )}
+        </div>
+
+        <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">
           <Link href={`/shop/${product.slug}`} className="hover:text-primary transition-colors">
             {product.name}
           </Link>
         </h3>
 
-        {/* Specs */}
-        <p className="text-xs text-muted-foreground line-clamp-1">{product.specs}</p>
+        <p className="line-clamp-2 min-h-10 text-xs leading-5 text-muted-foreground">{product.specs}</p>
 
-        {/* Rating */}
-        {product.rating && (
-          <div className="flex items-center gap-1">
-            <Star className="h-3 w-3 fill-warning text-warning" />
-            <span className="text-xs font-medium text-foreground">{product.rating}</span>
-            {product.reviewCount && (
-              <span className="text-xs text-muted-foreground">({product.reviewCount})</span>
-            )}
-          </div>
-        )}
+        <div className="mt-auto">
+          {product.reviewCount && (
+            <p className="mb-1 text-[11px] text-muted-foreground">
+              {product.reviewCount} customer reviews
+            </p>
+          )}
+        </div>
 
-        {/* Price */}
-        <div className="flex items-baseline gap-2 mt-auto">
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
           <span className="text-base font-bold text-foreground">
             {formatNAD(product.priceCents)}
           </span>
@@ -143,17 +178,32 @@ export function ProductCard({ product }: ProductCardProps) {
           )}
         </div>
 
-        {/* Add to Cart / Notify Me */}
         {isSoldOut ? (
-          <button className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md border border-border bg-background px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted">
+          <button className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted">
             <Bell className="h-3.5 w-3.5" />
             Notify Me
           </button>
         ) : (
-          <button className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-sm">
-            <ShoppingCart className="h-3.5 w-3.5" />
-            Add to Cart
-          </button>
+          <button
+              onClick={handleAddToCart}
+              className={`flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-xs font-semibold transition-all hover:shadow-sm ${
+                addedToCart
+                  ? "bg-success text-white"
+                  : "bg-primary text-primary-foreground hover:bg-primary/90"
+              }`}
+            >
+              {addedToCart ? (
+                <>
+                  <Check className="h-3.5 w-3.5" />
+                  Added
+                </>
+              ) : (
+                <>
+                  <ShoppingCart className="h-3.5 w-3.5" />
+                  Add to Cart
+                </>
+              )}
+            </button>
         )}
       </div>
     </motion.div>

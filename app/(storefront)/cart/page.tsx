@@ -188,7 +188,7 @@ export default function CartPage() {
                 href={`https://wa.me/${WHATSAPP_NUMBER}?text=${cartWhatsAppMessage}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-whatsapp px-5 py-3 text-sm font-semibold text-white transition-all hover:bg-whatsapp-hover hover:shadow-md active:scale-[0.98]"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-whatsapp/20 bg-whatsapp-soft px-5 py-3 text-sm font-semibold text-whatsapp transition-all hover:-translate-y-0.5 hover:border-whatsapp/30 hover:bg-whatsapp hover:text-white hover:shadow-md active:translate-y-0"
               >
                 <MessageCircle className="h-4 w-4" />
                 Enquire on WhatsApp

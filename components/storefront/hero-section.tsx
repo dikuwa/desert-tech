@@ -1,120 +1,80 @@
 "use client";
 
-import { MessageCircle, Phone, ShieldCheck, AlertTriangle } from "lucide-react";
-import { useState } from "react";
+import Link from "next/link";
+import {
+  ArrowRight,
+  BadgeCheck,
+  MessageCircle,
+  Phone,
+  ShieldCheck,
+  Truck,
+} from "lucide-react";
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
 const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
 
-const trustBadges = [
-  { label: "Quality Tested", icon: ShieldCheck },
-  { label: "Reliable Support", icon: ShieldCheck },
-  { label: "Best Prices", icon: ShieldCheck },
-  { label: "Secure Purchase", icon: ShieldCheck },
-];
-
 export function HeroSection() {
-  const [heroImgError, setHeroImgError] = useState(false);
-
   return (
-    <section className="bg-background bg-noise relative">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-10 lg:gap-16 py-10 lg:py-20">
-          {/* Left: Content */}
-          <div className="flex-1 max-w-xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-accent/50 px-4 py-1.5 mb-6">
-              <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-              <span className="text-xs font-semibold text-primary tracking-wider uppercase">
-                Namibia&apos;s Trusted Tech Partner
-              </span>
-            </div>
-
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground leading-[1.08]">
-              Your trusted tech partner in{" "}
-              <span className="text-primary">Namibia.</span>
-            </h1>
-
-            <p className="mt-5 text-base sm:text-lg text-muted-foreground leading-relaxed max-w-lg">
-              New, pre-used and refurbished technology — from laptops and
-              smartphones to security, networking and POS solutions.
-            </p>
-
-            {/* CTAs */}
-            <div className="mt-8 flex flex-col sm:flex-row gap-3">
-              <a
-                href={`https://wa.me/${WHATSAPP_NUMBER}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-whatsapp px-7 py-3.5 text-sm font-semibold text-white transition-all hover:bg-whatsapp-hover hover:shadow-lg hover:shadow-whatsapp/25 active:scale-[0.98]"
-              >
-                <MessageCircle className="h-5 w-5" />
-                Chat on WhatsApp
-              </a>
-              <a
-                href={`tel:${PHONE_NUMBER}`}
-                className="inline-flex items-center justify-center gap-2.5 rounded-xl border border-border bg-background px-7 py-3.5 text-sm font-semibold text-foreground transition-all hover:bg-muted hover:shadow-md active:scale-[0.98]"
-              >
-                <Phone className="h-5 w-5" />
-                {PHONE_NUMBER}
-              </a>
-            </div>
-
-            {/* Trust Badges */}
-            <div className="mt-10 flex flex-wrap gap-x-8 gap-y-3">
-              {trustBadges.map((badge) => {
-                const Icon = badge.icon;
-                return (
-                  <div key={badge.label} className="flex items-center gap-2">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-accent">
-                      <Icon className="h-3.5 w-3.5 text-primary" />
-                    </div>
-                    <span className="text-sm font-medium text-muted-foreground">
-                      {badge.label}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+    <section className="relative overflow-hidden border-b border-border bg-background">
+      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-8 sm:px-6 lg:grid-cols-[0.98fr_1.02fr] lg:px-8 lg:py-12">
+        <div className="flex flex-col justify-center">
+          <div className="mb-5 inline-flex w-fit items-center rounded-full border border-border bg-card px-4 py-1.5 text-xs font-semibold text-muted-foreground shadow-xs">
+            Desert Technology Consultant, Namibia
           </div>
 
-          {/* Right: Hero Image */}
-          <div className="flex-1 lg:flex lg:justify-end">
-            <div className="relative w-full max-w-lg aspect-[4/3] rounded-2xl overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 border border-border shadow-xl">
-              {!heroImgError ? (
-                <img
-                  src="https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&h=600&fit=crop"
-                  alt="Premium tech products"
-                  className="w-full h-full object-cover"
-                  onError={() => setHeroImgError(true)}
-                />
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center gap-3 text-muted-foreground">
-                  <AlertTriangle className="h-8 w-8" />
-                  <span className="text-sm font-medium">Image unavailable</span>
-                </div>
-              )}
+          <h1 className="max-w-2xl text-4xl font-semibold leading-[1.04] text-foreground sm:text-5xl">
+            Namibia&rsquo;s tech — tested, warranted, and a message away.
+          </h1>
 
-              {/* Floating badge */}
-              <div className="absolute bottom-4 left-4 right-4 flex items-center gap-3 rounded-xl bg-white/90 backdrop-blur-sm border border-white/50 px-4 py-3 shadow-lg">
-                <div className="flex -space-x-2">
-                  <div className="h-8 w-8 rounded-full border-2 border-white bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
-                    <ShieldCheck className="h-4 w-4 text-white" />
-                  </div>
-                  <div className="h-8 w-8 rounded-full border-2 border-white bg-gradient-to-br from-whatsapp to-whatsapp-hover flex items-center justify-center">
-                    <MessageCircle className="h-4 w-4 text-white" />
-                  </div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-foreground truncate">
-                    Trusted by customers across Namibia
-                  </p>
-                  <p className="text-[11px] text-muted-foreground">
-                    Quality checked • Free consultation
-                  </p>
-                </div>
-              </div>
-            </div>
+          <p className="mt-5 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">
+            Shop laptops, phones, gaming builds, CCTV, networking and POS gear with clear pricing, tested stock and direct local assistance.
+          </p>
+
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+            <Link
+              href="/shop"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-md active:translate-y-0"
+            >
+              Shop products
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <a
+              href={`https://wa.me/${WHATSAPP_NUMBER}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-5 py-3 text-sm font-semibold text-foreground transition-all hover:-translate-y-0.5 hover:border-whatsapp/30 hover:bg-whatsapp-soft hover:text-whatsapp active:translate-y-0"
+            >
+              <MessageCircle className="h-4 w-4" />
+              WhatsApp an expert
+            </a>
           </div>
+
+          <div className="mt-8 grid gap-3 sm:grid-cols-4">
+            {[
+              { label: "Tested stock", icon: ShieldCheck },
+              { label: "Warranty options", icon: BadgeCheck },
+              { label: "Nationwide courier", icon: Truck },
+              { label: PHONE_NUMBER, icon: Phone },
+            ].map((item) => {
+              const Icon = item.icon;
+              return (
+                <div key={item.label} className="flex items-center gap-2.5 text-sm font-medium text-muted-foreground">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-primary">
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  {item.label}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="min-w-0 -mr-4 sm:-mr-6 lg:-mr-8 -mb-8 lg:-mb-12 overflow-hidden">
+          <img
+            src="/images/desert-tech-hero.webp"
+            alt="Desert Technology Consultant"
+            className="w-full object-cover"
+          />
         </div>
       </div>
     </section>

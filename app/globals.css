@@ -1,44 +1,45 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-background: #fcfcf9;
-  --color-foreground: #111111;
-  --color-card: #ffffff;
-  --color-card-foreground: #111111;
-  --color-popover: #ffffff;
-  --color-popover-foreground: #111111;
-  --color-primary: #f68923;
-  --color-primary-foreground: #ffffff;
-  --color-secondary: #0b0b0b;
-  --color-secondary-foreground: #ffffff;
-  --color-muted: #f2f2ed;
-  --color-muted-foreground: #505050;
-  --color-accent: #fff3e8;
-  --color-accent-foreground: #111111;
-  --color-destructive: #dc2626;
-  --color-destructive-foreground: #ffffff;
-  --color-border: #e2e2dd;
-  --color-input: #e2e2dd;
-  --color-ring: #f68923;
-  --color-success: #16a34a;
-  --color-success-soft: #ecfdf3;
-  --color-warning: #f59e0b;
-  --color-warning-soft: #fffbeb;
-  --color-info: #2563eb;
-  --color-info-soft: #eff6ff;
-  --color-whatsapp: #25d366;
-  --color-whatsapp-hover: #1ebe5d;
-  --color-whatsapp-soft: #e8fcf0;
-  --color-gray-50: #fafaf7;
-  --color-gray-100: #f2f2ed;
-  --color-gray-200: #e2e2dd;
-  --color-gray-300: #d4d4cf;
-  --color-gray-400: #a3a39f;
-  --color-gray-500: #737370;
-  --color-gray-600: #525250;
-  --color-gray-700: #40403d;
-  --color-gray-800: #262625;
-  --color-gray-900: #171716;
+  --color-background: oklch(0.985 0.006 78);
+  --color-foreground: oklch(0.168 0.014 78);
+  --color-card: oklch(0.997 0.004 78);
+  --color-card-foreground: oklch(0.168 0.014 78);
+  --color-popover: oklch(0.997 0.004 78);
+  --color-popover-foreground: oklch(0.168 0.014 78);
+  --color-primary: oklch(0.637 0.181 45);
+  --color-primary-foreground: oklch(0.991 0.006 78);
+  --color-secondary: oklch(0.184 0.018 218);
+  --color-secondary-foreground: oklch(0.972 0.009 88);
+  --color-muted: oklch(0.94 0.012 80);
+  --color-muted-foreground: oklch(0.43 0.023 78);
+  --color-accent: oklch(0.925 0.052 54);
+  --color-accent-foreground: oklch(0.202 0.019 64);
+  --color-destructive: oklch(0.58 0.19 25);
+  --color-destructive-foreground: oklch(0.991 0.006 78);
+  --color-border: oklch(0.865 0.017 78);
+  --color-input: oklch(0.865 0.017 78);
+  --color-ring: oklch(0.637 0.181 45);
+  --color-success: oklch(0.57 0.14 148);
+  --color-success-soft: oklch(0.955 0.04 147);
+  --color-warning: oklch(0.66 0.15 69);
+  --color-warning-soft: oklch(0.962 0.049 80);
+  --color-info: oklch(0.52 0.145 232);
+  --color-info-soft: oklch(0.946 0.033 224);
+  --color-whatsapp: oklch(0.69 0.16 148);
+  --color-whatsapp-hover: oklch(0.62 0.15 148);
+  --color-whatsapp-soft: oklch(0.945 0.055 148);
+  --color-topbar: #0d41e1;
+  --color-gray-50: oklch(0.977 0.006 78);
+  --color-gray-100: oklch(0.94 0.012 80);
+  --color-gray-200: oklch(0.865 0.017 78);
+  --color-gray-300: oklch(0.79 0.02 78);
+  --color-gray-400: oklch(0.64 0.02 78);
+  --color-gray-500: oklch(0.51 0.02 78);
+  --color-gray-600: oklch(0.42 0.02 78);
+  --color-gray-700: oklch(0.32 0.018 78);
+  --color-gray-800: oklch(0.23 0.016 78);
+  --color-gray-900: oklch(0.17 0.014 78);
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 10px;
@@ -78,14 +79,12 @@ html {
 body {
   font-family: var(--font-sans);
   background:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(246, 137, 35, 0.04) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 80% 20%, rgba(246, 137, 35, 0.03) 0%, transparent 50%),
     var(--color-background);
   color: var(--color-foreground);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  letter-spacing: 0.01em;
+  letter-spacing: 0;
 }
 
 /* Subtle noise texture overlay on sections that need depth */
@@ -95,7 +94,7 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   font-weight: 600;
   line-height: 1.15;
 }

@@ -9,8 +9,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Grid3X3,
-  List,
+  ChevronUp,
 } from "lucide-react";
 import { ProductCard } from "@/components/storefront/product-card";
 import type { ProductData } from "@/components/storefront/product-card";
@@ -18,10 +17,14 @@ import {
   products as allProducts,
   categories,
   ALL_BRANDS,
-  ALL_AVAILABILITY,
   ALL_CONDITIONS,
   filterProducts,
 } from "@/lib/data";
+
+const ALL_AVAILABILITY = [
+  { value: "in_stock", label: "In Stock" },
+  { value: "low_stock", label: "Low Stock" },
+];
 
 const ITEMS_PER_PAGE = 12;
 
@@ -43,6 +46,16 @@ export default function ShopPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [showSort, setShowSort] = useState(false);
+  const [collapsedFilters, setCollapsedFilters] = useState<Record<string, boolean>>({
+    category: false,
+    brand: false,
+    availability: false,
+    condition: false,
+  });
+
+  const toggleFilter = (key: string) => {
+    setCollapsedFilters((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   const filtered = useMemo(() => {
     return filterProducts({
@@ -91,135 +104,175 @@ export default function ShopPage() {
   }, []);
 
   const FilterSidebar = () => (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Category Filter */}
-      <div>
-        <h3 className="text-sm font-semibold text-foreground mb-3">Category</h3>
-        <div className="space-y-1">
-          <button
-            onClick={() => handleCategoryChange("all")}
-            className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors ${
-              selectedCategory === "all"
-                ? "bg-accent text-primary font-semibold"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
-            }`}
-          >
-            <span>All Products</span>
-            <span className="text-xs text-muted-foreground">{categoryCounts.all}</span>
-          </button>
-          {categories.map((cat) => (
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
+        <button
+          onClick={() => toggleFilter("category")}
+          className={`flex w-full items-center justify-between px-4 py-3 text-sm font-semibold transition-colors ${
+            selectedCategory !== "all" ? "text-primary bg-accent/50" : "text-foreground hover:bg-muted"
+          }`}
+        >
+          <span>Category</span>
+          {collapsedFilters.category ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+        </button>
+        {!collapsedFilters.category && (
+          <div className="space-y-0.5 px-2 pb-3">
             <button
-              key={cat.slug}
-              onClick={() => handleCategoryChange(cat.slug)}
+              onClick={() => handleCategoryChange("all")}
               className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors ${
-                selectedCategory === cat.slug
+                selectedCategory === "all"
                   ? "bg-accent text-primary font-semibold"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               }`}
             >
-              <span>{cat.name}</span>
-              <span className="text-xs text-muted-foreground">
-                {categoryCounts[cat.slug] || 0}
-              </span>
+              <span>All Products</span>
+              <span className="text-xs text-muted-foreground">{categoryCounts.all}</span>
             </button>
-          ))}
-        </div>
+            {categories.map((cat) => (
+              <button
+                key={cat.slug}
+                onClick={() => handleCategoryChange(cat.slug)}
+                className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors ${
+                  selectedCategory === cat.slug
+                    ? "bg-accent text-primary font-semibold"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                }`}
+              >
+                <span>{cat.name}</span>
+                <span className="text-xs text-muted-foreground">
+                  {categoryCounts[cat.slug] || 0}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Brand Filter */}
-      <div>
-        <h3 className="text-sm font-semibold text-foreground mb-3">Brand</h3>
-        <div className="space-y-1">
-          <button
-            onClick={() => { setSelectedBrand("all"); setCurrentPage(1); }}
-            className={`flex w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors ${
-              selectedBrand === "all"
-                ? "bg-accent text-primary font-semibold"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
-            }`}
-          >
-            All Brands
-          </button>
-          {ALL_BRANDS.map((brand) => (
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
+        <button
+          onClick={() => toggleFilter("brand")}
+          className={`flex w-full items-center justify-between px-4 py-3 text-sm font-semibold transition-colors ${
+            selectedBrand !== "all" ? "text-primary bg-accent/50" : "text-foreground hover:bg-muted"
+          }`}
+        >
+          <span>Brand</span>
+          {collapsedFilters.brand ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+        </button>
+        {!collapsedFilters.brand && (
+          <div className="space-y-0.5 px-2 pb-3">
             <button
-              key={brand}
-              onClick={() => { setSelectedBrand(brand); setCurrentPage(1); }}
+              onClick={() => { setSelectedBrand("all"); setCurrentPage(1); }}
               className={`flex w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors ${
-                selectedBrand === brand
+                selectedBrand === "all"
                   ? "bg-accent text-primary font-semibold"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               }`}
             >
-              {brand}
+              All Brands
             </button>
-          ))}
-        </div>
+            {ALL_BRANDS.map((brand) => (
+              <button
+                key={brand}
+                onClick={() => { setSelectedBrand(brand); setCurrentPage(1); }}
+                className={`flex w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors ${
+                  selectedBrand === brand
+                    ? "bg-accent text-primary font-semibold"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                }`}
+              >
+                {brand}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Availability Filter */}
-      <div>
-        <h3 className="text-sm font-semibold text-foreground mb-3">Availability</h3>
-        <div className="space-y-1">
-          <button
-            onClick={() => { setSelectedAvailability("all"); setCurrentPage(1); }}
-            className={`flex w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors ${
-              selectedAvailability === "all"
-                ? "bg-accent text-primary font-semibold"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
-            }`}
-          >
-            All Items
-          </button>
-          {ALL_AVAILABILITY.map((avail) => (
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
+        <button
+          onClick={() => toggleFilter("availability")}
+          className={`flex w-full items-center justify-between px-4 py-3 text-sm font-semibold transition-colors ${
+            selectedAvailability !== "all" ? "text-primary bg-accent/50" : "text-foreground hover:bg-muted"
+          }`}
+        >
+          <span>Availability</span>
+          {collapsedFilters.availability ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+        </button>
+        {!collapsedFilters.availability && (
+          <div className="space-y-0.5 px-2 pb-3">
             <button
-              key={avail.value}
-              onClick={() => { setSelectedAvailability(avail.value); setCurrentPage(1); }}
+              onClick={() => { setSelectedAvailability("all"); setCurrentPage(1); }}
               className={`flex w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors ${
-                selectedAvailability === avail.value
+                selectedAvailability === "all"
                   ? "bg-accent text-primary font-semibold"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               }`}
             >
-              {avail.label}
+              All Items
             </button>
-          ))}
-        </div>
+            {ALL_AVAILABILITY.map((avail) => (
+              <button
+                key={avail.value}
+                onClick={() => { setSelectedAvailability(avail.value); setCurrentPage(1); }}
+                className={`flex w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors ${
+                  selectedAvailability === avail.value
+                    ? "bg-accent text-primary font-semibold"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                }`}
+              >
+                {avail.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Condition Filter */}
-      <div>
-        <h3 className="text-sm font-semibold text-foreground mb-3">Condition</h3>
-        <div className="space-y-1">
-          <button
-            onClick={() => { setSelectedCondition("all"); setCurrentPage(1); }}
-            className={`flex w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors ${
-              selectedCondition === "all"
-                ? "bg-accent text-primary font-semibold"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
-            }`}
-          >
-            All Conditions
-          </button>
-          {ALL_CONDITIONS.map((cond) => (
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
+        <button
+          onClick={() => toggleFilter("condition")}
+          className={`flex w-full items-center justify-between px-4 py-3 text-sm font-semibold transition-colors ${
+            selectedCondition !== "all" ? "text-primary bg-accent/50" : "text-foreground hover:bg-muted"
+          }`}
+        >
+          <span>Condition</span>
+          {collapsedFilters.condition ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+        </button>
+        {!collapsedFilters.condition && (
+          <div className="space-y-0.5 px-2 pb-3">
             <button
-              key={cond}
-              onClick={() => { setSelectedCondition(cond); setCurrentPage(1); }}
+              onClick={() => { setSelectedCondition("all"); setCurrentPage(1); }}
               className={`flex w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors ${
-                selectedCondition === cond
+                selectedCondition === "all"
                   ? "bg-accent text-primary font-semibold"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               }`}
             >
-              {cond}
+              All Conditions
             </button>
-          ))}
-        </div>
+            {ALL_CONDITIONS.map((cond) => (
+              <button
+                key={cond}
+                onClick={() => { setSelectedCondition(cond); setCurrentPage(1); }}
+                className={`flex w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors ${
+                  selectedCondition === cond
+                    ? "bg-accent text-primary font-semibold"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                }`}
+              >
+                {cond}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {hasActiveFilters && (
         <button
           onClick={clearFilters}
-          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
         >
           <X className="h-4 w-4" />
           Clear All Filters
@@ -331,7 +384,7 @@ export default function ShopPage() {
                 setCurrentPage(1);
               }}
               placeholder="Search by name, brand, or category..."
-              className="h-11 w-full rounded-lg border border-border bg-background pl-10 pr-4 text-sm placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+              className="h-11 w-full rounded-lg border border-border bg-background pl-10 pr-4 text-sm placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"
             />
             {searchQuery && (
               <button

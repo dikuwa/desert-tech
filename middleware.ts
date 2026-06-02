@@ -12,6 +12,7 @@ const publicPaths = [
   "/services",
   "/promotions",
   "/contact",
+  "/search",
   "/auth/sign-in",
   "/auth/sign-up",
   "/auth/forgot-password",

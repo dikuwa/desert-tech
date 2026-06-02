@@ -61,8 +61,8 @@ export const products: ProductData[] = [
     condition: "New", description: "The 15-inch MacBook Air with M3 chip brings a stunning Liquid Retina display, powerful performance, and all-day battery life in an incredibly thin design.",
     specs: "15.3″ Liquid Retina • Apple M3 • 8GB Unified • 256GB SSD",
     priceCents: 1899900, oldPriceCents: 2149900, discountPercent: 12,
-    imageUrl: "https://images.unsplash.com/photo-1517336714731-489689fd6ca8?w=400&h=400&fit=crop",
-    images: ["https://images.unsplash.com/photo-1517336714731-489689fd6ca8?w=600&h=600&fit=crop", "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600&h=600&fit=crop"],
+    imageUrl: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400&h=400&fit=crop",
+    images: ["https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600&h=600&fit=crop", "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&h=600&fit=crop"],
     availability: "in_stock", warranty: "1 Year", rating: 4.8, reviewCount: 24, isFeatured: true,
   },
   {
@@ -141,8 +141,8 @@ export const products: ProductData[] = [
     condition: "New", description: "Professional-grade laptop with M4 Pro chip, 14.2-inch Liquid Retina XDR display.",
     specs: "14.2″ Liquid Retina XDR • M4 Pro • 18GB • 512GB",
     priceCents: 2799900,
-    imageUrl: "https://images.unsplash.com/photo-1517336714731-489689fd6ca8?w=400&h=400&fit=crop",
-    images: ["https://images.unsplash.com/photo-1517336714731-489689fd6ca8?w=600&h=600&fit=crop"],
+    imageUrl: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400&h=400&fit=crop",
+    images: ["https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600&h=600&fit=crop"],
     availability: "in_stock", warranty: "1 Year", rating: 4.9, reviewCount: 37, isFeatured: false,
   },
   {
@@ -352,6 +352,5 @@ export const ALL_BRANDS = [...new Set(products.map((p) => p.brand))].sort();
 export const ALL_AVAILABILITY = [
   { value: "in_stock", label: "In Stock" },
   { value: "low_stock", label: "Low Stock" },
-  { value: "sold_out", label: "Sold Out" },
 ];
 export const ALL_CONDITIONS = ["New", "Refurbished", "Pre-Owned"];

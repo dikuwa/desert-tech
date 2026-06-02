@@ -62,36 +62,43 @@ export default function CheckoutPage() {
     setSubmitError(null);
 
     try {
-      // Generate order number
-      const timestamp = Date.now().toString(36).toUpperCase();
-      const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-      const orderNumber = `DT-${timestamp}${random}`;
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: data.fullName,
+          phone: data.phone,
+          whatsapp: data.whatsapp || data.phone,
+          email: data.email || undefined,
+          preferredContact: data.preferredContact,
+          notes: data.notes || undefined,
+          items: items.map((i) => ({
+            productId: i.productId,
+            name: i.name,
+            slug: i.slug,
+            priceCents: i.priceCents,
+            quantity: i.quantity,
+            specs: i.specs,
+          })),
+        }),
+      });
 
-      // In a real app, this would POST to an API route that creates the order in the DB
-      // For now, we simulate and redirect
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || "Failed to submit order");
+      }
+
+      const result = await response.json();
+      const order = result.order;
 
       // Store order data in sessionStorage for the success page
-      const orderData = {
-        orderNumber,
-        fullName: data.fullName,
-        phone: data.phone,
-        preferredContact: data.preferredContact,
-        itemCount,
-        subtotal,
-        items: items.map((i) => ({
-          name: i.name,
-          quantity: i.quantity,
-          priceCents: i.priceCents,
-        })),
-        createdAt: new Date().toISOString(),
-      };
-      sessionStorage.setItem("lastOrder", JSON.stringify(orderData));
+      sessionStorage.setItem("lastOrder", JSON.stringify(order));
 
       clearCart();
-      router.push(`/order-success/${orderNumber}`);
-    } catch {
-      setSubmitError("Something went wrong. Please try again or contact us directly.");
+      router.push(`/order-success/${order.orderNumber}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Something went wrong.";
+      setSubmitError(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -187,7 +194,7 @@ export default function CheckoutPage() {
                   <label className="text-sm font-medium text-foreground">WhatsApp Number</label>
                   <input
                     {...register("whatsapp")}
-                    className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"
                     placeholder="Same as phone if not specified"
                   />
                 </div>
@@ -254,7 +261,7 @@ export default function CheckoutPage() {
               <textarea
                 {...register("notes")}
                 rows={3}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"
                 placeholder="Collection preferences, questions, or any other details..."
               />
             </div>
@@ -352,7 +359,7 @@ export default function CheckoutPage() {
                 href={`https://wa.me/${WHATSAPP_NUMBER}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 rounded-lg bg-whatsapp px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-whatsapp-hover"
+                className="flex items-center justify-center gap-2 rounded-lg border border-whatsapp/20 bg-whatsapp-soft px-4 py-2.5 text-sm font-semibold text-whatsapp transition-all hover:-translate-y-0.5 hover:border-whatsapp/30 hover:bg-whatsapp hover:text-white"
               >
                 <MessageCircle className="h-4 w-4" />
                 Chat on WhatsApp

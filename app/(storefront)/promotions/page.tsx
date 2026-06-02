@@ -11,7 +11,6 @@ const activePromotions = [
     discount: "Save up to N$ 2,000",
     image: "https://images.unsplash.com/photo-1593640408182-31c70c8268f5?w=600&h=400&fit=crop",
     link: "/shop?category=gaming",
-    color: "from-accent to-orange-50 border-primary/20",
   },
   {
     title: "Back to School Special",
@@ -19,7 +18,6 @@ const activePromotions = [
     discount: "Up to 15% off",
     image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600&h=400&fit=crop",
     link: "/shop?category=laptops",
-    color: "from-blue-50 to-sky-50 border-blue-200",
   },
   {
     title: "CCTV Bundle Deals",
@@ -27,7 +25,6 @@ const activePromotions = [
     discount: "Save up to N$ 1,500",
     image: "https://images.unsplash.com/photo-1558002038-1055907df827?w=600&h=400&fit=crop",
     link: "/shop?category=cctv",
-    color: "from-gray-50 to-gray-100 border-gray-200",
   },
   {
     title: "Networking Upgrade",
@@ -35,7 +32,6 @@ const activePromotions = [
     discount: "Free installation",
     image: "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=600&h=400&fit=crop",
     link: "/shop?category=networking",
-    color: "from-green-50 to-emerald-50 border-green-200",
   },
 ];
 
@@ -63,39 +59,35 @@ export default function PromotionsPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-6">
             {activePromotions.map((promo) => (
-              <div
+              <Link
                 key={promo.title}
-                className={`relative overflow-hidden rounded-2xl border bg-gradient-to-br ${promo.color}`}
+                href={promo.link}
+                className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-all hover:-translate-y-0.5 hover:shadow-md"
               >
-                <div className="flex flex-col sm:flex-row h-full">
-                  <div className="flex-1 p-6 sm:p-8">
-                    <div className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1 text-xs font-bold text-primary-foreground mb-3">
-                      <TicketPercent className="h-3.5 w-3.5" />
-                      {promo.discount}
-                    </div>
-                    <h3 className="text-xl font-bold tracking-tight text-foreground">
-                      {promo.title}
-                    </h3>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      {promo.description}
-                    </p>
-                    <Link
-                      href={promo.link}
-                      className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-md"
-                    >
-                      Shop Now
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </div>
-                  <div className="sm:w-40 h-32 sm:h-auto">
-                    <img
-                      src={promo.image}
-                      alt={promo.title}
-                      className="w-full h-full object-cover"
-                    />
+                <div className="relative aspect-[3/2] overflow-hidden bg-gray-100">
+                  <img
+                    src={promo.image}
+                    alt={promo.title}
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+                  />
+                  <div className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-lg bg-primary px-2.5 py-1 text-xs font-bold text-primary-foreground shadow-sm">
+                    <TicketPercent className="h-3.5 w-3.5" />
+                    {promo.discount}
                   </div>
                 </div>
-              </div>
+                <div className="flex flex-1 flex-col p-5">
+                  <h3 className="text-lg font-bold text-foreground">
+                    {promo.title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                    {promo.description}
+                  </p>
+                  <div className="mt-auto pt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary group-hover:gap-2 transition-all">
+                    Shop Now
+                    <ArrowRight className="h-4 w-4" />
+                  </div>
+                </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -117,7 +109,7 @@ export default function PromotionsPage() {
               href={`https://wa.me/${WHATSAPP_NUMBER}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl bg-whatsapp px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-whatsapp-hover hover:shadow-md"
+              className="inline-flex items-center gap-2 rounded-xl border border-whatsapp/20 bg-whatsapp-soft px-6 py-3 text-sm font-semibold text-whatsapp transition-all hover:-translate-y-0.5 hover:border-whatsapp/30 hover:bg-whatsapp hover:text-white hover:shadow-md"
             >
               <MessageCircle className="h-5 w-5" />
               Ask on WhatsApp

@@ -2,51 +2,57 @@ import { Package, Users, ShieldCheck, HeadphonesIcon } from "lucide-react";
 
 const reasons = [
   {
-    title: "Wide Range",
-    description: "New, pre-used and refurbished tech from top brands.",
+    title: "Clear product condition",
+    description: "New, refurbished and pre-owned items are labelled before you commit.",
     icon: Package,
   },
   {
-    title: "Expert Advice",
-    description: "Get professional guidance before making a purchase.",
+    title: "Human buying help",
+    description: "Message or call for guidance when specs and compatibility matter.",
     icon: Users,
   },
   {
-    title: "Secure Purchase",
-    description: "Cash at store or bank transfer with invoice.",
+    title: "Invoice and payment clarity",
+    description: "Cash at store or bank transfer with clear purchase records.",
     icon: ShieldCheck,
   },
   {
-    title: "After Sales Support",
-    description: "We stand behind every product we sell.",
+    title: "After-sales support",
+    description: "Warranty notes and follow-up support stay close to the sale.",
     icon: HeadphonesIcon,
   },
 ];
 
 export function TrustSection() {
   return (
-    <section className="py-14 bg-muted border-t border-border bg-noise">
+    <section className="bg-muted py-14">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-10">
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">
-            Why shop with us
+        <div className="mb-8 max-w-2xl">
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary">
+            Built for practical buying
+          </p>
+          <h2 className="mt-1 text-3xl font-semibold text-foreground">
+            Why customers choose Desert Tech
           </h2>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            Electronics purchases need trust, availability and quick answers. The store experience is shaped around those basics.
+          </p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
           {reasons.map((reason) => {
             const Icon = reason.icon;
             return (
               <div
                 key={reason.title}
-                className="flex flex-col items-center text-center rounded-lg border border-border bg-card px-6 py-8 transition-all hover:shadow-sm hover:-translate-y-0.5"
+                className="bg-card p-6 transition-colors hover:bg-background"
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-accent text-primary">
-                  <Icon className="h-6 w-6" />
+                <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-muted text-primary">
+                  <Icon className="h-5 w-5" />
                 </div>
-                <h3 className="mt-4 text-base font-semibold text-foreground">
+                <h3 className="mt-5 text-base font-semibold text-foreground">
                   {reason.title}
                 </h3>
-                <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
                   {reason.description}
                 </p>
               </div>

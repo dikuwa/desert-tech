@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { getProductBySlug, formatNAD, products, categories } from "@/lib/data";
 import { useCart } from "@/lib/store/cart";
+import { useWishlist } from "@/lib/store/wishlist";
 import { cn } from "@/lib/utils";
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
@@ -30,10 +31,12 @@ export default function ProductDetailPage() {
   const product = getProductBySlug(slug);
   const { addItem, items } = useCart();
   const [selectedImage, setSelectedImage] = useState(0);
-  const [wishlisted, setWishlisted] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
+  const { toggleItem, isWishlisted } = useWishlist();
 
   if (!product) notFound();
+
+  const wishlisted = isWishlisted(product.id);
 
   const isSoldOut = product.availability === "sold_out";
   const isLowStock = product.availability === "low_stock";
@@ -102,7 +105,14 @@ export default function ProductDetailPage() {
               </div>
             )}
             <button
-              onClick={() => setWishlisted(!wishlisted)}
+              onClick={() => toggleItem({
+                productId: product.id,
+                name: product.name,
+                slug: product.slug,
+                imageUrl: product.imageUrl,
+                priceCents: product.priceCents,
+                specs: product.specs,
+              })}
               className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white/90 backdrop-blur-sm border border-border shadow-sm hover:shadow-md transition-all"
             >
               <Heart className={cn("h-5 w-5", wishlisted ? "fill-destructive text-destructive" : "text-muted-foreground")} />
@@ -240,7 +250,7 @@ export default function ProductDetailPage() {
               href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Hi, I'm interested in the ${product.name} (${formatNAD(product.priceCents)}). Is it available?`)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 rounded-xl bg-whatsapp px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-whatsapp-hover hover:shadow-md active:scale-[0.98]"
+              className="flex items-center justify-center gap-2 rounded-xl border border-whatsapp/20 bg-whatsapp-soft px-6 py-3 text-sm font-semibold text-whatsapp transition-all hover:-translate-y-0.5 hover:border-whatsapp/30 hover:bg-whatsapp hover:text-white hover:shadow-md active:translate-y-0"
             >
               <MessageCircle className="h-5 w-5" />
               Enquire on WhatsApp
@@ -258,9 +268,9 @@ export default function ProductDetailPage() {
           <div className="grid grid-cols-2 gap-3 pt-2">
             {[
               { icon: Truck, label: "Collection in Windhoek" },
+              { icon: Truck, label: "Nationwide courier available" },
               { icon: ShieldCheck, label: "Quality Tested" },
-              { icon: RotateCcw, label: "7-Day Return Policy" },
-              { icon: Check, label: "Full Invoice Provided" },
+              { icon: RotateCcw, label: "Warranty options" },
             ].map((feature) => (
               <div key={feature.label} className="flex items-center gap-2 text-sm text-muted-foreground">
                 <feature.icon className="h-4 w-4 text-primary" />
