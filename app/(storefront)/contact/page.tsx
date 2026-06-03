@@ -3,12 +3,19 @@
 import { useState } from "react";
 import { Phone, MessageCircle, Mail, MapPin, Building2, Send, Check, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useDashboardStore } from "@/lib/store/dashboard";
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
 const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
 const STORE_EMAIL = process.env.NEXT_PUBLIC_STORE_EMAIL || "info@deserttechnology.com.na";
 
 export default function ContactPage() {
+  const settings = useDashboardStore((s) => s.settings);
+  const paymentMethods = useDashboardStore((s) => s.paymentMethods);
+  const whatsapp = settings.whatsapp || WHATSAPP_NUMBER;
+  const phone = settings.phone || PHONE_NUMBER;
+  const storeEmail = settings.email || STORE_EMAIL;
+  const address = settings.address || "Windhoek, Namibia";
   const [formState, setFormState] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [formData, setFormData] = useState({
     fullName: "",
@@ -38,28 +45,28 @@ export default function ContactPage() {
     {
       icon: Phone,
       label: "Call Us",
-      value: PHONE_NUMBER,
-      href: `tel:${PHONE_NUMBER}`,
+      value: phone,
+      href: `tel:${phone}`,
       color: "text-primary",
     },
     {
       icon: MessageCircle,
       label: "WhatsApp",
-      value: PHONE_NUMBER,
-      href: `https://wa.me/${WHATSAPP_NUMBER}`,
+      value: phone,
+      href: `https://wa.me/${whatsapp}`,
       color: "text-whatsapp",
     },
     {
       icon: Mail,
       label: "Email",
-      value: STORE_EMAIL,
-      href: `mailto:${STORE_EMAIL}`,
+      value: storeEmail,
+      href: `mailto:${storeEmail}`,
       color: "text-primary",
     },
     {
       icon: MapPin,
       label: "Location",
-      value: "Windhoek, Namibia",
+      value: address,
       href: "#",
       color: "text-primary",
     },
@@ -115,23 +122,22 @@ export default function ContactPage() {
                 <div className="flex items-center gap-2 mb-4">
                   <Building2 className="h-5 w-5 text-primary" />
                   <h2 className="text-sm font-semibold text-foreground">Banking Details</h2>
-                </div>
-                <div className="space-y-2 text-sm text-muted-foreground">
+                </div>                  <div className="space-y-2 text-sm text-muted-foreground">
                   <div className="flex justify-between">
                     <span className="text-foreground/60">Account Name</span>
-                    <span className="font-medium text-foreground">Desert TECHNOLOGIES</span>
+                    <span className="font-medium text-foreground">{settings.bankAccountName}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-foreground/60">Bank</span>
-                    <span className="font-medium text-foreground">Standard Bank</span>
+                    <span className="font-medium text-foreground">{settings.bankName}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-foreground/60">Account Number</span>
-                    <span className="font-mono font-medium text-foreground">60003162833</span>
+                    <span className="font-mono font-medium text-foreground">{settings.bankAccountNumber}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-foreground/60">Branch Code</span>
-                    <span className="font-mono font-medium text-foreground">082672</span>
+                    <span className="font-mono font-medium text-foreground">{settings.bankBranchCode}</span>
                   </div>
                 </div>
                 <p className="mt-4 text-xs text-muted-foreground">

@@ -11,6 +11,7 @@ import {
   mockNotifications as initialNotifications,
   mockPayments as initialPayments,
   storeSettings as initialSettings,
+  defaultPaymentMethods,
 } from "@/lib/dashboard-data";
 import type {
   DashboardOrder,
@@ -22,6 +23,7 @@ import type {
   DashboardFollowUp,
   DashboardNotification,
   DashboardPayment,
+  PaymentMethod,
 } from "@/lib/dashboard-data";
 
 let nextProductId = 20;
@@ -31,6 +33,8 @@ let nextStaffId = 10;
 let nextFollowUpId = 10;
 let nextNotificationId = 10;
 let nextPaymentId = 10;
+let nextPaymentMethodId = 10;
+let nextInviteId = 10;
 
 interface DashboardState {
   // Data
@@ -43,9 +47,11 @@ interface DashboardState {
   followUps: DashboardFollowUp[];
   notifications: DashboardNotification[];
   payments: DashboardPayment[];
+  paymentMethods: PaymentMethod[];
   settings: typeof initialSettings;
   userRole: "Admin" | "Staff";
   currentUser: string;
+  invites: { token: string; email: string; name: string; role: string; createdAt: string; usedAt?: string }[];
 
   // Products CRUD
   addProduct: (p: Omit<DashboardProduct, "id" | "createdAt" | "slug">) => void;
@@ -85,8 +91,25 @@ interface DashboardState {
   markAllNotificationsRead: () => void;
   deleteNotification: (id: string) => void;
 
+  // Settings
+  updateSettings: (data: Partial<typeof initialSettings>) => void;
+
+  // Payment Methods CRUD
+  addPaymentMethod: (p: Omit<PaymentMethod, "id">) => void;
+  updatePaymentMethod: (id: string, data: Partial<PaymentMethod>) => void;
+  deletePaymentMethod: (id: string) => void;
+
+  // Staff
+  updateStaffRole: (id: string, role: string) => void;
+
+  // Invites
+  addInvite: (invite: { token: string; email: string; name: string; role: string; createdAt: string }) => void;
+  markInviteUsed: (token: string) => void;
+
   // Customers
   addCustomer: (c: Omit<DashboardCustomer, "id" | "createdAt" | "orderCount" | "totalSpentCents">) => void;
+  updateCustomer: (id: string, data: Partial<DashboardCustomer>) => void;
+  deleteCustomer: (id: string) => void;
 }
 
 function slugify(text: string): string {
@@ -105,9 +128,57 @@ export const useDashboardStore = create<DashboardState>()(
       followUps: initialFollowUps,
       notifications: initialNotifications,
       payments: initialPayments,
+      paymentMethods: defaultPaymentMethods,
       settings: initialSettings,
       userRole: "Admin",
       currentUser: "Admin User",
+      invites: [],
+
+      // === Settings ===
+      updateSettings: (data) =>
+        set((s) => ({
+          settings: { ...s.settings, ...data },
+        })),
+
+      // === Payment Methods ===
+      addPaymentMethod: (p) => {
+        const id = `pm${nextPaymentMethodId++}`;
+        set((s) => ({
+          paymentMethods: [{ ...p, id }, ...s.paymentMethods],
+        }));
+      },
+      updatePaymentMethod: (id, data) =>
+        set((s) => ({
+          paymentMethods: s.paymentMethods.map((pm) =>
+            pm.id === id ? { ...pm, ...data } : pm
+          ),
+        })),
+      deletePaymentMethod: (id) =>
+        set((s) => ({
+          paymentMethods: s.paymentMethods.filter((pm) => pm.id !== id),
+        })),
+
+      // === Staff ===
+      updateStaff: (id, data) =>
+        set((s) => ({
+          staff: s.staff.map((m) => (m.id === id ? { ...m, ...data } : m)),
+        })),
+      updateStaffRole: (id, role) =>
+        set((s) => ({
+          staff: s.staff.map((m) => (m.id === id ? { ...m, role } : m)),
+        })),
+
+      // === Invites ===
+      addInvite: (invite) =>
+        set((s) => ({
+          invites: [invite, ...s.invites],
+        })),
+      markInviteUsed: (token) =>
+        set((s) => ({
+          invites: s.invites.map((i) =>
+            i.token === token ? { ...i, usedAt: new Date().toISOString() } : i
+          ),
+        })),
 
       // === Products ===
       addProduct: (p) => {
@@ -257,10 +328,6 @@ export const useDashboardStore = create<DashboardState>()(
           ],
         }));
       },
-      updateStaff: (id, data) =>
-        set((s) => ({
-          staff: s.staff.map((m) => (m.id === id ? { ...m, ...data } : m)),
-        })),
       toggleStaffActive: (id) =>
         set((s) => ({
           staff: s.staff.map((m) =>
@@ -299,6 +366,16 @@ export const useDashboardStore = create<DashboardState>()(
           ],
         }));
       },
+      updateCustomer: (id, data) =>
+        set((s) => ({
+          customers: s.customers.map((c) =>
+            c.id === id ? { ...c, ...data } : c
+          ),
+        })),
+      deleteCustomer: (id) =>
+        set((s) => ({
+          customers: s.customers.filter((c) => c.id !== id),
+        })),
     }),
     {
       name: "desert-tech-dashboard",

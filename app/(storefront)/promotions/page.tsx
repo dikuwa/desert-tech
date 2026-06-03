@@ -1,9 +1,25 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, Tag, Sparkles, Percent } from "lucide-react";
-import { getAllActivePromotions } from "@/lib/data";
+import { useDashboardStore } from "@/lib/store/dashboard";
 
 export default function PromotionsPage() {
-  const allPromotions = getAllActivePromotions();
+  const dashboardPromotions = useDashboardStore((s) => s.promotions);
+
+  const allPromotions = dashboardPromotions
+    .filter((p) => p.isActive)
+    .map((p) => ({
+      id: p.id,
+      title: p.title,
+      slug: p.slug,
+      description: p.description,
+      imageUrl: p.imageUrl,
+      discountLabel: p.discountLabel,
+      isFeatured: p.isFeatured !== false,
+      type: (p.type || "general") as "product" | "bundle" | "service" | "general",
+    }));
+
   const featuredPromos = allPromotions.filter((p) => p.isFeatured);
   const otherPromos = allPromotions.filter((p) => !p.isFeatured);
 

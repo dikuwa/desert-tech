@@ -9,18 +9,34 @@ import {
   ShieldCheck,
   Truck,
 } from "lucide-react";
+import { useDashboardStore } from "@/lib/store/dashboard";
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
 const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
 
+const DEFAULT_HEADING = "Namibia&rsquo;s tech — tested, warranted, and a message away.";
+const DEFAULT_SUBHEADING =
+  "Shop laptops, phones, gaming builds, CCTV, networking and POS gear with clear pricing, tested stock and direct local assistance.";
+const DEFAULT_IMAGE = "/images/DTC-BG.webp";
+
 export function HeroSection() {
+  // Read settings from the shared zustand store (persisted to localStorage).
+  // Falls back to hardcoded defaults if the store hasn't been configured yet.
+  const settings = useDashboardStore((s) => s.settings);
+
+  const heading = settings.heroHeading || DEFAULT_HEADING;
+  const subheading = settings.heroSubheading || DEFAULT_SUBHEADING;
+  const imageUrl = settings.heroImageUrl || DEFAULT_IMAGE;
+  const whatsapp = settings.whatsapp || WHATSAPP_NUMBER;
+  const phone = settings.phone || PHONE_NUMBER;
+
   return (
     <section className="relative overflow-hidden border-b border-border bg-background">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-8 sm:px-6 lg:grid-cols-[0.98fr_1.02fr] lg:px-8 lg:py-12">
         {/* Image first on mobile, second on desktop */}
         <div className="min-w-0 -mr-4 sm:-mr-6 lg:-mr-8 -mb-8 lg:-mb-12 overflow-hidden lg:order-2">
           <img
-            src="/images/DTC-BG.webp"
+            src={imageUrl}
             alt="Desert Tech electronics showroom"
             className="w-full h-full object-cover"
           />
@@ -32,12 +48,14 @@ export function HeroSection() {
             Desert Technology Consultant, Namibia
           </div>
 
-          <h1 className="max-w-2xl text-4xl font-semibold leading-[1.04] text-foreground sm:text-5xl">
-            Namibia&rsquo;s tech — tested, warranted, and a message away.
-          </h1>
+          {/* Admin-controlled heading rendered with HTML entities support for &rsquo; etc. */}
+          <h1
+            className="max-w-2xl text-4xl font-semibold leading-[1.04] text-foreground sm:text-5xl"
+            dangerouslySetInnerHTML={{ __html: heading }}
+          />
 
           <p className="mt-5 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">
-            Shop laptops, phones, gaming builds, CCTV, networking and POS gear with clear pricing, tested stock and direct local assistance.
+            {subheading}
           </p>
 
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
@@ -49,7 +67,7 @@ export function HeroSection() {
               <ArrowRight className="h-4 w-4" />
             </Link>
             <a
-              href={`https://wa.me/${WHATSAPP_NUMBER}`}
+              href={`https://wa.me/${whatsapp}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-5 py-3 text-sm font-semibold text-foreground transition-all hover:-translate-y-0.5 hover:border-whatsapp/30 hover:bg-whatsapp-soft hover:text-whatsapp active:translate-y-0"
@@ -65,7 +83,7 @@ export function HeroSection() {
               { label: "Tested stock", icon: ShieldCheck },
               { label: "Warranty options", icon: BadgeCheck },
               { label: "Nationwide courier", icon: Truck },
-              { label: "Call us", sub: PHONE_NUMBER, icon: Phone },
+              { label: "Call us", sub: phone, icon: Phone },
             ].map((item) => {
               const Icon = item.icon;
               return (

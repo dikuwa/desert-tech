@@ -11,7 +11,7 @@ import {
   FolderOpen,
   Tags,
   Users,
-  Receipt,
+  FileText,
   Wallet,
   Bell,
   UserCog,
@@ -20,6 +20,7 @@ import {
   LogOut,
   ChevronLeft,
   Megaphone,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -33,7 +34,7 @@ const adminNavItems = [
   { href: "/dashboard/promotions", label: "Promotions", icon: Megaphone },
   { href: "/dashboard/customers", label: "Customers", icon: Users },
   { href: "/dashboard/follow-ups", label: "Follow-ups", icon: CalendarClock },
-  { href: "/dashboard/receipts", label: "Receipts", icon: Receipt },
+  { href: "/dashboard/receipts", label: "Receipts", icon: FileText },
   { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
 ];
 
@@ -76,9 +77,20 @@ export function DashboardSidebar() {
       {/* Logo */}
       <div className="flex h-16 items-center justify-between border-b border-border px-4">
         {!collapsed && (
-          <Link href="/dashboard" className="text-lg font-bold tracking-tight">
-            Desert<span className="text-primary">Tech</span>
-          </Link>
+          <div className="flex items-center gap-1.5">
+            <Link href="/dashboard" className="text-lg font-bold tracking-tight">
+              Desert<span className="text-primary">Tech</span>
+            </Link>
+            <a
+              href="/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground/60 hover:text-primary hover:bg-accent transition-colors"
+              title="View site"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          </div>
         )}
         <Button
           variant="ghost"
@@ -95,6 +107,7 @@ export function DashboardSidebar() {
         {adminNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
+          const unreadCount = item.href === "/dashboard/notifications" ? useDashboardStore((s) => s.notifications.filter(n => !n.isRead).length) : 0;
           return (
             <Link
               key={item.href}
@@ -106,7 +119,14 @@ export function DashboardSidebar() {
                   : "text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
             >
-              <Icon className="h-5 w-5 shrink-0" />
+              <div className="relative shrink-0">
+                <Icon className="h-5 w-5" />
+                {item.href === "/dashboard/notifications" && unreadCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground leading-none">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+              </div>
               {!collapsed && <span>{item.label}</span>}
             </Link>
           );
@@ -154,6 +174,22 @@ export function DashboardSidebar() {
             </Link>
           );
         })}
+
+        {/* View Site link - always visible */}
+        <div className="pt-2 mt-2 border-t border-border">
+          <a
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(
+              "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              "text-muted-foreground hover:bg-muted hover:text-primary",
+            )}
+          >
+            <ExternalLink className="h-5 w-5 shrink-0" />
+            {!collapsed && <span>View Site</span>}
+          </a>
+        </div>
       </nav>
 
       {/* User block */}

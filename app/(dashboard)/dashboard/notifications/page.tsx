@@ -1,34 +1,71 @@
 "use client";
 
-import { useState } from "react";
-import { Bell, CheckCheck, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
-import { mockNotifications } from "@/lib/dashboard-data";
+import { useState, useMemo } from "react";
+import { Bell, CheckCheck, Trash2, ChevronLeft, ChevronRight, ShoppingBag, Wallet, AlertTriangle, CalendarClock } from "lucide-react";
+import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
 
 const ITEMS_PER_PAGE = 10;
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState(mockNotifications);
+  const notifications = useDashboardStore((s) => s.notifications);
+  const markNotificationRead = useDashboardStore((s) => s.markNotificationRead);
+  const markAllNotificationsRead = useDashboardStore((s) => s.markAllNotificationsRead);
+  const deleteNotification = useDashboardStore((s) => s.deleteNotification);
+
   const [filter, setFilter] = useState<"all" | "unread">("all");
   const [currentPage, setCurrentPage] = useState(1);
 
-  const filtered = filter === "all" ? notifications : notifications.filter(n => !n.isRead);
+  const unreadCount = useMemo(() => notifications.filter(n => !n.isRead).length, [notifications]);
+
+  const filtered = useMemo(() =>
+    filter === "all" ? notifications : notifications.filter(n => !n.isRead),
+    [filter, notifications]
+  );
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
-  const markAllRead = () => setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-  const toggleRead = (id: string) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: !n.isRead } : n));
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case "order": return ShoppingBag;
+      case "payment": return Wallet;
+      case "stock": return AlertTriangle;
+      case "followup": return CalendarClock;
+      default: return Bell;
+    }
+  };
+
+  const getTypeColors = (type: string) => {
+    switch (type) {
+      case "order": return "bg-primary/10 text-primary border-primary/20";
+      case "payment": return "bg-success-soft text-success border-success/20";
+      case "stock": return "bg-warning-soft text-warning border-warning/20";
+      case "followup": return "bg-info-soft text-info border-info/20";
+      default: return "bg-muted text-muted-foreground border-border";
+    }
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Notifications</h1>
-          <p className="text-sm text-muted-foreground mt-1">{notifications.filter(n => !n.isRead).length} unread</p>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Notifications</h1>
+            {unreadCount > 0 && (
+              <span className="inline-flex items-center justify-center h-6 min-w-[24px] rounded-full bg-primary px-2 text-[11px] font-bold text-primary-foreground">
+                {unreadCount}
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">
+            {unreadCount > 0 ? `${unreadCount} unread notification${unreadCount !== 1 ? "s" : ""}` : "All caught up!"}
+          </p>
         </div>
-        <button onClick={markAllRead} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-          <CheckCheck className="h-3.5 w-3.5" /> Mark All Read
-        </button>
+        {unreadCount > 0 && (
+          <button onClick={markAllNotificationsRead} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+            <CheckCheck className="h-3.5 w-3.5" /> Mark All Read
+          </button>
+        )}
       </div>
 
       <div className="flex gap-2">
@@ -36,46 +73,64 @@ export default function NotificationsPage() {
           <button key={s} onClick={() => { setFilter(s); setCurrentPage(1); }}
             className={cn("rounded-lg border px-4 py-2 text-xs font-semibold transition-colors",
               filter === s ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground hover:bg-muted")}>
-            {s === "all" ? "All" : "Unread"}
+            {s === "all" ? "All" : `Unread (${unreadCount})`}
           </button>
         ))}
       </div>
 
-      <div className="space-y-2">
-        {paginated.map(n => (
-          <div key={n.id} className={cn("rounded-xl border bg-card p-4 transition-all cursor-pointer hover:shadow-sm", !n.isRead && "border-primary/20 bg-accent/30")}
-            onClick={() => toggleRead(n.id)}>
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg",
-                  n.type === "order" ? "bg-primary/10 text-primary" :
-                  n.type === "payment" ? "bg-success-soft text-success" :
-                  n.type === "stock" ? "bg-warning-soft text-warning" :
-                  "bg-info-soft text-info")}>
-                  <Bell className="h-4 w-4" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-foreground">{n.title}</p>
-                    {!n.isRead && <span className="h-2 w-2 rounded-full bg-primary" />}
+      <div className="space-y-3">
+        {paginated.map(n => {
+          const TypeIcon = getTypeIcon(n.type);
+          return (
+            <div
+              key={n.id}
+              className={cn(
+                "rounded-xl border bg-card p-4 transition-all cursor-pointer hover:shadow-sm group",
+                !n.isRead && "border-primary/20 bg-gradient-to-r from-accent/20 to-card",
+              )}
+              onClick={() => { if (!n.isRead) markNotificationRead(n.id); }}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg", getTypeColors(n.type))}>
+                    <TypeIcon className="h-4 w-4" />
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">{n.message}</p>
-                  <p className="text-[11px] text-muted-foreground mt-1">{new Date(n.createdAt).toLocaleString()}</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-foreground">{n.title}</p>
+                      {!n.isRead && <span className="h-2 w-2 animate-pulse rounded-full bg-primary flex-shrink-0" />}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{n.message}</p>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <span className="text-[10px] font-medium text-muted-foreground/70 uppercase tracking-wider">{n.type}</span>
+                      <span className="text-[10px] text-muted-foreground/50">·</span>
+                      <span className="text-[10px] text-muted-foreground/70">
+                        {new Date(n.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    </div>
+                  </div>
                 </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); deleteNotification(n.id); }}
+                  className="rounded-md p-1.5 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive hover:bg-destructive/5 transition-all"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
               </div>
-              <button onClick={(e) => { e.stopPropagation(); setNotifications(prev => prev.filter(x => x.id !== n.id)); }}
-                className="rounded-md p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors">
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {paginated.length === 0 && (
         <div className="flex flex-col items-center py-16 text-center">
           <Bell className="h-10 w-10 text-muted-foreground/40 mb-3" />
-          <p className="text-sm font-medium text-foreground">No notifications</p>
+          <p className="text-sm font-medium text-foreground">
+            {filter === "unread" ? "No unread notifications" : "No notifications yet"}
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {filter === "unread" ? "You're all caught up!" : "Notifications will appear here as they come in."}
+          </p>
         </div>
       )}
 

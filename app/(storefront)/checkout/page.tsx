@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { useCart } from "@/lib/store/cart";
 import { formatNAD } from "@/lib/data";
 import { cn } from "@/lib/utils";
+import { useDashboardStore } from "@/lib/store/dashboard";
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
 const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
@@ -40,6 +41,9 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const settings = useDashboardStore((s) => s.settings);
+  const whatsapp = settings.whatsapp || WHATSAPP_NUMBER;
+  const phone = settings.phone || PHONE_NUMBER;
   const subtotal = getSubtotal();
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
 
@@ -358,7 +362,7 @@ export default function CheckoutPage() {
 
             <div className="pt-2 space-y-2">
               <a
-                href={`https://wa.me/${WHATSAPP_NUMBER}`}
+                href={`https://wa.me/${whatsapp}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 rounded-lg border border-whatsapp/20 bg-whatsapp-soft px-4 py-2.5 text-sm font-semibold text-whatsapp transition-all hover:-translate-y-0.5 hover:border-whatsapp/30 hover:bg-whatsapp hover:text-white"
@@ -367,11 +371,11 @@ export default function CheckoutPage() {
                 Chat on WhatsApp
               </a>
               <a
-                href={`tel:${PHONE_NUMBER}`}
+                href={`tel:${phone}`}
                 className="flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-foreground transition-all hover:bg-muted"
               >
                 <Phone className="h-4 w-4" />
-                {PHONE_NUMBER}
+                {phone}
               </a>
             </div>
           </div>

@@ -1,18 +1,26 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
-import { getFeaturedPromotions } from "@/lib/data";
-import type { PromotionData } from "@/lib/data";
+import { ArrowRight, ChevronLeft, ChevronRight, Tag } from "lucide-react";
+import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
 
-function getPromotionHref(promo: PromotionData): string {
+interface PromoCard {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  imageUrl?: string;
+  discountLabel?: string;
+  type: string;
+}
+
+function getPromotionHref(promo: PromoCard): string {
   return `/promotions/${promo.slug}`;
 }
 
-function getPromotionCta(promo: PromotionData): string {
-  if (promo.ctaLabel) return promo.ctaLabel;
+function getPromotionCta(promo: PromoCard): string {
   switch (promo.type) {
     case "product":
       return "View offer";
@@ -20,14 +28,12 @@ function getPromotionCta(promo: PromotionData): string {
       return "View bundle";
     case "service":
       return "View offer";
-    case "general":
-      return "View offer";
     default:
       return "View offer";
   }
 }
 
-function PromotionCard({ promo }: { promo: PromotionData }) {
+function PromotionCard({ promo }: { promo: PromoCard }) {
   const href = getPromotionHref(promo);
   const cta = getPromotionCta(promo);
 
@@ -81,16 +87,25 @@ function PromotionCard({ promo }: { promo: PromotionData }) {
 }
 
 export function FeaturedPromotionsCarousel() {
-  const [promotions, setPromotions] = useState<PromotionData[]>([]);
+  const dashboardPromotions = useDashboardStore((s) => s.promotions);
+
+  // Filter active + featured promotions from the dashboard store
+  const promotions: PromoCard[] = dashboardPromotions
+    .filter((p) => p.isActive && p.isFeatured !== false)
+    .map((p) => ({
+      id: p.id,
+      title: p.title,
+      slug: p.slug,
+      description: p.description,
+      imageUrl: p.imageUrl,
+      discountLabel: p.discountLabel,
+      type: p.type || "general",
+    }));
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const touchStartRef = useRef<number | null>(null);
-
-  // Load promotions on mount
-  useEffect(() => {
-    setPromotions(getFeaturedPromotions());
-  }, []);
 
   const totalSlides = promotions.length;
 
@@ -201,7 +216,6 @@ export function FeaturedPromotionsCarousel() {
         {/* Pagination dots + mobile arrows */}
         {totalSlides > 1 && (
           <div className="mt-5 flex items-center justify-center gap-3">
-            {/* Mobile arrows */}
             <button
               onClick={goPrev}
               className="flex sm:hidden h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
@@ -210,7 +224,6 @@ export function FeaturedPromotionsCarousel() {
               <ChevronLeft className="h-4 w-4" />
             </button>
 
-            {/* Dots */}
             <div className="flex items-center gap-2">
               {promotions.map((promo, idx) => (
                 <button
@@ -227,7 +240,6 @@ export function FeaturedPromotionsCarousel() {
               ))}
             </div>
 
-            {/* Mobile arrows */}
             <button
               onClick={goNext}
               className="flex sm:hidden h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"

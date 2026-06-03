@@ -141,8 +141,12 @@ async function getRealHandler() {
   return toNextJsHandler(auth);
 }
 
+// Use mock auth in development, or when DATABASE_URL is not set
+// In production with a real database, the real Better Auth handler is used
+const useMockAuth = !process.env.DATABASE_URL || process.env.NODE_ENV !== "production";
+
 export async function GET(request: NextRequest) {
-  if (!process.env.DATABASE_URL) {
+  if (useMockAuth) {
     return handleMockRequest(request);
   }
   const handler = await getRealHandler();
@@ -150,7 +154,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!process.env.DATABASE_URL) {
+  if (useMockAuth) {
     return handleMockRequest(request);
   }
   const handler = await getRealHandler();

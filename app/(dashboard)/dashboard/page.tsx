@@ -36,27 +36,33 @@ export default function DashboardPage() {
         <p className="text-sm text-muted-foreground mt-1">Overview of your store operations.</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 bg-noise rounded-xl p-4">
-        {stats.map((stat, idx) => {
-          const Icon = stat.icon;
-          return (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: idx * 0.05 }}
-            >
-            <Link href={stat.href}
-              className="rounded-xl border border-border bg-card p-5 transition-all hover:shadow-sm hover:-translate-y-0.5 block">
-              <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${stat.bg}`}>
-                <Icon className={`h-5 w-5 ${stat.color}`} />
-              </div>
-              <p className="mt-3 text-2xl font-bold text-foreground">{stat.value}</p>
-              <p className="text-xs text-muted-foreground">{stat.label}</p>
-            </Link>
-            </motion.div>
-          );
-        })}
+      {/* Stats Grid - Professional, equal-height cards */}
+      <div className="bg-noise rounded-xl p-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
+          {stats.map((stat, idx) => {
+            const Icon = stat.icon;
+            return (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: idx * 0.05 }}
+                className="min-h-0"
+              >
+                <Link href={stat.href}
+                  className="flex flex-col justify-center rounded-xl border border-border bg-card p-5 transition-all hover:shadow-sm hover:border-primary/20 min-h-[170px] lg:min-h-[180px] overflow-hidden group">
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${stat.bg}`}>
+                    <Icon className={`h-5.5 w-5.5 ${stat.color}`} />
+                  </div>
+                  <div className="mt-3">
+                    <p className="text-2xl font-bold text-foreground tabular-nums whitespace-nowrap overflow-hidden text-ellipsis">{stat.value}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{stat.label}</p>
+                  </div>
+                </Link>
+              </motion.div>
+            );
+          })}
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6 bg-noise rounded-xl p-4">

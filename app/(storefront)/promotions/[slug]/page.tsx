@@ -16,12 +16,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import {
-  getAllActivePromotions,
-  getPromotionBySlug,
-  getPromotionProducts,
-  formatNAD,
-} from "@/lib/data";
+import { useDashboardStore } from "@/lib/store/dashboard";
+import { getPromotionProducts, formatNAD, type ProductData } from "@/lib/data";
 import { useCart } from "@/lib/store/cart";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -29,23 +25,53 @@ import { cn } from "@/lib/utils";
 export default function PromotionDetailPage() {
   const params = useParams();
   const slug = params.slug as string;
-  const promotion = getPromotionBySlug(slug);
+  const dashboardPromotions = useDashboardStore((s) => s.promotions);
   const { addItem, items } = useCart();
   const [hydrated, setHydrated] = useState(false);
   const [addedItems, setAddedItems] = useState<Set<string>>(new Set());
   useEffect(() => { setHydrated(true); }, []);
 
-  if (!promotion) notFound();
+  // Find the promotion from the dashboard store
+  const rawPromo = dashboardPromotions.find((p) => p.slug === slug);
 
-  const relatedProducts = getPromotionProducts(promotion);
-  const otherPromotions = getAllActivePromotions().filter((p) => p.id !== promotion.id);
-  // show at most 2 other promos, prefer featured ones
+  if (!rawPromo) notFound();
+
+  const promotion = {
+    id: rawPromo.id,
+    title: rawPromo.title,
+    slug: rawPromo.slug,
+    description: rawPromo.description,
+    imageUrl: rawPromo.imageUrl,
+    discountLabel: rawPromo.discountLabel,
+    isActive: rawPromo.isActive,
+    isFeatured: rawPromo.isFeatured !== false,
+    placement: rawPromo.placement,
+    type: (rawPromo.type || "general") as "product" | "bundle" | "service" | "general",
+    linkedProductId: rawPromo.linkedProductId,
+    linkedCategory: rawPromo.linkedCategory,
+    serviceSlug: rawPromo.serviceSlug,
+    ctaLabel: rawPromo.ctaLabel,
+  };
+
+  const relatedProducts = getPromotionProducts(promotion as any);
+  const otherPromotions = dashboardPromotions
+    .filter((p) => p.isActive && p.id !== rawPromo.id)
+    .map((p) => ({
+      id: p.id,
+      title: p.title,
+      slug: p.slug,
+      description: p.description,
+      imageUrl: p.imageUrl,
+      discountLabel: p.discountLabel,
+      isFeatured: p.isFeatured !== false,
+      type: (p.type || "general") as "product" | "bundle" | "service" | "general",
+    }));
   const sidebarPromos = [
     ...otherPromotions.filter((p) => p.isFeatured),
     ...otherPromotions.filter((p) => !p.isFeatured),
   ].slice(0, 3);
 
-  const handleAddToCart = (product: (typeof relatedProducts)[number]) => {
+  const handleAddToCart = (product: ProductData) => {
     addItem({
       id: product.id,
       productId: product.id,
@@ -86,14 +112,14 @@ export default function PromotionDetailPage() {
     toast.success(`Added ${available.length} item${available.length > 1 ? "s" : ""} to cart`);
   };
 
-  const promoTypeLabel = {
+  const promoTypeLabel: Record<string, string> = {
     product: "Product Offer",
     bundle: "Bundle Deal",
     service: "Service Offer",
     general: "Special Offer",
   };
 
-  const promoTypeIcon = {
+  const promoTypeIcon: Record<string, React.ElementType> = {
     product: Tag,
     bundle: Package,
     service: Wrench,
@@ -135,7 +161,7 @@ export default function PromotionDetailPage() {
             <div className="p-6 sm:p-8">
               <div className="mb-3 inline-flex items-center gap-1.5 rounded-md bg-accent px-3 py-1 text-xs font-semibold text-primary">
                 <TypeIcon className="h-3.5 w-3.5" />
-                {promoTypeLabel[promotion.type]}
+                {promoTypeLabel[promotion.type] || "Special Offer"}
               </div>
 
               <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
@@ -195,7 +221,6 @@ export default function PromotionDetailPage() {
                       key={product.id}
                       className="group flex gap-4 rounded-xl border border-border bg-card p-4 shadow-sm transition-all duration-200 hover:shadow-md"
                     >
-                      {/* Product image */}
                       <Link
                         href={`/shop/${product.slug}`}
                         className="relative h-28 w-28 flex-shrink-0 overflow-hidden rounded-lg border border-border bg-muted sm:h-32 sm:w-32"
@@ -207,7 +232,6 @@ export default function PromotionDetailPage() {
                         />
                       </Link>
 
-                      {/* Product info */}
                       <div className="flex min-w-0 flex-1 flex-col justify-between">
                         <div>
                           <Link

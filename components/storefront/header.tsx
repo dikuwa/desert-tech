@@ -18,6 +18,7 @@ import { useCart } from "@/lib/store/cart";
 import { useMobileMenu } from "@/lib/store/mobile-menu";
 import { searchProducts, formatNAD } from "@/lib/data";
 import { CartDropdown } from "@/components/storefront/cart-dropdown";
+import { useDashboardStore } from "@/lib/store/dashboard";
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
 const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
@@ -46,6 +47,9 @@ const navLinks = [
 
 export function StorefrontHeader() {
   const router = useRouter();
+  const settings = useDashboardStore((s) => s.settings);
+  const whatsapp = settings.whatsapp || WHATSAPP_NUMBER;
+  const phone = settings.phone || PHONE_NUMBER;
   const { isOpen: mobileMenuOpen, toggle: toggleMobileMenu, close: closeMobileMenu } = useMobileMenu();
   const [activeCategory, setActiveCategory] = useState("All Products");
   const [searchQuery, setSearchQuery] = useState("");
@@ -119,15 +123,15 @@ export function StorefrontHeader() {
         <div className="mx-auto flex h-9 max-w-7xl items-center justify-between px-4 text-xs sm:px-6 lg:px-8">
           <div className="flex items-center gap-4">
             <a
-              href={`tel:${PHONE_NUMBER}`}
+              href={`tel:${phone}`}
               className="flex items-center gap-1 font-semibold text-white/90 hover:text-white transition-colors"
             >
               <Phone className="h-3.5 w-3.5" />
-              <span>{PHONE_NUMBER}</span>
+              <span>{phone}</span>
             </a>
             <span className="hidden sm:block text-white/30">|</span>
             <a
-              href={`https://wa.me/${WHATSAPP_NUMBER}`}
+              href={`https://wa.me/${whatsapp}`}
               target="_blank"
               rel="noopener noreferrer"
               className="hidden sm:flex items-center gap-1 font-semibold text-white/90 hover:text-white transition-colors"
@@ -227,7 +231,7 @@ export function StorefrontHeader() {
 
           <div className="flex items-center gap-2 ml-auto">
             <a
-              href={`https://wa.me/${WHATSAPP_NUMBER}`}
+              href={`https://wa.me/${whatsapp}`}
               target="_blank"
               rel="noopener noreferrer"
               className="hidden items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-semibold text-foreground transition-all hover:-translate-y-0.5 hover:border-whatsapp/30 hover:bg-whatsapp-soft hover:text-whatsapp active:translate-y-0 lg:flex"

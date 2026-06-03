@@ -1,10 +1,22 @@
+"use client";
+
 import Link from "next/link";
 import { Phone, MessageCircle, MapPin } from "lucide-react";
+import { useDashboardStore } from "@/lib/store/dashboard";
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
 const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
 
 export function StorefrontFooter() {
+  const settings = useDashboardStore((s) => s.settings);
+  const whatsapp = settings.whatsapp || WHATSAPP_NUMBER;
+  const phone = settings.phone || PHONE_NUMBER;
+  const email = settings.email || "info@deserttechnology.com.na";
+  const address = settings.address || "Windhoek, Namibia";
+  const bankName = settings.bankName || "Standard Bank";
+  const bankAccountName = settings.bankAccountName || "Desert TECHNOLOGIES";
+  const bankAccountNumber = settings.bankAccountNumber || "60003162833";
+  const bankBranchCode = settings.bankBranchCode || "082672";
   return (
     <footer className="bg-[#0d41e1] text-white">
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -52,16 +64,16 @@ export function StorefrontFooter() {
             <ul className="mt-4 space-y-3">
               <li>
                 <a
-                  href={`tel:${PHONE_NUMBER}`}
+                  href={`tel:${phone}`}
                   className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors"
                 >
                   <Phone className="h-4 w-4 flex-shrink-0" />
-                  {PHONE_NUMBER}
+                  {phone}
                 </a>
               </li>
               <li>
                 <a
-                  href={`https://wa.me/${WHATSAPP_NUMBER}`}
+                  href={`https://wa.me/${whatsapp}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors"
@@ -72,15 +84,15 @@ export function StorefrontFooter() {
               </li>
               <li className="flex items-start gap-2 text-sm text-white/60">
                 <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                <span>Windhoek, Namibia</span>
+                <span>{address}</span>
               </li>
             </ul>
 
             <div className="mt-5 pt-4 border-t border-white/10">
               <h5 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2">Banking Details</h5>
               <div className="space-y-1 text-xs text-white/50">
-                <p>Desert Technologies — Standard Bank</p>
-                <p className="font-mono">Account: 60003162833 | Branch: 082672</p>
+                <p>{bankAccountName} — {bankName}</p>
+                <p className="font-mono">Account: {bankAccountNumber} | Branch: {bankBranchCode}</p>
               </div>
             </div>
           </div>

@@ -36,6 +36,11 @@ export interface DashboardProduct {
   isFeatured: boolean;
   createdAt: string;
   imageUrl: string;
+  sku?: string;
+  description?: string;
+  warranty?: string;
+  compareAtPriceCents?: number;
+  images?: string[];
 }
 
 export interface DashboardCustomer {
@@ -66,12 +71,28 @@ export interface DashboardPromotion {
   title: string;
   slug: string;
   description: string;
+  imageUrl?: string;
   discountLabel?: string;
   placement: string;
   isActive: boolean;
   startsAt?: string;
   endsAt?: string;
   productCount: number;
+  type?: "product" | "bundle" | "service" | "general";
+  isFeatured?: boolean;
+  linkedProductId?: string;
+  linkedCategory?: string;
+  serviceSlug?: string;
+  ctaLabel?: string;
+}
+
+export interface PaymentMethod {
+  id: string;
+  name: string;
+  type: "BankTransfer" | "Cash" | "PhoneTransfer" | "Card" | "Other";
+  details: string;
+  instructions?: string;
+  isActive: boolean;
 }
 
 export interface DashboardStaff {
@@ -83,6 +104,7 @@ export interface DashboardStaff {
   lastActive?: string;
   isActive: boolean;
   createdAt: string;
+  password?: string;
 }
 
 export interface DashboardFollowUp {
@@ -164,9 +186,9 @@ export const mockCategories: DashboardCategory[] = [
 ];
 
 export const mockPromotions: DashboardPromotion[] = [
-  { id: "pr1", title: "Gaming Setup Bundle", slug: "gaming-bundle", description: "Complete gaming rig bundle", discountLabel: "Save up to N$ 2,000", placement: "HomeHero", isActive: true, startsAt: "2026-05-01", endsAt: "2026-06-30", productCount: 5 },
-  { id: "pr2", title: "Back to School Special", slug: "back-to-school", description: "Student discounts on laptops", discountLabel: "Up to 15% off", placement: "FeaturedSection", isActive: true, startsAt: "2026-05-15", endsAt: "2026-07-15", productCount: 8 },
-  { id: "pr3", title: "CCTV Bundle Deals", slug: "cctv-bundle", description: "Security camera bundles", discountLabel: "Save up to N$ 1,500", placement: "FeaturedSection", isActive: false, startsAt: "2026-04-01", endsAt: "2026-05-31", productCount: 3 },
+  { id: "pr1", title: "Gaming Setup Bundle", slug: "gaming-bundle", description: "Complete gaming rig bundle", imageUrl: "https://images.unsplash.com/photo-1593640408182-31c70c8268f5?w=900&h=500&fit=crop", discountLabel: "Save up to N$ 2,000", placement: "HomeHero", isActive: true, startsAt: "2026-05-01", endsAt: "2026-06-30", productCount: 5 },
+  { id: "pr2", title: "Back to School Special", slug: "back-to-school", description: "Student discounts on laptops", imageUrl: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=900&h=500&fit=crop", discountLabel: "Up to 15% off", placement: "FeaturedSection", isActive: true, startsAt: "2026-05-15", endsAt: "2026-07-15", productCount: 8 },
+  { id: "pr3", title: "CCTV Bundle Deals", slug: "cctv-bundle", description: "Security camera bundles", imageUrl: "https://images.unsplash.com/photo-1558002038-1055907df827?w=900&h=500&fit=crop", discountLabel: "Save up to N$ 1,500", placement: "FeaturedSection", isActive: false, startsAt: "2026-04-01", endsAt: "2026-05-31", productCount: 3 },
 ];
 
 export const mockStaff: DashboardStaff[] = [
@@ -213,7 +235,16 @@ export const storeSettings = {
   receiptPrefix: "DT",
   lowStockThreshold: 5,
   currency: "NAD",
+  heroHeading: "Namibia&rsquo;s tech — tested, warranted, and a message away.",
+  heroSubheading: "Shop laptops, phones, gaming builds, CCTV, networking and POS gear with clear pricing, tested stock and direct local assistance.",
+  heroImageUrl: "/images/DTC-BG.webp",
 };
+
+export const defaultPaymentMethods: PaymentMethod[] = [
+  { id: "pm1", name: "Bank Transfer", type: "BankTransfer", details: "Standard Bank", instructions: "Use your order reference as payment reference", isActive: true },
+  { id: "pm2", name: "Cash at Store", type: "Cash", details: "Pay in person at our Windhoek location", isActive: true },
+  { id: "pm3", name: "Phone Transfer (E-Wallet)", type: "PhoneTransfer", details: "Send via mobile money or e-wallet", instructions: "Contact us for the phone number to send to", isActive: true },
+];
 
 export function formatCents(cents: number): string {
   return `N$ ${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 0 })}`;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { FolderOpen, Plus, Pencil, Check, X, Trash2 } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
@@ -53,9 +54,9 @@ export default function CategoriesPage() {
         </div>
       </div>
 
-      <button onClick={() => setShowAdd(true)} className="flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border p-8 text-sm font-semibold text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors">
-        <Plus className="h-5 w-5" /> Add Category
-      </button>
+      <Link href="#" onClick={(e: React.MouseEvent) => { e.preventDefault(); setShowAdd(true); }} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors w-fit">
+        <Plus className="h-3.5 w-3.5" /> Add Category
+      </Link>
 
       {showAdd && (
         <div className="rounded-xl border border-border bg-card p-5 space-y-3">

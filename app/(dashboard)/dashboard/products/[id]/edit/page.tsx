@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft, Save, ImagePlus } from "lucide-react";
 import Link from "next/link";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
 
@@ -21,7 +22,8 @@ export default function EditProductPage() {
     setForm({
       name: product.name, brand: product.brand, category: product.category,
       condition: product.condition, priceCents: product.priceCents,
-      stockQuantity: product.stockQuantity, lowStockThreshold: product.lowStockThreshold,
+      stockQuantity: product.stockQuantity, reorderLimit: product.lowStockThreshold,
+      priceWas: product.compareAtPriceCents || "",
       isFeatured: product.isFeatured,
     });
   }
@@ -46,7 +48,7 @@ export default function EditProductPage() {
       name: form.name, brand: form.brand, category: form.category,
       condition: form.condition, priceCents: parseInt(form.priceCents),
       stockQuantity: parseInt(form.stockQuantity),
-      lowStockThreshold: parseInt(form.lowStockThreshold),
+      lowStockThreshold: parseInt(form.reorderLimit) || 5,
       isFeatured: form.isFeatured,
       availability: parseInt(form.stockQuantity) > 0 ? "InStock" : "OutOfStock",
     });
@@ -78,14 +80,19 @@ export default function EditProductPage() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground">Category</label>
-                  <select value={form.category || ""} onChange={e => updateField("category", e.target.value)} className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30">
-                    <option value="Apple">Apple</option>
-                    <option value="Windows">Windows</option>
-                    <option value="Gaming">Gaming</option>
-                    <option value="CCTV & Security">CCTV & Security</option>
-                    <option value="Phones & Tablets">Phones & Tablets</option>
-                    <option value="Accessories">Accessories</option>
-                  </select>
+                  <Select value={form.category || ""} onValueChange={v => updateField("category", v)}>
+                    <SelectTrigger className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/30">
+                      <SelectValue placeholder="Category" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-border shadow-lg z-[80]">
+                      <SelectItem value="Apple" className="text-sm cursor-pointer focus:bg-accent">Apple</SelectItem>
+                      <SelectItem value="Windows" className="text-sm cursor-pointer focus:bg-accent">Windows</SelectItem>
+                      <SelectItem value="Gaming" className="text-sm cursor-pointer focus:bg-accent">Gaming</SelectItem>
+                      <SelectItem value="CCTV & Security" className="text-sm cursor-pointer focus:bg-accent">CCTV & Security</SelectItem>
+                      <SelectItem value="Phones & Tablets" className="text-sm cursor-pointer focus:bg-accent">Phones & Tablets</SelectItem>
+                      <SelectItem value="Accessories" className="text-sm cursor-pointer focus:bg-accent">Accessories</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </div>

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, MessageCircle, Phone, Mail, CheckCircle2, XCircle, Clock, User, Package, Wallet, CalendarClock, Receipt, Plus, Download, ExternalLink } from "lucide-react";
+import { ArrowLeft, MessageCircle, Phone, Mail, CheckCircle2, XCircle, Clock, User, Package, Wallet, CalendarClock, FileText, Plus, Download, ExternalLink, Check } from "lucide-react";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { formatCents, getStatusBadgeClass, getStatusLabel } from "@/lib/dashboard-data";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,33 @@ export default function OrderDetailPage() {
   const [downloadingPDF, setDownloadingPDF] = useState(false);
 
   const order = orders.find(o => o.id === params.id);
+  const products = useDashboardStore((s) => s.products);
+
+  // Generate order items from the product catalog, matching the order's item count and total
+  const orderItems = useMemo(() => {
+    if (!order) return [];
+    const available = [...products].filter(p => p.priceCents <= order.subtotalCents);
+    const items = [];
+    let remainingTotal = order.subtotalCents;
+    let remainingCount = order.itemCount;
+    for (let i = 0; i < order.itemCount && available.length > 0; i++) {
+      const idx = i % available.length;
+      const qty = remainingCount === 1 ? 1 : Math.max(1, Math.floor(remainingCount / 2));
+      const unitPrice = Math.min(available[idx].priceCents, remainingTotal);
+      const total = unitPrice * qty;
+      items.push({ name: available[idx].name, qty, price: unitPrice });
+      remainingTotal -= total;
+      remainingCount -= qty;
+    }
+    if (items.length === 0) {
+      // Fallback if no products match
+      const unitPrice = Math.floor(order.subtotalCents / order.itemCount);
+      for (let i = 0; i < order.itemCount; i++) {
+        items.push({ name: "Product Item", qty: 1, price: unitPrice });
+      }
+    }
+    return items;
+  }, [order, products]);
 
   const handleDownloadPDF = async () => {
     if (!order) return;
@@ -95,14 +123,26 @@ export default function OrderDetailPage() {
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <select value={order.status} onChange={e => updateOrderStatus(order.id, e.target.value)}
-                  className="h-8 rounded-lg border border-border bg-background px-2 text-xs font-semibold focus:border-primary focus:outline-none">
-                  {STATUS_OPTIONS.map(s => <option key={s} value={s}>{getStatusLabel(s)}</option>)}
-                </select>
-                <select value={order.paymentStatus} onChange={e => updatePaymentStatus(order.id, e.target.value)}
-                  className="h-8 rounded-lg border border-border bg-background px-2 text-xs font-semibold focus:border-primary focus:outline-none">
-                  {PAYMENT_OPTIONS.map(s => <option key={s} value={s}>{getStatusLabel(s)}</option>)}
-                </select>
+                <Select value={order.status} onValueChange={v => updateOrderStatus(order.id, v)}>
+                  <SelectTrigger className="h-8 rounded-lg border border-border bg-background px-2 text-xs font-semibold focus:border-primary focus:ring-1 focus:ring-primary/30 gap-1 min-w-[130px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border shadow-lg z-[80]">
+                    {STATUS_OPTIONS.map(s => (
+                      <SelectItem key={s} value={s} className="text-xs cursor-pointer focus:bg-accent">{getStatusLabel(s)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={order.paymentStatus} onValueChange={v => updatePaymentStatus(order.id, v)}>
+                  <SelectTrigger className="h-8 rounded-lg border border-border bg-background px-2 text-xs font-semibold focus:border-primary focus:ring-1 focus:ring-primary/30 gap-1 min-w-[130px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border shadow-lg z-[80]">
+                    {PAYMENT_OPTIONS.map(s => (
+                      <SelectItem key={s} value={s} className="text-xs cursor-pointer focus:bg-accent">{getStatusLabel(s)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="flex gap-2 mt-3">
@@ -144,10 +184,7 @@ export default function OrderDetailPage() {
           <div className="rounded-xl border border-border bg-card p-6">
             <h2 className="text-sm font-semibold text-foreground mb-4">Order Items</h2>
             <div className="space-y-3">
-              {[
-                { name: 'MacBook Air 15" M3', qty: 1, price: 1899900 },
-                { name: "Logitech MX Master 3S", qty: 1, price: 159900 },
-              ].map((item, idx) => (
+              {orderItems.map((item, idx) => (
                 <div key={idx} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                   <div>
                     <p className="text-sm font-medium text-foreground">{item.name}</p>
@@ -206,12 +243,16 @@ export default function OrderDetailPage() {
               <div className="mt-3 space-y-2 border-t border-border pt-3">
                 <input type="number" value={paymentAmount} onChange={e => setPaymentAmount(e.target.value)} placeholder="Amount in cents"
                   className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none" />
-                <select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}
-                  className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none">
-                  <option value="BankTransfer">Bank Transfer</option>
-                  <option value="Cash">Cash</option>
-                  <option value="PhoneTransfer">Phone Transfer</option>
-                </select>
+                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <SelectTrigger className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/30">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border shadow-lg z-[80]">
+                    <SelectItem value="BankTransfer" className="text-sm cursor-pointer focus:bg-accent">Bank Transfer</SelectItem>
+                    <SelectItem value="Cash" className="text-sm cursor-pointer focus:bg-accent">Cash</SelectItem>
+                    <SelectItem value="PhoneTransfer" className="text-sm cursor-pointer focus:bg-accent">Phone Transfer</SelectItem>
+                  </SelectContent>
+                </Select>
                 <button onClick={() => {
                   const amt = parseInt(paymentAmount);
                   if (!amt) return;
@@ -267,7 +308,7 @@ export default function OrderDetailPage() {
               {downloadingPDF ? (
                 <><div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-foreground border-t-transparent" /> Generating...</>
               ) : (
-                <><Receipt className="h-3.5 w-3.5" /> Generate Receipt</>
+                <><FileText className="h-3.5 w-3.5" /> Generate Receipt</>
               )}
             </button>
             <a

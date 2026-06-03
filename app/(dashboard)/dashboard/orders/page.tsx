@@ -2,9 +2,11 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Search, ChevronDown, ChevronLeft, ChevronRight, Download, FileText, ShoppingBag } from "lucide-react";
+import { Search, ChevronDown, ChevronLeft, ChevronRight, Download, FileText, ShoppingBag, Check } from "lucide-react";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { formatCents, getStatusBadgeClass, getStatusLabel } from "@/lib/dashboard-data";
+import { generateOrdersCSV, generateOrdersExportHTML, downloadCSV, openHTMLForPrint } from "@/lib/export-utils";
 import { cn } from "@/lib/utils";
 
 const ITEMS_PER_PAGE = 10;
@@ -51,6 +53,17 @@ export default function OrdersPage() {
     }
   };
 
+  const handleExportCSV = () => {
+    const csv = generateOrdersCSV(filtered);
+    const filename = `orders-export-${new Date().toISOString().split("T")[0]}.csv`;
+    downloadCSV(csv, filename);
+  };
+
+  const handleExportPDF = () => {
+    const html = generateOrdersExportHTML(filtered);
+    openHTMLForPrint(html);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -59,10 +72,10 @@ export default function OrdersPage() {
           <p className="text-sm text-muted-foreground mt-1">{filtered.length} orders found</p>
         </div>
         <div className="flex items-center gap-2">
-          <button className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+          <button onClick={handleExportCSV} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
             <Download className="h-3.5 w-3.5" /> Export CSV
           </button>
-          <button className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+          <button onClick={handleExportPDF} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
             <FileText className="h-3.5 w-3.5" /> Export PDF
           </button>
         </div>
@@ -78,14 +91,26 @@ export default function OrdersPage() {
             className="h-10 w-full rounded-lg border border-border bg-background pl-10 pr-4 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
           />
         </div>
-        <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1); }}
-          className="h-10 rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none">
-          {STATUS_OPTIONS.map(s => <option key={s} value={s}>{getStatusLabel(s)}</option>)}
-        </select>
-        <select value={paymentFilter} onChange={e => { setPaymentFilter(e.target.value); setCurrentPage(1); }}
-          className="h-10 rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none">
-          {PAYMENT_OPTIONS.map(s => <option key={s} value={s}>{getStatusLabel(s)}</option>)}
-        </select>
+        <Select value={statusFilter} onValueChange={v => { setStatusFilter(v); setCurrentPage(1); }}>
+          <SelectTrigger className="h-10 w-[160px] rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/30">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent className="bg-card border-border shadow-lg z-[80]">
+            {STATUS_OPTIONS.map(s => (
+              <SelectItem key={s} value={s} className="text-sm cursor-pointer focus:bg-accent focus:text-accent-foreground">{getStatusLabel(s)}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={paymentFilter} onValueChange={v => { setPaymentFilter(v); setCurrentPage(1); }}>
+          <SelectTrigger className="h-10 w-[160px] rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/30">
+            <SelectValue placeholder="Filter by payment" />
+          </SelectTrigger>
+          <SelectContent className="bg-card border-border shadow-lg z-[80]">
+            {PAYMENT_OPTIONS.map(s => (
+              <SelectItem key={s} value={s} className="text-sm cursor-pointer focus:bg-accent focus:text-accent-foreground">{getStatusLabel(s)}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Table */}

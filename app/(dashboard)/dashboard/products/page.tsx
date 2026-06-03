@@ -2,7 +2,8 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Search, Plus, Download, ChevronLeft, ChevronRight, Package, AlertTriangle, Pencil, Trash2, AlertCircle } from "lucide-react";
+import { Search, Plus, Download, ChevronLeft, ChevronRight, Package, AlertTriangle, Pencil, Trash2, AlertCircle, Check } from "lucide-react";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { formatCents, getStatusBadgeClass, getStatusLabel } from "@/lib/dashboard-data";
 import { cn } from "@/lib/utils";
@@ -33,6 +34,28 @@ export default function ProductsPage() {
   const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
   const lowStockCount = products.filter(p => p.availability === "LowStock" || p.stockQuantity <= p.lowStockThreshold).length;
 
+  const handleExport = () => {
+    const headers = ["Name", "Brand", "Category", "Price", "Stock", "Status", "Condition", "SKU"];
+    const rows = filtered.map(p => [
+      p.name,
+      p.brand,
+      p.category,
+      formatCents(p.priceCents),
+      p.stockQuantity.toString(),
+      getStatusLabel(p.availability),
+      p.condition,
+      p.sku || "",
+    ]);
+    const csv = [headers.join(","), ...rows.map(r => r.map(c => `"${c.replace(/"/g, '""')}"`).join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `products-export-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleDelete = (id: string) => {
     deleteProduct(id);
     setDeleteConfirm(null);
@@ -49,7 +72,7 @@ export default function ProductsPage() {
           <Link href="/dashboard/products/new" className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
             <Plus className="h-3.5 w-3.5" /> Add Product
           </Link>
-          <button className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+          <button onClick={handleExport} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
             <Download className="h-3.5 w-3.5" /> Export
           </button>
         </div>
@@ -62,13 +85,17 @@ export default function ProductsPage() {
             placeholder="Search products..."
             className="h-10 w-full rounded-lg border border-border bg-background pl-10 pr-4 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
         </div>
-        <select value={availFilter} onChange={e => { setAvailFilter(e.target.value); setCurrentPage(1); }}
-          className="h-10 rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none">
-          <option value="All">All Availability</option>
-          <option value="InStock">In Stock</option>
-          <option value="LowStock">Low Stock</option>
-          <option value="OutOfStock">Out of Stock</option>
-        </select>
+        <Select value={availFilter} onValueChange={v => { setAvailFilter(v); setCurrentPage(1); }}>
+          <SelectTrigger className="h-10 w-[160px] rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/30">
+            <SelectValue placeholder="Availability" />
+          </SelectTrigger>
+          <SelectContent className="bg-card border-border shadow-lg z-[80]">
+            <SelectItem value="All" className="text-sm cursor-pointer focus:bg-accent">All Availability</SelectItem>
+            <SelectItem value="InStock" className="text-sm cursor-pointer focus:bg-accent">In Stock</SelectItem>
+            <SelectItem value="LowStock" className="text-sm cursor-pointer focus:bg-accent">Low Stock</SelectItem>
+            <SelectItem value="OutOfStock" className="text-sm cursor-pointer focus:bg-accent">Out of Stock</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="rounded-xl border border-border bg-card overflow-x-auto">

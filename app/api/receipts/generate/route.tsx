@@ -13,6 +13,8 @@ import { ReceiptPDF } from "@/components/receipts/receipt-pdf";
 // We import this to look up orders
 import { getOrders, getOrderByNumber } from "@/lib/order-store";
 import { useDashboardStore } from "@/lib/store/dashboard";
+import { addReceipt } from "@/lib/receipt-store";
+import { uploadFile } from "@/lib/storage";
 
 // Helper to get a readable order from either the in-memory store or dashboard store
 function findOrder(orderIdOrNumber: string) {
@@ -98,10 +100,32 @@ export async function POST(request: NextRequest) {
     }
     const pdfBuffer = Buffer.concat(chunks);
 
+    const isView = body.view === true || body.view === "true" || body.view === 1;
+
+    // Store the receipt record (async upload to R2 if configured)
+    let pdfUrl: string | undefined;
+    try {
+      const uploadResult = await uploadFile(
+        pdfBuffer,
+        `${receiptNumber}.pdf`,
+        "application/pdf",
+      );
+      pdfUrl = uploadResult.url;
+    } catch {}
+
+    addReceipt({
+      receiptNumber,
+      orderNumber: order.orderNumber,
+      customerName: order.customerName,
+      pdfUrl,
+      sentVia: "NotSent",
+      issuedAt: new Date().toISOString(),
+    });
+
     return new NextResponse(pdfBuffer, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${receiptNumber}.pdf"`,
+        "Content-Disposition": isView ? `inline; filename="${receiptNumber}.pdf"` : `attachment; filename="${receiptNumber}.pdf"`,
         "Content-Length": pdfBuffer.length.toString(),
       },
     });
@@ -116,16 +140,18 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET /api/receipts/generate?orderId=xxx — alias for POST for convenience
+ * Supports ?view=1 to preview inline in browser instead of downloading.
  */
 export async function GET(request: NextRequest) {
   const orderId = request.nextUrl.searchParams.get("orderId");
+  const view = request.nextUrl.searchParams.get("view");
   if (!orderId) {
     return NextResponse.json({ error: "orderId query param is required" }, { status: 400 });
   }
   return POST(
     new NextRequest(request.url, {
       method: "POST",
-      body: JSON.stringify({ orderId }),
+      body: JSON.stringify({ orderId, view: view === "1" || view === "true" }),
       headers: { "Content-Type": "application/json" },
     }),
   );

@@ -1,25 +1,94 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, ImagePlus } from "lucide-react";
 import Link from "next/link";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
+
+function generateSKU(name: string, brand: string): string {
+  const prefix = brand ? brand.substring(0, 3).toUpperCase() : "DT";
+  const namePart = name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 4) || "PROD";
+  const timestamp = Date.now().toString(36).slice(-4).toUpperCase();
+  return `${prefix}-${namePart}-${timestamp}`;
+}
 
 export default function NewProductPage() {
   const router = useRouter();
   const addProduct = useDashboardStore((s) => s.addProduct);
+  const products = useDashboardStore((s) => s.products);
   const [submitting, setSubmitting] = useState(false);
+  const [images, setImages] = useState<string[]>([]);
   const [form, setForm] = useState({
     name: "", brand: "", category: "Apple", condition: "New" as const,
-    priceCents: "", stockQuantity: "0", lowStockThreshold: "5",
+    priceCents: "", stockQuantity: "0", reorderLimit: "5",
     description: "", sku: "", warranty: "", isFeatured: false,
-    compareAtPriceCents: "",
+    priceWas: "",
   });
 
-  const updateField = (field: string, value: string | boolean) =>
-    setForm(prev => ({ ...prev, [field]: value }));
+  // Auto-generate SKU when name or brand changes
+  const generateAndSetSKU = useCallback((name: string, brand: string) => {
+    if (!name.trim() || !brand.trim()) return;
+    const existingSKUs = new Set(products.map(p => p.sku).filter(Boolean));
+    let sku = generateSKU(name, brand);
+    let attempts = 0;
+    while (existingSKUs.has(sku) && attempts < 10) {
+      sku = generateSKU(name, brand) + String.fromCharCode(65 + attempts);
+      attempts++;
+    }
+    setForm(prev => ({ ...prev, sku }));
+  }, [products]);
+
+  const updateField = (field: string, value: string | boolean) => {
+    setForm(prev => {
+      const updated = { ...prev, [field]: value };
+      // Auto-generate SKU when name or brand changes, but only if SKU wasn't manually edited
+      if ((field === "name" || field === "brand") && typeof value === "string" && !prev.sku && field === "name") {
+        // Don't auto-generate here - do it on manual trigger
+      }
+      return updated;
+    });
+  };
+
+  const handleNameOrBrandChange = (field: string, value: string) => {
+    setForm(prev => {
+      const updated = { ...prev, [field]: value };
+      // Auto-generate SKU if user hasn't manually set it
+      if (!updated.sku) {
+        const nameToUse = field === "name" ? value : updated.name;
+        const brandToUse = field === "brand" ? value : updated.brand;
+        if (nameToUse.trim() && brandToUse.trim()) {
+          updated.sku = generateSKU(nameToUse, brandToUse);
+        }
+      }
+      return updated;
+    });
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    for (const file of Array.from(files)) {
+      const formData = new FormData();
+      formData.append("file", file);
+      try {
+        const res = await fetch("/api/upload", { method: "POST", body: formData });
+        const data = await res.json();
+        if (data.url) {
+          setImages(prev => [...prev, data.url]);
+        }
+      } catch (err) {
+        console.error("Upload failed:", err);
+      }
+    }
+    if (e.target) e.target.value = "";
+  };
+
+  const removeImage = (idx: number) => {
+    setImages(prev => prev.filter((_, i) => i !== idx));
+  };
 
   const onSubmit = async () => {
     if (!form.name.trim() || !form.brand.trim() || !form.priceCents) return;
@@ -32,11 +101,12 @@ export default function NewProductPage() {
       condition: form.condition,
       priceCents: parseInt(form.priceCents),
       stockQuantity: parseInt(form.stockQuantity) || 0,
-      lowStockThreshold: parseInt(form.lowStockThreshold) || 5,
+      lowStockThreshold: parseInt(form.reorderLimit) || 5,
       availability: parseInt(form.stockQuantity) > 0 ? "InStock" : "OutOfStock",
       isPublished: true,
       isFeatured: form.isFeatured,
-      imageUrl: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=200&h=200&fit=crop",
+      sku: form.sku || undefined,
+      imageUrl: images[0] || "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=200&h=200&fit=crop",
     });
     setSubmitting(false);
     router.push("/dashboard/products");
@@ -56,24 +126,29 @@ export default function NewProductPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
                   <label className="text-sm font-medium text-foreground">Name <span className="text-destructive">*</span></label>
-                  <input value={form.name} onChange={e => updateField("name", e.target.value)} className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" placeholder="Product name" />
+                  <input value={form.name} onChange={e => handleNameOrBrandChange("name", e.target.value)} className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" placeholder="Product name" />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground">Brand <span className="text-destructive">*</span></label>
-                  <input value={form.brand} onChange={e => updateField("brand", e.target.value)} className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" placeholder="e.g. Apple, Dell" />
+                  <input value={form.brand} onChange={e => handleNameOrBrandChange("brand", e.target.value)} className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" placeholder="e.g. Apple, Dell" />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground">Category <span className="text-destructive">*</span></label>
-                  <select value={form.category} onChange={e => updateField("category", e.target.value)} className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30">
-                    <option value="Apple">Apple</option>
-                    <option value="Windows">Windows</option>
-                    <option value="Gaming">Gaming</option>
-                    <option value="CCTV & Security">CCTV & Security</option>
-                    <option value="Networking">Networking</option>
-                    <option value="Phones & Tablets">Phones & Tablets</option>
-                    <option value="Accessories">Accessories</option>
-                    <option value="POS Systems">POS Systems</option>
-                  </select>
+                  <Select value={form.category} onValueChange={v => updateField("category", v)}>
+                    <SelectTrigger className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/30">
+                      <SelectValue placeholder="Category" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-border shadow-lg z-[80]">
+                      <SelectItem value="Apple" className="text-sm cursor-pointer focus:bg-accent">Apple</SelectItem>
+                      <SelectItem value="Windows" className="text-sm cursor-pointer focus:bg-accent">Windows</SelectItem>
+                      <SelectItem value="Gaming" className="text-sm cursor-pointer focus:bg-accent">Gaming</SelectItem>
+                      <SelectItem value="CCTV & Security" className="text-sm cursor-pointer focus:bg-accent">CCTV & Security</SelectItem>
+                      <SelectItem value="Networking" className="text-sm cursor-pointer focus:bg-accent">Networking</SelectItem>
+                      <SelectItem value="Phones & Tablets" className="text-sm cursor-pointer focus:bg-accent">Phones & Tablets</SelectItem>
+                      <SelectItem value="Accessories" className="text-sm cursor-pointer focus:bg-accent">Accessories</SelectItem>
+                      <SelectItem value="POS Systems" className="text-sm cursor-pointer focus:bg-accent">POS Systems</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </div>
@@ -82,7 +157,7 @@ export default function NewProductPage() {
               <h2 className="text-base font-semibold text-foreground">Pricing & Stock</h2>
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-foreground">Price (cents) <span className="text-destructive">*</span></label>
+                  <label className="text-sm font-medium text-foreground">Price *</label>
                   <input value={form.priceCents} onChange={e => updateField("priceCents", e.target.value)} type="number" className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" placeholder="1899900" />
                 </div>
                 <div>
@@ -90,22 +165,27 @@ export default function NewProductPage() {
                   <input value={form.stockQuantity} onChange={e => updateField("stockQuantity", e.target.value)} type="number" className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-foreground">Low Stock Threshold</label>
-                  <input value={form.lowStockThreshold} onChange={e => updateField("lowStockThreshold", e.target.value)} type="number" className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                  <label className="text-sm font-medium text-foreground">Reorder Limit</label>
+                  <input value={form.reorderLimit} onChange={e => updateField("reorderLimit", e.target.value)} type="number" className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-foreground">Compare At (cents)</label>
-                  <input value={form.compareAtPriceCents || ""} onChange={e => updateField("compareAtPriceCents", e.target.value)} type="number" className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" placeholder="2149900" />
+                  <label className="text-sm font-medium text-foreground">Price Was</label>
+                  <input value={form.priceWas || ""} onChange={e => updateField("priceWas", e.target.value)} type="number" className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" placeholder="2149900" />
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="text-sm font-medium text-foreground">Condition</label>
-                  <select value={form.condition} onChange={e => updateField("condition", e.target.value)} className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30">
-                    <option value="New">New</option>
-                    <option value="Refurbished">Refurbished</option>
-                    <option value="Pre-Owned">Pre-Owned</option>
-                  </select>
+                  <Select value={form.condition} onValueChange={v => updateField("condition", v)}>
+                    <SelectTrigger className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/30">
+                      <SelectValue placeholder="Condition" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-border shadow-lg z-[80]">
+                      <SelectItem value="New" className="text-sm cursor-pointer focus:bg-accent">New</SelectItem>
+                      <SelectItem value="Refurbished" className="text-sm cursor-pointer focus:bg-accent">Refurbished</SelectItem>
+                      <SelectItem value="Pre-Owned" className="text-sm cursor-pointer focus:bg-accent">Pre-Owned</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground">SKU</label>
@@ -134,11 +214,28 @@ export default function NewProductPage() {
             </div>
 
             <div className="rounded-xl border border-border bg-card p-6 space-y-4">
-              <h2 className="text-sm font-semibold text-foreground">Product Image</h2>
-              <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
+              <h2 className="text-sm font-semibold text-foreground">Product Images</h2>
+              <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" id="product-image-upload" />
+              <label htmlFor="product-image-upload" className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
                 <ImagePlus className="h-8 w-8 text-muted-foreground mb-2" />
-                <p className="text-xs text-muted-foreground">Click to upload image</p>
-              </div>
+                <p className="text-xs text-muted-foreground">Click to upload images</p>
+                <p className="text-[10px] text-muted-foreground mt-1">You can select multiple images</p>
+              </label>
+              {images.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {images.map((url, idx) => (
+                    <div key={idx} className="relative group h-16 w-16 rounded-lg border border-border overflow-hidden">
+                      <img src={url} alt={`Product image ${idx + 1}`} className="h-full w-full object-cover" />
+                      <button
+                        onClick={() => removeImage(idx)}
+                        className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <span className="text-white text-[10px] font-semibold">Remove</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <button type="submit" disabled={submitting}
