@@ -1,28 +1,30 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Wallet, ChevronLeft, ChevronRight, CheckCircle2, XCircle, Clock } from "lucide-react";
-import { mockPayments, formatCents, getStatusBadgeClass } from "@/lib/dashboard-data";
+import { useState } from "react";
+import { Wallet, ChevronLeft, ChevronRight } from "lucide-react";
+import { useDashboardStore } from "@/lib/store/dashboard";
+import { formatCents, getStatusBadgeClass } from "@/lib/dashboard-data";
 import { cn } from "@/lib/utils";
 
 const ITEMS_PER_PAGE = 10;
 
 export default function PaymentsPage() {
+  const payments = useDashboardStore((s) => s.payments);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const totalPages = Math.ceil(mockPayments.length / ITEMS_PER_PAGE);
-  const paginated = mockPayments.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(payments.length / ITEMS_PER_PAGE);
+  const paginated = payments.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Payments</h1>
-          <p className="text-sm text-muted-foreground mt-1">{mockPayments.length} payment records</p>
+          <p className="text-sm text-muted-foreground mt-1">{payments.length} payment records</p>
         </div>
         <div className="rounded-lg border border-border bg-card px-4 py-2">
           <p className="text-xs text-muted-foreground">Total Collected</p>
-          <p className="text-lg font-bold text-foreground">{formatCents(mockPayments.filter(p => p.status === "Confirmed").reduce((s, p) => s + p.amountCents, 0))}</p>
+          <p className="text-lg font-bold text-foreground">{formatCents(payments.filter(p => p.status === "Confirmed").reduce((s, p) => s + p.amountCents, 0))}</p>
         </div>
       </div>
 

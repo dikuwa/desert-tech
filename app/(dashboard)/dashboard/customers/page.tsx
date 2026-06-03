@@ -3,19 +3,21 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { Search, Users, MessageCircle, Phone, Mail, ChevronLeft, ChevronRight } from "lucide-react";
-import { mockCustomers, formatCents } from "@/lib/dashboard-data";
+import { useDashboardStore } from "@/lib/store/dashboard";
+import { formatCents } from "@/lib/dashboard-data";
 
 const ITEMS_PER_PAGE = 10;
 
 export default function CustomersPage() {
+  const customers = useDashboardStore((s) => s.customers);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
   const filtered = useMemo(() => {
-    if (!search) return mockCustomers;
+    if (!search) return customers;
     const q = search.toLowerCase();
-    return mockCustomers.filter(c => c.fullName.toLowerCase().includes(q) || c.phone.includes(q) || c.email?.toLowerCase().includes(q));
-  }, [search]);
+    return customers.filter(c => c.fullName.toLowerCase().includes(q) || c.phone.includes(q) || c.email?.toLowerCase().includes(q));
+  }, [search, customers]);
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);

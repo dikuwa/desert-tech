@@ -2,16 +2,19 @@
 
 import { useState } from "react";
 import { CalendarClock, CheckCircle2, MessageCircle, Phone, Mail, ChevronLeft, ChevronRight } from "lucide-react";
-import { mockFollowUps, getStatusBadgeClass } from "@/lib/dashboard-data";
+import { useDashboardStore } from "@/lib/store/dashboard";
+import { getStatusBadgeClass } from "@/lib/dashboard-data";
 import { cn } from "@/lib/utils";
 
 const ITEMS_PER_PAGE = 10;
 
 export default function FollowUpsPage() {
+  const followUps = useDashboardStore((s) => s.followUps);
+  const markFollowUpDone = useDashboardStore((s) => s.markFollowUpDone);
   const [filter, setFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
 
-  const filtered = filter === "All" ? mockFollowUps : mockFollowUps.filter(f => f.status === filter);
+  const filtered = filter === "All" ? followUps : followUps.filter(f => f.status === filter);
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
@@ -19,7 +22,7 @@ export default function FollowUpsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">Follow-ups</h1>
-        <p className="text-sm text-muted-foreground mt-1">{mockFollowUps.filter(f => f.status === "Pending").length} pending follow-ups</p>
+        <p className="text-sm text-muted-foreground mt-1">{followUps.filter(f => f.status === "Pending").length} pending follow-ups</p>
       </div>
 
       <div className="flex items-center gap-3">
@@ -57,7 +60,7 @@ export default function FollowUpsPage() {
                 </div>
               </div>
               {f.status === "Pending" && (
-                <button className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-success hover:bg-success-soft transition-colors">
+                <button onClick={() => markFollowUpDone(f.id)} className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-success hover:bg-success-soft transition-colors">
                   <CheckCircle2 className="h-3.5 w-3.5" /> Mark Done
                 </button>
               )}

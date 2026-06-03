@@ -4,34 +4,30 @@ import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft, Save, ImagePlus } from "lucide-react";
 import Link from "next/link";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
-import { mockProducts } from "@/lib/dashboard-data";
-
-const productSchema = z.object({
-  name: z.string().min(2, "Name is required"),
-  brand: z.string().min(1, "Brand is required"),
-  category: z.string().min(1, "Category is required"),
-  condition: z.enum(["New", "Refurbished", "Pre-Owned"]),
-  priceCents: z.coerce.number().min(1, "Price is required"),
-  compareAtPriceCents: z.coerce.number().optional(),
-  stockQuantity: z.coerce.number().min(0),
-  lowStockThreshold: z.coerce.number().min(1),
-  description: z.string().optional(),
-  sku: z.string().optional(),
-  warranty: z.string().optional(),
-  isFeatured: z.boolean().optional(),
-});
-
-type ProductForm = z.infer<typeof productSchema>;
 
 export default function EditProductPage() {
   const router = useRouter();
   const params = useParams();
-  const product = mockProducts.find(p => p.id === params.id);
+  const products = useDashboardStore((s) => s.products);
+  const updateProduct = useDashboardStore((s) => s.updateProduct);
+  const product = products.find(p => p.id === params.id);
   const [submitting, setSubmitting] = useState(false);
+  const [form, setForm] = useState<Record<string, any>>({});
+
+  // Initialize form when product loads
+  if (product && Object.keys(form).length === 0) {
+    setForm({
+      name: product.name, brand: product.brand, category: product.category,
+      condition: product.condition, priceCents: product.priceCents,
+      stockQuantity: product.stockQuantity, lowStockThreshold: product.lowStockThreshold,
+      isFeatured: product.isFeatured,
+    });
+  }
+
+  const updateField = (field: string, value: any) =>
+    setForm(prev => ({ ...prev, [field]: value }));
 
   if (!product) {
     return (
@@ -42,25 +38,18 @@ export default function EditProductPage() {
     );
   }
 
-  const { register, handleSubmit, formState: { errors } } = useForm<ProductForm>({
-    resolver: zodResolver(productSchema),
-    defaultValues: {
-      name: product.name,
-      brand: product.brand,
-      category: product.category,
-      condition: product.condition as "New" | "Refurbished" | "Pre-Owned",
-      priceCents: product.priceCents,
-      stockQuantity: product.stockQuantity,
-      lowStockThreshold: product.lowStockThreshold,
-      description: "",
-      sku: "",
-      isFeatured: product.isFeatured,
-    },
-  });
-
   const onSubmit = async () => {
+    if (!form.name) return;
     setSubmitting(true);
-    await new Promise(r => setTimeout(r, 600));
+    await new Promise(r => setTimeout(r, 300));
+    updateProduct(product.id, {
+      name: form.name, brand: form.brand, category: form.category,
+      condition: form.condition, priceCents: parseInt(form.priceCents),
+      stockQuantity: parseInt(form.stockQuantity),
+      lowStockThreshold: parseInt(form.lowStockThreshold),
+      isFeatured: form.isFeatured,
+      availability: parseInt(form.stockQuantity) > 0 ? "InStock" : "OutOfStock",
+    });
     setSubmitting(false);
     router.push("/dashboard/products");
   };
@@ -73,7 +62,7 @@ export default function EditProductPage() {
         </Link>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }}>
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <div className="rounded-xl border border-border bg-card p-6 space-y-5">
@@ -81,15 +70,15 @@ export default function EditProductPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
                   <label className="text-sm font-medium text-foreground">Name</label>
-                  <input {...register("name")} className={cn("mt-1.5 h-11 w-full rounded-lg border bg-background px-3 text-sm focus:outline-none focus:ring-1", errors.name ? "border-destructive" : "border-border focus:border-primary focus:ring-primary/30")} />
+                  <input value={form.name || ""} onChange={e => updateField("name", e.target.value)} className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground">Brand</label>
-                  <input {...register("brand")} className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                  <input value={form.brand || ""} onChange={e => updateField("brand", e.target.value)} className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground">Category</label>
-                  <select {...register("category")} className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30">
+                  <select value={form.category || ""} onChange={e => updateField("category", e.target.value)} className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30">
                     <option value="Apple">Apple</option>
                     <option value="Windows">Windows</option>
                     <option value="Gaming">Gaming</option>
