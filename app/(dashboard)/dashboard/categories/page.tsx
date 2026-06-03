@@ -1,29 +1,47 @@
 "use client";
 
 import { useState } from "react";
-import { FolderOpen, Plus, Pencil, Check, X, ArrowUp, ArrowDown } from "lucide-react";
-import { mockCategories } from "@/lib/dashboard-data";
+import { FolderOpen, Plus, Pencil, Check, X, Trash2 } from "lucide-react";
+import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
 
 export default function CategoriesPage() {
-  const [categories, setCategories] = useState(mockCategories);
+  const categories = useDashboardStore((s) => s.categories);
+  const addCategory = useDashboardStore((s) => s.addCategory);
+  const updateCategory = useDashboardStore((s) => s.updateCategory);
+  const deleteCategory = useDashboardStore((s) => s.deleteCategory);
+  const toggleCategoryActive = useDashboardStore((s) => s.toggleCategoryActive);
+
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
+  const [showAdd, setShowAdd] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newDesc, setNewDesc] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
-  const startEdit = (cat: typeof mockCategories[0]) => {
+  const startEdit = (cat: typeof categories[0]) => {
     setEditingId(cat.id);
     setEditName(cat.name);
     setEditDescription(cat.description);
   };
 
   const saveEdit = (id: string) => {
-    setCategories(prev => prev.map(c => c.id === id ? { ...c, name: editName, description: editDescription } : c));
+    updateCategory(id, { name: editName, description: editDescription });
     setEditingId(null);
   };
 
-  const toggleActive = (id: string) => {
-    setCategories(prev => prev.map(c => c.id === id ? { ...c, isActive: !c.isActive } : c));
+  const handleAdd = () => {
+    if (!newName.trim()) return;
+    addCategory({ name: newName.trim(), description: newDesc.trim(), isActive: true, sortOrder: categories.length + 1 });
+    setNewName("");
+    setNewDesc("");
+    setShowAdd(false);
+  };
+
+  const handleDelete = (id: string) => {
+    deleteCategory(id);
+    setDeleteConfirm(null);
   };
 
   return (
@@ -34,6 +52,23 @@ export default function CategoriesPage() {
           <p className="text-sm text-muted-foreground mt-1">{categories.length} categories</p>
         </div>
       </div>
+
+      <button onClick={() => setShowAdd(true)} className="flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border p-8 text-sm font-semibold text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors">
+        <Plus className="h-5 w-5" /> Add Category
+      </button>
+
+      {showAdd && (
+        <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+          <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Category name"
+            className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm font-semibold focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
+          <input value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="Description (optional)"
+            className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
+          <div className="flex gap-2">
+            <button onClick={handleAdd} className="flex items-center gap-1 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground"><Check className="h-3 w-3" /> Create</button>
+            <button onClick={() => { setShowAdd(false); setNewName(""); setNewDesc(""); }} className="flex items-center gap-1 rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground"><X className="h-3 w-3" /> Cancel</button>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {categories.map((cat) => (
@@ -72,9 +107,14 @@ export default function CategoriesPage() {
                   </div>
                   <div className="flex items-center gap-1">
                     <button onClick={() => startEdit(cat)} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"><Pencil className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => toggleActive(cat.id)} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                    <button onClick={() => toggleCategoryActive(cat.id)} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
                       {cat.isActive ? <X className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
                     </button>
+                    {deleteConfirm === cat.id ? (
+                      <button onClick={() => handleDelete(cat.id)} className="rounded-md p-1.5 text-success hover:bg-success-soft transition-colors" title="Confirm delete"><Trash2 className="h-3.5 w-3.5" /></button>
+                    ) : (
+                      <button onClick={() => setDeleteConfirm(cat.id)} className="rounded-md p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors" title="Delete category"><Trash2 className="h-3.5 w-3.5" /></button>
+                    )}
                   </div>
                 </div>
               </>

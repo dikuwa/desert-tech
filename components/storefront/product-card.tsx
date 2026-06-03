@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, Check, Heart, ImageOff, ShoppingCart, Star, Tag } from "lucide-react";
+import { Bell, Check, Heart, ImageOff, ShoppingCart, Tag } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/lib/store/cart";
 import { useWishlist } from "@/lib/store/wishlist";
+import { toast } from "sonner";
 
 export interface ProductData {
   id: string;
@@ -52,6 +53,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const [addedToCart, setAddedToCart] = useState(false);
   const { addItem } = useCart();
   const { toggleItem, isWishlisted } = useWishlist();
+  
   const wishlisted = isWishlisted(product.id);
   const isSoldOut = product.availability === "sold_out";
   const isLowStock = product.availability === "low_stock";
@@ -69,6 +71,7 @@ export function ProductCard({ product }: ProductCardProps) {
       availability: product.availability,
     });
     setAddedToCart(true);
+    toast.success(`${product.name} added to cart`);
     setTimeout(() => setAddedToCart(false), 2000);
   };
 
@@ -142,13 +145,10 @@ export function ProductCard({ product }: ProductCardProps) {
             )}
           >
             {typeof avail.label === "function" ? avail.label(product.stockCount) : avail.label}
+            {product.stockCount && product.availability !== "sold_out" && (
+              <span className="ml-1">&middot; {product.stockCount} available</span>
+            )}
           </div>
-          {product.rating && (
-            <div className="flex items-center gap-1 rounded-md bg-muted px-2 py-1">
-              <Star className="h-3 w-3 fill-warning text-warning" />
-              <span className="text-[11px] font-semibold text-foreground">{product.rating}</span>
-            </div>
-          )}
         </div>
 
         <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">
@@ -159,13 +159,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
         <p className="line-clamp-2 min-h-10 text-xs leading-5 text-muted-foreground">{product.specs}</p>
 
-        <div className="mt-auto">
-          {product.reviewCount && (
-            <p className="mb-1 text-[11px] text-muted-foreground">
-              {product.reviewCount} customer reviews
-            </p>
-          )}
-        </div>
+
 
         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
           <span className="text-base font-bold text-foreground">
@@ -186,9 +180,9 @@ export function ProductCard({ product }: ProductCardProps) {
         ) : (
           <button
               onClick={handleAddToCart}
-              className={`flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-xs font-semibold transition-all hover:shadow-sm ${
+              className={`flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-xs font-semibold transition-all hover:shadow-sm cursor-pointer ${
                 addedToCart
-                  ? "bg-success text-white"
+                  ? "bg-success-soft text-success border border-success/30"
                   : "bg-primary text-primary-foreground hover:bg-primary/90"
               }`}
             >

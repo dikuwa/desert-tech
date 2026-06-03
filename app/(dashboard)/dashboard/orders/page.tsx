@@ -3,7 +3,8 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { Search, ChevronDown, ChevronLeft, ChevronRight, Download, FileText, ShoppingBag } from "lucide-react";
-import { mockOrders, formatCents, getStatusBadgeClass, getStatusLabel } from "@/lib/dashboard-data";
+import { useDashboardStore } from "@/lib/store/dashboard";
+import { formatCents, getStatusBadgeClass, getStatusLabel } from "@/lib/dashboard-data";
 import { cn } from "@/lib/utils";
 
 const ITEMS_PER_PAGE = 10;
@@ -19,8 +20,10 @@ export default function OrdersPage() {
   const [sortField, setSortField] = useState<string>("createdAt");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
+  const orders = useDashboardStore((s) => s.orders);
+
   const filtered = useMemo(() => {
-    let result = [...mockOrders];
+    let result = [...orders];
     if (search) {
       const q = search.toLowerCase();
       result = result.filter(o => o.orderNumber.toLowerCase().includes(q) || o.customerName.toLowerCase().includes(q) || o.customerPhone.includes(q));
@@ -34,7 +37,7 @@ export default function OrdersPage() {
       return sortDir === "asc" ? valA.localeCompare(valB) : valB.localeCompare(valA);
     });
     return result;
-  }, [search, statusFilter, paymentFilter, sortField, sortDir]);
+  }, [search, statusFilter, paymentFilter, sortField, sortDir, orders]);
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);

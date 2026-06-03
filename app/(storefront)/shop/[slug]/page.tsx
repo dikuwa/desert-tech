@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, notFound } from "next/navigation";
 import {
@@ -8,8 +8,6 @@ import {
   Heart,
   MessageCircle,
   Phone,
-  ChevronLeft,
-  Star,
   Check,
   AlertTriangle,
   Share2,
@@ -20,6 +18,7 @@ import {
 import { getProductBySlug, formatNAD, products, categories } from "@/lib/data";
 import { useCart } from "@/lib/store/cart";
 import { useWishlist } from "@/lib/store/wishlist";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
@@ -31,8 +30,11 @@ export default function ProductDetailPage() {
   const product = getProductBySlug(slug);
   const { addItem, items } = useCart();
   const [selectedImage, setSelectedImage] = useState(0);
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => { setHydrated(true); }, []);
   const [addedToCart, setAddedToCart] = useState(false);
   const { toggleItem, isWishlisted } = useWishlist();
+  
 
   if (!product) notFound();
 
@@ -57,6 +59,7 @@ export default function ProductDetailPage() {
       availability: product.availability,
     });
     setAddedToCart(true);
+    toast.success(`${product.name} added to cart`);
     setTimeout(() => setAddedToCart(false), 2000);
   };
 
@@ -121,22 +124,23 @@ export default function ProductDetailPage() {
 
           {/* Thumbnails */}
           {product.images.length > 1 && (
-            <div className="flex gap-3 overflow-x-auto pb-2">
+            <div className="flex gap-2.5 overflow-x-auto pb-1 -mx-1 px-1">
               {product.images.map((img, idx) => (
                 <button
                   key={idx}
                   onClick={() => setSelectedImage(idx)}
                   className={cn(
-                    "flex-shrink-0 w-20 h-20 rounded-xl border-2 overflow-hidden transition-all",
+                    "flex-shrink-0 w-[72px] h-[72px] rounded-lg border-2 overflow-hidden transition-all duration-150 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
                     selectedImage === idx
-                      ? "border-primary"
+                      ? "border-primary ring-1 ring-primary/20"
                       : "border-border hover:border-muted-foreground/30",
                   )}
+                  aria-label={`View product image ${idx + 1}`}
                 >
                   <img
                     src={img}
                     alt={`${product.name} view ${idx + 1}`}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain p-1.5"
                   />
                 </button>
               ))}
@@ -160,12 +164,6 @@ export default function ProductDetailPage() {
               {product.name}
             </h1>
             <div className="flex items-center gap-3 mt-2">
-              <div className="flex items-center gap-1">
-                <Star className="h-4 w-4 fill-warning text-warning" />
-                <span className="text-sm font-semibold text-foreground">{product.rating}</span>
-                <span className="text-sm text-muted-foreground">({product.reviewCount} reviews)</span>
-              </div>
-              <span className="text-muted-foreground/30">|</span>
               <span className="text-sm text-muted-foreground">{product.brand}</span>
               {product.sku && (
                 <>
@@ -218,13 +216,12 @@ export default function ProductDetailPage() {
               <button
                 onClick={handleAddToCart}
                 className={cn(
-                  "flex-1 inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-semibold transition-all",
+                  "flex-1 inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-semibold transition-all cursor-pointer",
                   addedToCart
-                    ? "bg-success text-white"
+                    ? "bg-success-soft text-success border border-success/30"
                     : "bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-md active:scale-[0.98]",
                 )}
-              >
-                {addedToCart ? (
+              >                  {addedToCart ? (
                   <>
                     <Check className="h-5 w-5" />
                     Added to Cart
@@ -232,7 +229,7 @@ export default function ProductDetailPage() {
                 ) : (
                   <>
                     <ShoppingCart className="h-5 w-5" />
-                    {cartItem ? `Add Another (${cartItem.quantity} in cart)` : "Add to Cart"}
+                    {hydrated && cartItem ? `Add Another (${cartItem.quantity} in cart)` : "Add to Cart"}
                   </>
                 )}
               </button>

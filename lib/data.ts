@@ -40,13 +40,19 @@ export interface PromotionData {
   discountLabel?: string;
   imageUrl?: string;
   isActive: boolean;
+  isFeatured: boolean;
   placement: string;
+  type: "product" | "bundle" | "service" | "general";
+  linkedProductId?: string;
+  linkedCategory?: string;
+  serviceSlug?: string;
+  ctaLabel?: string;
 }
 
 export const categories: CategoryData[] = [
-  { id: "cat-1", name: "Apple Products", slug: "apple", description: "MacBooks, iPads, iPhones and accessories", productCount: 12, imageUrl: "https://images.unsplash.com/photo-1611186871348-b1f696febbb3?w=200&h=200&fit=crop" },
-  { id: "cat-2", name: "Windows Laptops", slug: "windows", description: "Dell, HP, Lenovo, ASUS and more", productCount: 15, imageUrl: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=200&h=200&fit=crop" },
-  { id: "cat-3", name: "Gaming PCs", slug: "gaming", description: "Gaming desktops, laptops and accessories", productCount: 8, imageUrl: "https://images.unsplash.com/photo-1593640408182-31c70c8268f5?w=200&h=200&fit=crop" },
+  { id: "cat-1", name: "Apple", slug: "apple", description: "MacBooks, iPads, iPhones and accessories", productCount: 12, imageUrl: "https://images.unsplash.com/photo-1611186871348-b1f696febbb3?w=200&h=200&fit=crop" },
+  { id: "cat-2", name: "Windows", slug: "windows", description: "Dell, HP, Lenovo, ASUS and more", productCount: 15, imageUrl: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=200&h=200&fit=crop" },
+  { id: "cat-3", name: "Gaming", slug: "gaming", description: "Gaming desktops, laptops and accessories", productCount: 8, imageUrl: "https://images.unsplash.com/photo-1593640408182-31c70c8268f5?w=200&h=200&fit=crop" },
   { id: "cat-4", name: "CCTV & Security", slug: "cctv", description: "Cameras, NVRs and security systems", productCount: 20, imageUrl: "https://images.unsplash.com/photo-1558002038-1055907df827?w=200&h=200&fit=crop" },
   { id: "cat-5", name: "Networking", slug: "networking", description: "Routers, switches, cabling and WiFi", productCount: 18, imageUrl: "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=200&h=200&fit=crop" },
   { id: "cat-6", name: "Phones & Tablets", slug: "phones", description: "Smartphones and tablets", productCount: 10, imageUrl: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=200&h=200&fit=crop" },
@@ -57,7 +63,7 @@ export const categories: CategoryData[] = [
 export const products: ProductData[] = [
   {
     id: "p1", name: 'MacBook Air 15" M3', slug: "macbook-air-15-m3", brand: "Apple",
-    categoryId: "cat-1", categoryName: "Apple Products", categorySlug: "apple",
+    categoryId: "cat-1", categoryName: "Apple", categorySlug: "apple",
     condition: "New", description: "The 15-inch MacBook Air with M3 chip brings a stunning Liquid Retina display, powerful performance, and all-day battery life in an incredibly thin design.",
     specs: "15.3″ Liquid Retina • Apple M3 • 8GB Unified • 256GB SSD",
     priceCents: 1899900, oldPriceCents: 2149900, discountPercent: 12,
@@ -67,32 +73,32 @@ export const products: ProductData[] = [
   },
   {
     id: "p2", name: "Dell XPS 16 Intel Ultra 9", slug: "dell-xps-16", brand: "Dell",
-    categoryId: "cat-2", categoryName: "Windows Laptops", categorySlug: "windows",
+    categoryId: "cat-2", categoryName: "Windows", categorySlug: "windows",
     condition: "New", description: "The Dell XPS 16 delivers desktop-class performance with Intel Core Ultra 9 processor, stunning OLED display, and premium build quality.",
     specs: "16″ OLED • Intel Ultra 9 • 32GB • 1TB SSD",
     priceCents: 2599900,
     imageUrl: "https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=400&h=400&fit=crop",
-    images: ["https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=600&h=600&fit=crop"],
+    images: ["https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=600&h=600&fit=crop", "https://images.unsplash.com/photo-1611078489935-0cb964de46d6?w=600&h=600&fit=crop", "https://images.unsplash.com/photo-1504707748692-419802cf939d?w=600&h=600&fit=crop"],
     availability: "low_stock", stockCount: 2, warranty: "2 Years", rating: 4.6, reviewCount: 18, isFeatured: true,
   },
   {
     id: "p3", name: "Gaming PC Ryzen 7 RTX 4070", slug: "gaming-pc-ryzen-7-rtx-4070", brand: "Custom Build",
-    categoryId: "cat-3", categoryName: "Gaming PCs", categorySlug: "gaming",
+    categoryId: "cat-3", categoryName: "Gaming", categorySlug: "gaming",
     condition: "New", description: "High-performance gaming desktop with AMD Ryzen 7, NVIDIA RTX 4070, 32GB RAM, and 1TB NVMe SSD.",
     specs: "Ryzen 7 7800X3D • RTX 4070 • 32GB • 1TB NVMe",
     priceCents: 2199900, oldPriceCents: 2599900, discountPercent: 15,
     imageUrl: "https://images.unsplash.com/photo-1593640408182-31c70c8268f5?w=400&h=400&fit=crop",
-    images: ["https://images.unsplash.com/photo-1593640408182-31c70c8268f5?w=600&h=600&fit=crop"],
+    images: ["https://images.unsplash.com/photo-1593640408182-31c70c8268f5?w=600&h=600&fit=crop", "https://images.unsplash.com/photo-1587831990711-23ca6441417f?w=600&h=600&fit=crop", "https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=600&h=600&fit=crop"],
     availability: "in_stock", warranty: "2 Years", rating: 4.9, reviewCount: 31, isFeatured: true,
   },
   {
     id: "p4", name: "iPad Pro 13″ M4", slug: "ipad-pro-13-m4", brand: "Apple",
-    categoryId: "cat-1", categoryName: "Apple Products", categorySlug: "apple",
+    categoryId: "cat-1", categoryName: "Apple", categorySlug: "apple",
     condition: "New", description: "The iPad Pro with M4 chip, Ultra Retina XDR display, and Apple Pencil Pro support.",
     specs: "13″ Ultra Retina XDR • M4 • 256GB • WiFi",
     priceCents: 1649900,
     imageUrl: "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=400&h=400&fit=crop",
-    images: ["https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=600&h=600&fit=crop"],
+    images: ["https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=600&h=600&fit=crop", "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=600&h=600&fit=crop"],
     availability: "sold_out", warranty: "1 Year", rating: 4.7, reviewCount: 15, isFeatured: true,
   },
   {
@@ -102,7 +108,7 @@ export const products: ProductData[] = [
     specs: "6.9″ Dynamic AMOLED • 256GB • 12GB RAM",
     priceCents: 1859900,
     imageUrl: "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=400&h=400&fit=crop",
-    images: ["https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=600&h=600&fit=crop"],
+    images: ["https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=600&h=600&fit=crop", "https://images.unsplash.com/photo-1586050059591-9e212eac5c15?w=600&h=600&fit=crop", "https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?w=600&h=600&fit=crop"],
     availability: "in_stock", warranty: "1 Year", rating: 4.5, reviewCount: 42, isFeatured: true,
   },
   {
@@ -112,12 +118,12 @@ export const products: ProductData[] = [
     specs: "8CH NVR • 4x 4MP • 2TB HDD • IP67",
     priceCents: 599900, oldPriceCents: 749900, discountPercent: 20,
     imageUrl: "https://images.unsplash.com/photo-1558002038-1055907df827?w=400&h=400&fit=crop",
-    images: ["https://images.unsplash.com/photo-1558002038-1055907df827?w=600&h=600&fit=crop"],
+    images: ["https://images.unsplash.com/photo-1558002038-1055907df827?w=600&h=600&fit=crop", "https://images.unsplash.com/photo-1577303935007-0d306ee8cf9e?w=600&h=600&fit=crop"],
     availability: "in_stock", warranty: "3 Years", rating: 4.4, reviewCount: 56, isFeatured: true,
   },
   {
     id: "p7", name: "Lenovo ThinkPad X1 Carbon", slug: "lenovo-thinkpad-x1-carbon", brand: "Lenovo",
-    categoryId: "cat-2", categoryName: "Windows Laptops", categorySlug: "windows",
+    categoryId: "cat-2", categoryName: "Windows", categorySlug: "windows",
     condition: "Refurbished", description: "Business-class ultrabook with Intel Core i7, lightweight carbon fiber design, and enterprise security.",
     specs: "14″ WUXGA • i7-1365U • 16GB • 512GB SSD",
     priceCents: 1299900,
@@ -137,7 +143,7 @@ export const products: ProductData[] = [
   },
   {
     id: "p9", name: 'MacBook Pro 14" M4 Pro', slug: "macbook-pro-14-m4-pro", brand: "Apple",
-    categoryId: "cat-1", categoryName: "Apple Products", categorySlug: "apple",
+    categoryId: "cat-1", categoryName: "Apple", categorySlug: "apple",
     condition: "New", description: "Professional-grade laptop with M4 Pro chip, 14.2-inch Liquid Retina XDR display.",
     specs: "14.2″ Liquid Retina XDR • M4 Pro • 18GB • 512GB",
     priceCents: 2799900,
@@ -147,7 +153,7 @@ export const products: ProductData[] = [
   },
   {
     id: "p10", name: "ASUS ROG Strix G16", slug: "asus-rog-strix-g16", brand: "ASUS",
-    categoryId: "cat-3", categoryName: "Gaming PCs", categorySlug: "gaming",
+    categoryId: "cat-3", categoryName: "Gaming", categorySlug: "gaming",
     condition: "New", description: "Gaming laptop with Intel i9, NVIDIA RTX 4070, 16-inch FHD 165Hz display.",
     specs: "16″ FHD 165Hz • i9-13980HX • RTX 4070 • 16GB • 1TB",
     priceCents: 2249900,
@@ -187,7 +193,7 @@ export const products: ProductData[] = [
   },
   {
     id: "p14", name: "Dell 27″ 4K Monitor", slug: "dell-27-4k-monitor", brand: "Dell",
-    categoryId: "cat-2", categoryName: "Windows Laptops", categorySlug: "windows",
+    categoryId: "cat-2", categoryName: "Windows", categorySlug: "windows",
     condition: "Refurbished", description: "Professional 4K UHD monitor with IPS panel, USB-C hub, and ergonomic stand.",
     specs: "27″ 4K UHD • IPS • USB-C • Height Adjust",
     priceCents: 549900, oldPriceCents: 749900, discountPercent: 27,
@@ -240,18 +246,24 @@ export const products: ProductData[] = [
 export const promotions: PromotionData[] = [
   {
     id: "promo-1", title: "Gaming Setup Bundle", slug: "gaming-bundle",
-    description: "Complete gaming rig with monitor, keyboard, mouse & headset.",
-    discountLabel: "Save up to N$ 2,000", isActive: true, placement: "HomeHero",
+    description: "Complete gaming rig with monitor, keyboard, mouse & headset. Perfect for competitive play.",
+    discountLabel: "Save up to N$ 2,000", isActive: true, isFeatured: true, placement: "HomeHero",
+    type: "bundle", linkedCategory: "gaming",
+    imageUrl: "https://images.unsplash.com/photo-1593640408182-31c70c8268f5?w=900&h=620&fit=crop",
   },
   {
     id: "promo-2", title: "CCTV Installation Special", slug: "cctv-installation",
-    description: "Professional security camera installation. Free site assessment.",
-    discountLabel: "Free Installation", isActive: true, placement: "FeaturedSection",
+    description: "Professional security camera installation for homes and businesses. Free site assessment included with every booking.",
+    discountLabel: "Free Installation", isActive: true, isFeatured: true, placement: "FeaturedSection",
+    type: "service", serviceSlug: "cctv",
+    imageUrl: "https://images.unsplash.com/photo-1558002038-1055907df827?w=900&h=620&fit=crop",
   },
   {
     id: "promo-3", title: "Back to School Deals", slug: "back-to-school",
-    description: "Student discounts on laptops and accessories. Show your student ID.",
-    discountLabel: "Up to 15% off", isActive: true, placement: "ProductBadge",
+    description: "Student discounts on laptops, tablets and accessories. Show your student ID in-store.",
+    discountLabel: "Up to 15% off", isActive: true, isFeatured: false, placement: "ProductBadge",
+    type: "general", linkedCategory: "laptops",
+    imageUrl: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=900&h=620&fit=crop",
   },
 ];
 
@@ -265,6 +277,47 @@ export function getProductsByCategory(categorySlug: string): ProductData[] {
 
 export function getFeaturedProducts(): ProductData[] {
   return products.filter((p) => p.isFeatured);
+}
+
+export function getFeaturedPromotions(): PromotionData[] {
+  return promotions.filter(
+    (p) => p.isActive && p.isFeatured,
+  );
+}
+
+export function getAllActivePromotions(): PromotionData[] {
+  return promotions.filter((p) => p.isActive);
+}
+
+export function getPromotionBySlug(slug: string): PromotionData | undefined {
+  return promotions.find((p) => p.slug === slug);
+}
+
+export function getPromotionProducts(promotion: PromotionData): ProductData[] {
+  switch (promotion.type) {
+    case "product":
+      return products.filter((p) => p.slug === promotion.linkedProductId);
+    case "bundle":
+      return promotion.linkedCategory
+        ? products.filter(
+            (p) =>
+              p.categorySlug === promotion.linkedCategory &&
+              (p.availability === "in_stock" || p.availability === "low_stock"),
+          )
+        : [];
+    case "service":
+      return [];
+    case "general":
+      return promotion.linkedCategory
+        ? products.filter(
+            (p) =>
+              p.categorySlug === promotion.linkedCategory &&
+              (p.availability === "in_stock" || p.availability === "low_stock"),
+          )
+        : [];
+    default:
+      return [];
+  }
 }
 
 export function getCategoryBySlug(slug: string): CategoryData | undefined {

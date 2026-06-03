@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
 import { z } from "zod";
+import { addOrder, getOrders } from "@/lib/order-store";
 
 const orderSchema = z.object({
   fullName: z.string().min(2).max(100),
@@ -36,67 +36,101 @@ export async function POST(req: Request) {
       0,
     );
 
-    // Find or create customer by phone
-    let customer = await db.customer.findFirst({
-      where: { phone: validated.phone },
-    });
+    let dbCustomer = null;
+    let dbOrder = null;
 
-    if (customer) {
-      customer = await db.customer.update({
-        where: { id: customer.id },
+    // Try database first
+    try {
+      const { db } = await import("@/lib/db");
+
+      // Find or create customer by phone
+      let customer = await db.customer.findFirst({
+        where: { phone: validated.phone },
+      });
+
+      if (customer) {
+        customer = await db.customer.update({
+          where: { id: customer.id },
+          data: {
+            fullName: validated.fullName,
+            whatsapp: validated.whatsapp || validated.phone,
+            email: validated.email || null,
+            preferredContact: validated.preferredContact,
+            notes: validated.notes || null,
+          },
+        });
+      } else {
+        customer = await db.customer.create({
+          data: {
+            fullName: validated.fullName,
+            phone: validated.phone,
+            whatsapp: validated.whatsapp || validated.phone,
+            email: validated.email || null,
+            preferredContact: validated.preferredContact,
+            notes: validated.notes || null,
+          },
+        });
+      }
+
+      // Create the order with items
+      const order = await db.order.create({
         data: {
-          fullName: validated.fullName,
-          whatsapp: validated.whatsapp || validated.phone,
-          email: validated.email || null,
+          orderNumber,
+          customerId: customer.id,
+          status: "PendingContact",
           preferredContact: validated.preferredContact,
+          subtotalCents,
           notes: validated.notes || null,
+          items: {
+            create: validated.items.map((item) => ({
+              productId: item.productId,
+              productName: item.name,
+              quantity: item.quantity,
+              unitPriceCents: item.priceCents,
+              totalCents: item.priceCents * item.quantity,
+            })),
+          },
+        },
+        include: {
+          items: true,
+          customer: true,
         },
       });
-    } else {
-      customer = await db.customer.create({
-        data: {
-          fullName: validated.fullName,
-          phone: validated.phone,
-          whatsapp: validated.whatsapp || validated.phone,
-          email: validated.email || null,
-          preferredContact: validated.preferredContact,
-          notes: validated.notes || null,
-        },
-      });
+
+      dbCustomer = customer;
+      dbOrder = order;
+    } catch {
+      // Database unavailable — fall through to in-memory store
+      console.log("Database unavailable, storing order in-memory");
     }
 
-    // Create the order with items
-    const order = await db.order.create({
-      data: {
-        orderNumber,
-        customerId: customer.id,
-        status: "PendingContact",
-        preferredContact: validated.preferredContact,
-        subtotalCents,
-        notes: validated.notes || null,
-        items: {
-          create: validated.items.map((item) => ({
-            productId: item.productId,
-            productName: item.name,
-            quantity: item.quantity,
-            unitPriceCents: item.priceCents,
-            totalCents: item.priceCents * item.quantity,
-          })),
-        },
-      },
-      include: {
-        items: true,
-        customer: true,
-      },
+    // Always store in in-memory store for dashboard visibility
+    addOrder({
+      id: orderNumber,
+      orderNumber,
+      customerName: validated.fullName,
+      customerPhone: validated.phone,
+      itemCount: validated.items.reduce((sum, i) => sum + i.quantity, 0),
+      subtotalCents,
+      status: "PendingContact",
+      paymentStatus: "Unpaid",
+      preferredContact: validated.preferredContact,
+      notes: validated.notes || undefined,
+      items: validated.items.map((i) => ({
+        name: i.name,
+        quantity: i.quantity,
+        priceCents: i.priceCents,
+      })),
+      createdAt: new Date().toISOString(),
     });
 
     return NextResponse.json({
       success: true,
       order: {
-        orderNumber: order.orderNumber,
-        fullName: customer.fullName,
-        phone: customer.phone,
-        preferredContact: customer.preferredContact,
+        orderNumber,
+        fullName: validated.fullName,
+        phone: validated.phone,
+        preferredContact: validated.preferredContact,
         itemCount: validated.items.reduce((sum, i) => sum + i.quantity, 0),
         subtotal: subtotalCents,
         items: validated.items.map((i) => ({
@@ -104,7 +138,7 @@ export async function POST(req: Request) {
           quantity: i.quantity,
           priceCents: i.priceCents,
         })),
-        createdAt: order.createdAt.toISOString(),
+        createdAt: new Date().toISOString(),
       },
     });
   } catch (error) {
@@ -120,4 +154,9 @@ export async function POST(req: Request) {
       { status: 500 },
     );
   }
+}
+
+export async function GET() {
+  const storedOrders = getOrders();
+  return NextResponse.json({ orders: storedOrders });
 }

@@ -15,6 +15,7 @@ import {
   ChevronRight,
   CreditCard,
 } from "lucide-react";
+import { toast } from "sonner";
 import { useCart } from "@/lib/store/cart";
 import { formatNAD } from "@/lib/data";
 import { cn } from "@/lib/utils";
@@ -94,6 +95,7 @@ export default function CheckoutPage() {
       // Store order data in sessionStorage for the success page
       sessionStorage.setItem("lastOrder", JSON.stringify(order));
 
+      toast.success(`Order ${order.orderNumber} submitted! We'll be in touch.`);
       clearCart();
       router.push(`/order-success/${order.orderNumber}`);
     } catch (err) {

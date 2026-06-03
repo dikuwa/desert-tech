@@ -45,7 +45,7 @@ export function CategoryCards() {
 
         <div
           ref={scrollRef}
-          className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 md:mx-0 md:grid md:grid-cols-3 md:px-0 md:pb-0 lg:grid-cols-6"
+          className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 md:mx-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0 md:pb-0 lg:grid-cols-6 pt-2"
         >
           {categories.map((cat) => {
             const Icon = cat.icon;
@@ -53,7 +53,7 @@ export function CategoryCards() {
               <Link
                 key={cat.label}
                 href={cat.href}
-                className="group flex w-[220px] shrink-0 snap-start flex-col rounded-lg border border-border bg-background p-4 transition-all hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 md:w-auto"
+                className="group relative flex w-[220px] shrink-0 snap-start flex-col rounded-lg border border-border bg-background p-4 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-md hover:z-10 hover:border-primary/30 active:translate-y-0 active:shadow-sm md:w-auto"
               >
                 <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-muted text-muted-foreground transition-colors group-hover:bg-accent group-hover:text-primary">
                   <Icon className="h-5 w-5" />

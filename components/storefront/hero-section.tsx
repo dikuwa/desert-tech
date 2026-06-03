@@ -17,7 +17,17 @@ export function HeroSection() {
   return (
     <section className="relative overflow-hidden border-b border-border bg-background">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-8 sm:px-6 lg:grid-cols-[0.98fr_1.02fr] lg:px-8 lg:py-12">
-        <div className="flex flex-col justify-center">
+        {/* Image first on mobile, second on desktop */}
+        <div className="min-w-0 -mr-4 sm:-mr-6 lg:-mr-8 -mb-8 lg:-mb-12 overflow-hidden lg:order-2">
+          <img
+            src="/images/DTC-BG.webp"
+            alt="Desert Tech electronics showroom"
+            className="w-full h-full object-cover"
+          />
+        </div>
+
+        {/* Text second on mobile, first on desktop */}
+        <div className="flex flex-col justify-center lg:order-1">
           <div className="mb-5 inline-flex w-fit items-center rounded-full border border-border bg-card px-4 py-1.5 text-xs font-semibold text-muted-foreground shadow-xs">
             Desert Technology Consultant, Namibia
           </div>
@@ -49,32 +59,41 @@ export function HeroSection() {
             </a>
           </div>
 
-          <div className="mt-8 grid gap-3 sm:grid-cols-4">
+          {/* Trust indicators - centered mini feature cards */}
+          <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-6">
             {[
               { label: "Tested stock", icon: ShieldCheck },
               { label: "Warranty options", icon: BadgeCheck },
               { label: "Nationwide courier", icon: Truck },
-              { label: PHONE_NUMBER, icon: Phone },
+              { label: "Call us", sub: PHONE_NUMBER, icon: Phone },
             ].map((item) => {
               const Icon = item.icon;
               return (
-                <div key={item.label} className="flex items-center gap-2.5 text-sm font-medium text-muted-foreground">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-primary">
+                <div
+                  key={item.label}
+                  className="flex flex-col items-center gap-2.5 text-center"
+                >
+                  <span
+                    className="flex items-center justify-center rounded-lg bg-muted text-primary border border-black/[0.04]"
+                    style={{
+                      width: "44px",
+                      height: "44px",
+                      minWidth: "44px",
+                      minHeight: "44px",
+                      flexShrink: 0,
+                      aspectRatio: "1 / 1",
+                    }}
+                  >
                     <Icon className="h-4 w-4" />
                   </span>
-                  {item.label}
+                  <div className="text-sm font-medium leading-tight text-muted-foreground">
+                    <span>{item.label}</span>
+                    {item.sub && <span className="block text-xs">{item.sub}</span>}
+                  </div>
                 </div>
               );
             })}
           </div>
-        </div>
-
-        <div className="min-w-0 -mr-4 sm:-mr-6 lg:-mr-8 -mb-8 lg:-mb-12 overflow-hidden">
-          <img
-            src="/images/desert-tech-hero.webp"
-            alt="Desert Technology Consultant"
-            className="w-full object-cover"
-          />
         </div>
       </div>
     </section>

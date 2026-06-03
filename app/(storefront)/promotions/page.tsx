@@ -1,129 +1,155 @@
 import Link from "next/link";
-import { Sparkles, MessageCircle, Phone, ArrowRight, TicketPercent, Clock } from "lucide-react";
-
-const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
-const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
-
-const activePromotions = [
-  {
-    title: "Gaming Setup Bundle",
-    description: "Complete gaming rig with monitor, keyboard, mouse & headset. Perfect for competitive play.",
-    discount: "Save up to N$ 2,000",
-    image: "https://images.unsplash.com/photo-1593640408182-31c70c8268f5?w=600&h=400&fit=crop",
-    link: "/shop?category=gaming",
-  },
-  {
-    title: "Back to School Special",
-    description: "Student discounts on laptops, tablets, and accessories. Show your student ID.",
-    discount: "Up to 15% off",
-    image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600&h=400&fit=crop",
-    link: "/shop?category=laptops",
-  },
-  {
-    title: "CCTV Bundle Deals",
-    description: "Complete security camera kits at special bundle prices. Limited stock available.",
-    discount: "Save up to N$ 1,500",
-    image: "https://images.unsplash.com/photo-1558002038-1055907df827?w=600&h=400&fit=crop",
-    link: "/shop?category=cctv",
-  },
-  {
-    title: "Networking Upgrade",
-    description: "Upgrade to WiFi 6/6E for faster, more reliable connectivity throughout your home or office.",
-    discount: "Free installation",
-    image: "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=600&h=400&fit=crop",
-    link: "/shop?category=networking",
-  },
-];
+import { ArrowRight, Tag, Sparkles, Percent } from "lucide-react";
+import { getAllActivePromotions } from "@/lib/data";
 
 export default function PromotionsPage() {
-  return (
-    <div>
-      {/* Hero */}
-      <section className="bg-background border-b border-border">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-accent px-4 py-1.5 mb-4">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span className="text-xs font-semibold text-primary">Limited Time Offers</span>
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
-            Promotions & Deals
-          </h1>
-          <p className="mt-4 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
-            Save on top tech products and services. These offers won&apos;t last long.
-          </p>
-        </div>
-      </section>
+  const allPromotions = getAllActivePromotions();
+  const featuredPromos = allPromotions.filter((p) => p.isFeatured);
+  const otherPromos = allPromotions.filter((p) => !p.isFeatured);
 
-      {/* Active Promotions */}
-      <section className="py-14 bg-background">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 gap-6">
-            {activePromotions.map((promo) => (
+  return (
+    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      {/* Page Header */}
+      <div className="mb-10">
+        <div className="inline-flex items-center gap-2 rounded-full bg-accent px-4 py-1.5 text-xs font-semibold text-primary">
+          <Sparkles className="h-3.5 w-3.5" />
+          Limited time offers
+        </div>
+        <h1 className="mt-4 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          Promotions & Specials
+        </h1>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+          Take advantage of current deals on tech, security, networking, and services across Namibia. 
+          Prices and availability are subject to change.
+        </p>
+      </div>
+
+      {allPromotions.length === 0 && (
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/50 px-6 py-20 text-center">
+          <Tag className="h-10 w-10 text-muted-foreground/40" />
+          <p className="mt-4 text-base font-medium text-foreground">No active promotions right now</p>
+          <p className="mt-1 text-sm text-muted-foreground">Check back soon for new deals and specials.</p>
+          <Link
+            href="/shop"
+            className="mt-6 inline-flex items-center gap-1.5 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-md active:scale-[0.98]"
+          >
+            Browse Shop
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      )}
+
+      {/* Featured Promotions */}
+      {featuredPromos.length > 0 && (
+        <section className="mb-14">
+          <div className="mb-6 flex items-end justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary">Featured</p>
+              <h2 className="mt-1 text-xl font-bold text-foreground sm:text-2xl">Best deals right now</h2>
+            </div>
+          </div>
+          <div className="grid gap-6">
+            {featuredPromos.map((promo) => (
               <Link
-                key={promo.title}
-                href={promo.link}
-                className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-all hover:-translate-y-0.5 hover:shadow-md"
+                key={promo.id}
+                href={`/promotions/${promo.slug}`}
+                className="group grid overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 sm:grid-cols-2"
               >
-                <div className="relative aspect-[3/2] overflow-hidden bg-gray-100">
-                  <img
-                    src={promo.image}
-                    alt={promo.title}
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
-                  />
-                  <div className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-lg bg-primary px-2.5 py-1 text-xs font-bold text-primary-foreground shadow-sm">
-                    <TicketPercent className="h-3.5 w-3.5" />
-                    {promo.discount}
-                  </div>
+                {/* Image */}
+                <div className="relative aspect-[4/3] overflow-hidden bg-muted sm:aspect-auto sm:order-last">
+                  {promo.imageUrl ? (
+                    <img
+                      src={promo.imageUrl}
+                      alt={promo.title}
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground/40">
+                      <Tag className="h-8 w-8" />
+                    </div>
+                  )}
+                  {promo.discountLabel && (
+                    <div className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1 text-xs font-bold text-primary-foreground shadow-sm">
+                      <Percent className="h-3 w-3" />
+                      {promo.discountLabel}
+                    </div>
+                  )}
                 </div>
-                <div className="flex flex-1 flex-col p-5">
-                  <h3 className="text-lg font-bold text-foreground">
+
+                {/* Content */}
+                <div className="flex flex-col justify-center p-6 sm:p-8">
+                  <div className="inline-flex w-fit items-center gap-1.5 rounded-md bg-accent/50 px-2.5 py-1 text-xs font-semibold text-primary uppercase tracking-wider">
+                    {promo.type === "service" ? "Service Offer" : promo.type === "bundle" ? "Bundle Deal" : "Special Offer"}
+                  </div>
+                  <h3 className="mt-3 text-lg font-bold leading-snug text-foreground sm:text-xl">
                     {promo.title}
                   </h3>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground line-clamp-2">
                     {promo.description}
                   </p>
-                  <div className="mt-auto pt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary group-hover:gap-2 transition-all">
-                    Shop Now
-                    <ArrowRight className="h-4 w-4" />
+                  <div className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary transition-all group-hover:gap-3">
+                    View offer
+                    <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
                   </div>
                 </div>
               </Link>
             ))}
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* Info */}
-      <section className="bg-muted border-y border-border py-14">
-        <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
-          <Clock className="h-8 w-8 text-primary mx-auto mb-4" />
-          <h2 className="text-xl font-bold tracking-tight text-foreground">
-            Prices can change
-          </h2>
-          <p className="mt-3 text-sm text-muted-foreground">
-            Promotional prices and discounts are valid while stocks last. Contact us to confirm
-            current pricing and availability.
-          </p>
-          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <a
-              href={`https://wa.me/${WHATSAPP_NUMBER}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-whatsapp/20 bg-whatsapp-soft px-6 py-3 text-sm font-semibold text-whatsapp transition-all hover:-translate-y-0.5 hover:border-whatsapp/30 hover:bg-whatsapp hover:text-white hover:shadow-md"
-            >
-              <MessageCircle className="h-5 w-5" />
-              Ask on WhatsApp
-            </a>
-            <a
-              href={`tel:${PHONE_NUMBER}`}
-              className="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-6 py-3 text-sm font-semibold text-foreground transition-all hover:bg-muted hover:shadow-sm"
-            >
-              <Phone className="h-5 w-5" />
-              Call Now
-            </a>
+      {/* Other Promotions */}
+      {otherPromos.length > 0 && (
+        <section>
+          <div className="mb-6">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">More deals</p>
+            <h2 className="mt-1 text-xl font-bold text-foreground sm:text-2xl">Other specials</h2>
           </div>
-        </div>
-      </section>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {otherPromos.map((promo) => (
+              <Link
+                key={promo.id}
+                href={`/promotions/${promo.slug}`}
+                className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0"
+              >
+                <div className="relative aspect-[16/9] overflow-hidden bg-muted">
+                  {promo.imageUrl ? (
+                    <img
+                      src={promo.imageUrl}
+                      alt={promo.title}
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground/40">
+                      <Tag className="h-8 w-8" />
+                    </div>
+                  )}
+                  {promo.discountLabel && (
+                    <div className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1 text-xs font-bold text-primary-foreground shadow-sm">
+                      {promo.discountLabel}
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-1 flex-col p-5">
+                  <div className="inline-flex w-fit items-center gap-1 rounded-md bg-accent/50 px-2 py-0.5 text-[11px] font-semibold text-primary uppercase tracking-wider">
+                    {promo.type === "service" ? "Service" : promo.type === "bundle" ? "Bundle" : "Offer"}
+                  </div>
+                  <h3 className="mt-2 text-base font-bold text-foreground group-hover:text-primary transition-colors">
+                    {promo.title}
+                  </h3>
+                  <p className="mt-1.5 flex-1 text-sm leading-relaxed text-muted-foreground line-clamp-2">
+                    {promo.description}
+                  </p>
+                  <div className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary">
+                    View offer
+                    <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

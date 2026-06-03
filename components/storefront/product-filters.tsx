@@ -21,9 +21,9 @@ const filterGroups: FilterGroup[] = [
     label: "All Products",
     options: [
       { value: "all", label: "All Products" },
-      { value: "apple", label: "Apple Products" },
-      { value: "windows", label: "Windows Laptops" },
-      { value: "gaming", label: "Gaming PC" },
+      { value: "apple", label: "Apple" },
+      { value: "windows", label: "Windows" },
+      { value: "gaming", label: "Gaming" },
       { value: "cctv", label: "CCTV & Security" },
       { value: "networking", label: "Networking" },
       { value: "pos", label: "POS Systems" },

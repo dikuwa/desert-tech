@@ -3,22 +3,29 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ShoppingBag, Users, Bell, CalendarClock, AlertTriangle, ArrowRight, TrendingUp } from "lucide-react";
-import { mockOrders, mockProducts, mockCustomers, mockNotifications, mockFollowUps, formatCents } from "@/lib/dashboard-data";
+import { useDashboardStore } from "@/lib/store/dashboard";
+import { formatCents } from "@/lib/dashboard-data";
 
 export default function DashboardPage() {
-  const pendingOrders = mockOrders.filter((o) => o.status === "PendingContact");
-  const lowStockProducts = mockProducts.filter((p) => p.availability === "LowStock" || p.stockQuantity <= p.lowStockThreshold);
-  const pendingFollowUps = mockFollowUps.filter((f) => f.status === "Pending");
-  const unreadNotifications = mockNotifications.filter((n) => !n.isRead);
-  const recentOrders = [...mockOrders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
-  const totalRevenue = mockOrders.filter((o) => o.paymentStatus === "Paid").reduce((sum, o) => sum + o.subtotalCents, 0);
+  const orders = useDashboardStore((s) => s.orders);
+  const products = useDashboardStore((s) => s.products);
+  const customers = useDashboardStore((s) => s.customers);
+  const notifications = useDashboardStore((s) => s.notifications);
+  const followUps = useDashboardStore((s) => s.followUps);
+
+  const pendingOrders = orders.filter((o) => o.status === "PendingContact");
+  const lowStockProducts = products.filter((p) => p.availability === "LowStock" || p.stockQuantity <= p.lowStockThreshold);
+  const pendingFollowUps = followUps.filter((f) => f.status === "Pending");
+  const unreadNotifications = notifications.filter((n) => !n.isRead);
+  const recentOrders = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
+  const totalRevenue = orders.filter((o) => o.paymentStatus === "Paid").reduce((sum, o) => sum + o.subtotalCents, 0);
 
   const stats = [
     { label: "New Orders", value: pendingOrders.length, icon: ShoppingBag, color: "text-primary", bg: "bg-accent", href: "/dashboard/orders" },
     { label: "Low Stock Items", value: lowStockProducts.length, icon: AlertTriangle, color: "text-warning", bg: "bg-warning-soft", href: "/dashboard/products" },
     { label: "Pending Follow-ups", value: pendingFollowUps.length, icon: CalendarClock, color: "text-info", bg: "bg-info-soft", href: "/dashboard/follow-ups" },
     { label: "Unread Notifications", value: unreadNotifications.length, icon: Bell, color: "text-destructive", bg: "bg-destructive/10", href: "/dashboard/notifications" },
-    { label: "Total Customers", value: mockCustomers.length, icon: Users, color: "text-success", bg: "bg-success-soft", href: "/dashboard/customers" },
+    { label: "Total Customers", value: customers.length, icon: Users, color: "text-success", bg: "bg-success-soft", href: "/dashboard/customers" },
     { label: "Revenue (Paid)", value: formatCents(totalRevenue), icon: TrendingUp, color: "text-success", bg: "bg-success-soft", href: "/dashboard/orders" },
   ];
 
@@ -86,7 +93,7 @@ export default function DashboardPage() {
             </Link>
           </div>
           <div className="divide-y divide-border">
-            {mockNotifications.slice(0, 5).map((note) => (
+            {notifications.slice(0, 5).map((note) => (
               <div key={note.id} className={`flex items-start gap-3 p-4 ${!note.isRead ? "bg-accent/30" : ""}`}>
                 <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${
                   note.type === "order" ? "bg-primary/10 text-primary" :

@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
 const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
+const STORE_EMAIL = process.env.NEXT_PUBLIC_STORE_EMAIL || "info@deserttechnology.com.na";
 
 export default function ContactPage() {
   const [formState, setFormState] = useState<"idle" | "submitting" | "success" | "error">("idle");
@@ -51,8 +52,8 @@ export default function ContactPage() {
     {
       icon: Mail,
       label: "Email",
-      value: "info@deserttechnology.com.na",
-      href: "mailto:info@deserttechnology.com.na",
+      value: STORE_EMAIL,
+      href: `mailto:${STORE_EMAIL}`,
       color: "text-primary",
     },
     {

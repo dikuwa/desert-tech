@@ -20,8 +20,8 @@
   --color-border: oklch(0.865 0.017 78);
   --color-input: oklch(0.865 0.017 78);
   --color-ring: oklch(0.637 0.181 45);
-  --color-success: oklch(0.57 0.14 148);
-  --color-success-soft: oklch(0.955 0.04 147);
+  --color-success: #15803D;
+  --color-success-soft: #E8F7EE;
   --color-warning: oklch(0.66 0.15 69);
   --color-warning-soft: oklch(0.962 0.049 80);
   --color-info: oklch(0.52 0.145 232);
@@ -134,4 +134,29 @@ h1, h2, h3, h4, h5, h6 {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Mobile menu open: blur entire page behind drawer */
+body.mobile-menu-open header,
+body.mobile-menu-open main,
+body.mobile-menu-open footer {
+  filter: blur(4px);
+  transition: filter 0.3s ease;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Keep bottom CTA sharp (above the blurred content) */
+body.mobile-menu-open .fixed.bottom-0.left-0.right-0 {
+  pointer-events: auto !important;
+}
+
+/* Mobile drawer backdrop */
+body.mobile-menu-open::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(0, 0, 0, 0.4);
+  pointer-events: auto;
 }

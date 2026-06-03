@@ -3,7 +3,7 @@ import { ArrowRight, BadgePercent, Clock3, ShieldCheck, Truck } from "lucide-rea
 import { HeroSection } from "@/components/storefront/hero-section";
 import { CategoryCards } from "@/components/storefront/category-cards";
 import { ProductCard } from "@/components/storefront/product-card";
-import { PromoBanner } from "@/components/storefront/promo-banner";
+import { FeaturedPromotionsCarousel } from "@/components/storefront/featured-promotions-carousel";
 import { TrustSection } from "@/components/storefront/trust-section";
 import { WhatsAppCTA } from "@/components/storefront/whatsapp-cta";
 import { getFeaturedProducts } from "@/lib/data";
@@ -64,7 +64,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-      <PromoBanner />
+      <FeaturedPromotionsCarousel />
       <TrustSection />
       <WhatsAppCTA />
     </div>

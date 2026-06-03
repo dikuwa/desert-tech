@@ -1,8 +1,7 @@
 "use client";
 
-"use client";
-
 import Link from "next/link";
+import { useDashboardStore } from "@/lib/store/dashboard";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -53,6 +52,9 @@ const bottomNavItems = [
 export function DashboardSidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const userRole = useDashboardStore((s) => s.userRole);
+  const currentUser = useDashboardStore((s) => s.currentUser);
+  const isStaff = userRole === "Staff";
 
   return (
     <aside
@@ -100,9 +102,8 @@ export function DashboardSidebar() {
           );
         })}
 
-        {!collapsed && <div className="my-2 border-t border-border" />}
-
-        {financialNavItems.map((item) => {
+        {/* Financial section - hidden from Staff */}
+        {!isStaff && financialNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
           return (
@@ -121,30 +122,10 @@ export function DashboardSidebar() {
             </Link>
           );
         })}
+
+        {!isStaff && !collapsed && <div className="my-2 border-t border-border" />}
 
         {staffNavItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = pathname === item.href;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
-              )}
-            >
-              <Icon className="h-5 w-5 shrink-0" />
-              {!collapsed && <span>{item.label}</span>}
-            </Link>
-          );
-        })}
-
-        {!collapsed && <div className="my-2 border-t border-border" />}
-
-        {bottomNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
           return (
@@ -173,8 +154,8 @@ export function DashboardSidebar() {
           </Avatar>
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">Admin</p>
-              <p className="text-xs text-muted-foreground truncate">admin@deserttech.com</p>
+              <p className="text-sm font-medium text-foreground truncate">{currentUser}</p>
+              <p className="text-xs text-muted-foreground truncate">{userRole}</p>
             </div>
           )}
         </div>

@@ -2,8 +2,9 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Search, Plus, Download, FileText, ChevronDown, ChevronLeft, ChevronRight, Package, AlertTriangle, Eye, Pencil } from "lucide-react";
-import { mockProducts, formatCents, getStatusBadgeClass, getStatusLabel } from "@/lib/dashboard-data";
+import { Search, Plus, Download, ChevronLeft, ChevronRight, Package, AlertTriangle, Pencil, Trash2, AlertCircle } from "lucide-react";
+import { useDashboardStore } from "@/lib/store/dashboard";
+import { formatCents, getStatusBadgeClass, getStatusLabel } from "@/lib/dashboard-data";
 import { cn } from "@/lib/utils";
 
 const ITEMS_PER_PAGE = 10;
@@ -12,20 +13,30 @@ export default function ProductsPage() {
   const [search, setSearch] = useState("");
   const [availFilter, setAvailFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
+  const products = useDashboardStore((s) => s.products);
+  const deleteProduct = useDashboardStore((s) => s.deleteProduct);
+  const updateProduct = useDashboardStore((s) => s.updateProduct);
 
   const filtered = useMemo(() => {
-    let result = [...mockProducts];
+    let result = [...products];
     if (search) {
       const q = search.toLowerCase();
       result = result.filter(p => p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
     }
     if (availFilter !== "All") result = result.filter(p => p.availability === availFilter);
     return result;
-  }, [search, availFilter]);
+  }, [search, availFilter, products]);
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
-  const lowStockCount = mockProducts.filter(p => p.availability === "LowStock" || p.stockQuantity <= p.lowStockThreshold).length;
+  const lowStockCount = products.filter(p => p.availability === "LowStock" || p.stockQuantity <= p.lowStockThreshold).length;
+
+  const handleDelete = (id: string) => {
+    deleteProduct(id);
+    setDeleteConfirm(null);
+  };
 
   return (
     <div className="space-y-6">
@@ -104,9 +115,21 @@ export default function ProductsPage() {
                 </td>
                 <td className="px-4 py-3 text-xs text-muted-foreground">{product.condition}</td>
                 <td className="px-4 py-3">
-                  <Link href={`/dashboard/products/${product.id}/edit`} className="text-xs font-semibold text-primary hover:text-primary/80 flex items-center gap-1">
-                    <Pencil className="h-3 w-3" /> Edit
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Link href={`/dashboard/products/${product.id}/edit`} className="text-xs font-semibold text-primary hover:text-primary/80 flex items-center gap-1">
+                      <Pencil className="h-3 w-3" /> Edit
+                    </Link>
+                    {deleteConfirm === product.id ? (
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => handleDelete(product.id)} className="rounded-md p-1 text-success hover:bg-success-soft transition-colors" title="Confirm delete"><AlertCircle className="h-3.5 w-3.5" /></button>
+                        <button onClick={() => setDeleteConfirm(null)} className="rounded-md p-1 text-muted-foreground hover:bg-muted transition-colors" title="Cancel"><Trash2 className="h-3.5 w-3.5" /></button>
+                      </div>
+                    ) : (
+                      <button onClick={() => setDeleteConfirm(product.id)} className="rounded-md p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors" title="Delete">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}

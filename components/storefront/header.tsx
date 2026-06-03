@@ -10,45 +10,95 @@ import {
   MessageCircle,
   Search,
   BadgeCheck,
+  ArrowRight,
 } from "lucide-react";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/lib/store/cart";
+import { useMobileMenu } from "@/lib/store/mobile-menu";
+import { searchProducts, formatNAD } from "@/lib/data";
+import { CartDropdown } from "@/components/storefront/cart-dropdown";
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
 const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
 
 const categories = [
   { href: "/shop", label: "All Products" },
-  { href: "/shop?category=apple", label: "Apple Products" },
-  { href: "/shop?category=windows", label: "Windows Laptops" },
-  { href: "/shop?category=gaming", label: "Gaming PC" },
+  { href: "/shop?category=apple", label: "Apple" },
+  { href: "/shop?category=windows", label: "Windows" },
+  { href: "/shop?category=gaming", label: "Gaming" },
   { href: "/shop?category=cctv", label: "CCTV & Security" },
-  { href: "/shop?category=networking", label: "Networking" },
   { href: "/shop?category=pos", label: "POS Systems" },
   { href: "/shop?category=accessories", label: "Accessories" },
+  { href: "/shop?category=mechanics", label: "Auto Services" },
   { href: "/promotions", label: "Promotions" },
-  { href: "/shop?category=mechanics", label: "Mechanics" },
+  { href: "/services", label: "Services" },
+  { href: "/contact", label: "Contact" },
 ];
 
 const navLinks = [
   { href: "/", label: "Home" },
   { href: "/shop", label: "Shop" },
-  { href: "/services", label: "Services" },
   { href: "/promotions", label: "Promotions" },
+  { href: "/services", label: "Services" },
   { href: "/contact", label: "Contact" },
 ];
 
 export function StorefrontHeader() {
   const router = useRouter();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { isOpen: mobileMenuOpen, toggle: toggleMobileMenu, close: closeMobileMenu } = useMobileMenu();
   const [activeCategory, setActiveCategory] = useState("All Products");
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<ReturnType<typeof searchProducts>>([]);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => { setHydrated(true); }, []);
   const { getItemCount } = useCart();
   const itemCount = getItemCount();
 
+  // Live search as user types
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      setSearchResults(searchProducts(searchQuery.trim()));
+      setShowSearchDropdown(true);
+    } else {
+      setSearchResults([]);
+      setShowSearchDropdown(false);
+    }
+  }, [searchQuery]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowSearchDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Mobile menu: body scroll lock, blur class
+  useEffect(() => {
+    if (!mobileMenuOpen) {
+      document.body.style.overflow = "";
+      document.body.classList.remove("mobile-menu-open");
+      return;
+    }
+
+    document.body.style.overflow = "hidden";
+    document.body.classList.add("mobile-menu-open");
+
+    return () => {
+      document.body.style.overflow = "";
+      document.body.classList.remove("mobile-menu-open");
+    };
+  }, [mobileMenuOpen]);
+
   const handleSearch = useCallback((e: React.FormEvent | React.KeyboardEvent) => {
     e.preventDefault();
+    setShowSearchDropdown(false);
     const q = searchQuery.trim();
     if (q) {
       router.push(`/search?q=${encodeURIComponent(q)}`);
@@ -110,7 +160,7 @@ export function StorefrontHeader() {
           </Link>
 
           <div className="hidden md:flex flex-1 max-w-xl mx-auto">
-            <div className="relative w-full">
+            <div className="relative w-full" ref={searchRef}>
               <button onClick={handleSearch} className="absolute left-0 top-0 flex h-10 w-10 items-center justify-center">
                 <Search className="h-4 w-4 text-muted-foreground" />
               </button>
@@ -118,10 +168,60 @@ export function StorefrontHeader() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => searchQuery.trim() && setShowSearchDropdown(true)}
                 onKeyDown={handleSearchKeyDown}
                 placeholder="Search products, brands or categories..."
                 className="h-10 w-full rounded-lg border border-border bg-muted/50 pl-10 pr-4 text-sm placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none transition-colors"
               />
+              {/* Live search dropdown */}
+              {showSearchDropdown && (
+                <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-lg border border-border bg-card shadow-lg max-h-80 overflow-y-auto">
+                  {searchResults.length === 0 ? (
+                    <div className="px-4 py-6 text-center text-sm text-muted-foreground">
+                      No results found for &ldquo;{searchQuery}&rdquo;
+                    </div>
+                  ) : (
+                    <div className="py-1">
+                      {searchResults.slice(0, 8).map((product) => (
+                        <Link
+                          key={product.id}
+                          href={`/shop/${product.slug}`}
+                          onClick={() => {
+                            setShowSearchDropdown(false);
+                            setSearchQuery("");
+                          }}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors"
+                        >
+                          {product.imageUrl && (
+                            <img
+                              src={product.imageUrl}
+                              alt={product.name}
+                              className="h-10 w-10 flex-shrink-0 rounded-md object-cover border border-border"
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-foreground truncate">{product.name}</p>
+                            <p className="text-xs text-muted-foreground">{product.brand} &middot; {product.categoryName}</p>
+                          </div>
+                          <span className="text-sm font-semibold text-foreground flex-shrink-0">
+                            {formatNAD(product.priceCents)}
+                          </span>
+                        </Link>
+                      ))}
+                      {searchResults.length > 8 && (
+                        <Link
+                          href={`/search?q=${encodeURIComponent(searchQuery)}`}
+                          onClick={() => setShowSearchDropdown(false)}
+                          className="flex items-center justify-center gap-1 border-t border-border px-4 py-2.5 text-xs font-medium text-primary hover:bg-muted transition-colors"
+                        >
+                          View all {searchResults.length} results
+                          <ArrowRight className="h-3 w-3" />
+                        </Link>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -135,22 +235,11 @@ export function StorefrontHeader() {
               <BadgeCheck className="h-4 w-4 text-whatsapp" />
               Ask expert
             </a>
-            <Link
-              href="/cart"
-              className="flex items-center justify-center h-10 w-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors relative"
-            >
-              <ShoppingCart className="h-5 w-5" />
-              {itemCount > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold leading-none text-primary-foreground ring-2 ring-background">
-                  {itemCount > 99 ? "99+" : itemCount}
-                </span>
-              )}
-              <span className="sr-only">Cart ({itemCount} items)</span>
-            </Link>
+            <CartDropdown />
 
             <button
               className="flex md:hidden items-center justify-center h-10 w-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              onClick={toggleMobileMenu}
               aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             >
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -181,74 +270,7 @@ export function StorefrontHeader() {
         </div>
       </div>
 
-      {mobileMenuOpen && (
-        <div className="border-b border-border bg-background md:hidden">
-          <div className="px-4 pt-3 pb-2">
-            <div className="relative">
-              <button onClick={handleSearch} className="absolute left-0 top-0 flex h-10 w-10 items-center justify-center">
-                <Search className="h-4 w-4 text-muted-foreground" />
-              </button>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={handleSearchKeyDown}
-                placeholder="Search products..."
-                className="h-10 w-full rounded-lg border border-border bg-muted/50 pl-10 pr-4 text-sm placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none transition-colors"
-              />
-            </div>
-          </div>
-
-          <nav className="flex flex-col px-4 pb-4 space-y-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {link.label}
-              </Link>
-            ))}
-            <div className="pt-2 border-t border-border mt-2">
-              <p className="px-3 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Categories
-              </p>
-              {categories.map((cat) => (
-                <Link
-                  key={cat.label}
-                  href={cat.href}
-                  className="block rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
-                  onClick={() => {
-                    setActiveCategory(cat.label);
-                    setMobileMenuOpen(false);
-                  }}
-                >
-                  {cat.label}
-                </Link>
-              ))}
-            </div>
-            <div className="flex gap-2 pt-2 border-t border-border mt-2">
-              <a
-                href={`https://wa.me/${WHATSAPP_NUMBER}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border border-whatsapp/20 bg-whatsapp-soft px-3 py-2.5 text-sm font-medium text-whatsapp hover:bg-whatsapp hover:text-white transition-colors"
-              >
-                <MessageCircle className="h-4 w-4" />
-                WhatsApp
-              </a>
-              <a
-                href={`tel:${PHONE_NUMBER}`}
-                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border border-border px-3 py-2.5 text-sm font-medium text-foreground"
-              >
-                <Phone className="h-4 w-4" />
-                Call
-              </a>
-            </div>
-          </nav>
-        </div>
-      )}
+      {/* The mobile drawer is rendered outside <header> in the layout */}
     </header>
   );
 }

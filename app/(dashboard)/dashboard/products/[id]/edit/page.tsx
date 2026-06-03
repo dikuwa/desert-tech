@@ -90,9 +90,9 @@ export default function EditProductPage() {
                 <div>
                   <label className="text-sm font-medium text-foreground">Category</label>
                   <select {...register("category")} className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30">
-                    <option value="Apple Products">Apple Products</option>
-                    <option value="Windows Laptops">Windows Laptops</option>
-                    <option value="Gaming PCs">Gaming PCs</option>
+                    <option value="Apple">Apple</option>
+                    <option value="Windows">Windows</option>
+                    <option value="Gaming">Gaming</option>
                     <option value="CCTV & Security">CCTV & Security</option>
                     <option value="Phones & Tablets">Phones & Tablets</option>
                     <option value="Accessories">Accessories</option>

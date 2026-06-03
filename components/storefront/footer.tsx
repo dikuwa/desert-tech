@@ -96,6 +96,8 @@ export function StorefrontFooter() {
               <Link href="/privacy" className="hover:text-white/60 transition-colors">Privacy Policy</Link>
               <span>|</span>
               <Link href="/terms" className="hover:text-white/60 transition-colors">Terms &amp; Conditions</Link>
+              <span>|</span>
+              <a href="https://www.flextech-media.com/" target="_blank" rel="noopener noreferrer" className="hover:text-white/60 transition-colors">Designed by FlexTech Media</a>
             </div>
           </div>
         </div>
