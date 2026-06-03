@@ -43,6 +43,8 @@ export async function POST(req: Request) {
     try {
       const { db } = await import("@/lib/db");
 
+      if (!db) throw new Error("Database not available");
+
       // Find or create customer by phone
       let customer = await db.customer.findFirst({
         where: { phone: validated.phone },

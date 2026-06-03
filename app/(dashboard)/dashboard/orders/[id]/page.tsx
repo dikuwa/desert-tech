@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, MessageCircle, Phone, Mail, CheckCircle2, XCircle, Clock, User, Package, Wallet, CalendarClock, Receipt, Plus, Download } from "lucide-react";
+import { ArrowLeft, MessageCircle, Phone, Mail, CheckCircle2, XCircle, Clock, User, Package, Wallet, CalendarClock, Receipt, Plus, Download, ExternalLink } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { formatCents, getStatusBadgeClass, getStatusLabel } from "@/lib/dashboard-data";
 import { cn } from "@/lib/utils";
@@ -23,8 +23,33 @@ export default function OrderDetailPage() {
   const addPayment = useDashboardStore((s) => s.addPayment);
   const markFollowUpDone = useDashboardStore((s) => s.markFollowUpDone);
   const addNotification = useDashboardStore((s) => s.addNotification);
+  const [downloadingPDF, setDownloadingPDF] = useState(false);
 
   const order = orders.find(o => o.id === params.id);
+
+  const handleDownloadPDF = async () => {
+    if (!order) return;
+    setDownloadingPDF(true);
+    try {
+      const res = await fetch("/api/receipts/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: order.id }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `receipt-${order.orderNumber}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("PDF download failed:", err);
+    } finally {
+      setDownloadingPDF(false);
+    }
+  };
   const [showAddPayment, setShowAddPayment] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("BankTransfer");
@@ -234,12 +259,25 @@ export default function OrderDetailPage() {
           {/* Receipt */}
           <div className="rounded-xl border border-border bg-card p-5">
             <h2 className="text-sm font-semibold text-foreground mb-3">Receipt</h2>
-            <button className="flex w-full items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors">
-              <Receipt className="h-3.5 w-3.5" /> Generate Receipt
+            <button
+              onClick={handleDownloadPDF}
+              disabled={downloadingPDF}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+            >
+              {downloadingPDF ? (
+                <><div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-foreground border-t-transparent" /> Generating...</>
+              ) : (
+                <><Receipt className="h-3.5 w-3.5" /> Generate Receipt</>
+              )}
             </button>
-            <button className="flex w-full items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors mt-2">
-              <Download className="h-3.5 w-3.5" /> Download PDF
-            </button>
+            <a
+              href={`/api/receipts/generate?orderId=${order?.orderNumber || ""}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors mt-2"
+            >
+              <ExternalLink className="h-3.5 w-3.5" /> Open PDF
+            </a>
           </div>
         </div>
       </div>

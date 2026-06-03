@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useDashboardStore } from "@/lib/store/dashboard";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -51,10 +51,20 @@ const bottomNavItems = [
 
 export function DashboardSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const userRole = useDashboardStore((s) => s.userRole);
   const currentUser = useDashboardStore((s) => s.currentUser);
   const isStaff = userRole === "Staff";
+
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    try {
+      await fetch("/api/auth/sign-out", { method: "POST" });
+    } catch {}
+    window.location.href = "/auth/sign-in";
+  };
 
   return (
     <aside
@@ -150,13 +160,25 @@ export function DashboardSidebar() {
       <div className={cn("border-t border-border p-4", collapsed && "flex justify-center")}>
         <div className={cn("flex items-center gap-3", collapsed && "flex-col")}>
           <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-primary/10 text-primary text-xs">AD</AvatarFallback>
+            <AvatarFallback className="bg-primary/10 text-primary text-xs">
+              {currentUser.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
+            </AvatarFallback>
           </Avatar>
           {!collapsed && (
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground truncate">{currentUser}</p>
               <p className="text-xs text-muted-foreground truncate">{userRole}</p>
             </div>
+          )}
+          {!collapsed && (
+            <button
+              onClick={handleSignOut}
+              disabled={signingOut}
+              className="flex items-center justify-center h-8 w-8 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors"
+              title="Sign out"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
           )}
         </div>
       </div>

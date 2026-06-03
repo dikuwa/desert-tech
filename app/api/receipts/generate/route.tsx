@@ -1,0 +1,132 @@
+/**
+ * API route to generate a PDF receipt for a given order.
+ * 
+ * POST /api/receipts/generate
+ * Body: { orderId }
+ * Returns: PDF file as downloadable response
+ */
+import { NextRequest, NextResponse } from "next/server";
+import { renderToStream } from "@react-pdf/renderer";
+import { ReceiptPDF } from "@/components/receipts/receipt-pdf";
+
+// Order data store (same in-memory store used by /api/orders)
+// We import this to look up orders
+import { getOrders, getOrderByNumber } from "@/lib/order-store";
+import { useDashboardStore } from "@/lib/store/dashboard";
+
+// Helper to get a readable order from either the in-memory store or dashboard store
+function findOrder(orderIdOrNumber: string) {
+  // Try in-memory store first (orders from the checkout flow)
+  const stored = getOrderByNumber(orderIdOrNumber);
+  if (stored) {
+    return {
+      orderNumber: stored.orderNumber,
+      customerName: stored.customerName,
+      customerPhone: stored.customerPhone,
+      items: stored.items.map((i) => ({
+        name: i.name,
+        quantity: i.quantity,
+        unitPrice: i.priceCents,
+        total: i.priceCents * i.quantity,
+      })),
+      subtotalCents: stored.subtotalCents,
+      paymentStatus: stored.paymentStatus,
+      createdAt: stored.createdAt,
+    };
+  }
+
+  // Try dashboard store
+  const { orders } = useDashboardStore.getState();
+  const order = orders.find((o) => o.id === orderIdOrNumber || o.orderNumber === orderIdOrNumber);
+  if (order) {
+    return {
+      orderNumber: order.orderNumber,
+      customerName: order.customerName,
+      customerPhone: order.customerPhone,
+      items: [
+        { name: "Order Items", quantity: order.itemCount, unitPrice: order.subtotalCents / order.itemCount, total: order.subtotalCents },
+      ],
+      subtotalCents: order.subtotalCents,
+      paymentStatus: order.paymentStatus,
+      createdAt: order.createdAt,
+    };
+  }
+
+  return null;
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { orderId } = body;
+
+    if (!orderId) {
+      return NextResponse.json({ error: "orderId is required" }, { status: 400 });
+    }
+
+    const order = findOrder(orderId);
+    if (!order) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    // Generate receipt number
+    const receiptNumber = `RCP-${order.orderNumber.replace("DT-", "")}-${Date.now().toString(36).toUpperCase().slice(-4)}`;
+    const date = new Date(order.createdAt).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+
+    // Render PDF to stream
+    const stream = await renderToStream(
+      <ReceiptPDF
+        receiptNumber={receiptNumber}
+        orderNumber={order.orderNumber}
+        date={date}
+        customerName={order.customerName}
+        customerPhone={order.customerPhone}
+        items={order.items}
+        subtotal={order.subtotalCents}
+        paymentStatus={order.paymentStatus}
+      />,
+    );
+
+    // Collect stream into buffer
+    const chunks: Uint8Array[] = [];
+    for await (const chunk of stream as unknown as AsyncIterable<Uint8Array>) {
+      chunks.push(chunk);
+    }
+    const pdfBuffer = Buffer.concat(chunks);
+
+    return new NextResponse(pdfBuffer, {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${receiptNumber}.pdf"`,
+        "Content-Length": pdfBuffer.length.toString(),
+      },
+    });
+  } catch (error) {
+    console.error("Receipt generation error:", error);
+    return NextResponse.json(
+      { error: "Failed to generate receipt" },
+      { status: 500 },
+    );
+  }
+}
+
+/**
+ * GET /api/receipts/generate?orderId=xxx — alias for POST for convenience
+ */
+export async function GET(request: NextRequest) {
+  const orderId = request.nextUrl.searchParams.get("orderId");
+  if (!orderId) {
+    return NextResponse.json({ error: "orderId query param is required" }, { status: 400 });
+  }
+  return POST(
+    new NextRequest(request.url, {
+      method: "POST",
+      body: JSON.stringify({ orderId }),
+      headers: { "Content-Type": "application/json" },
+    }),
+  );
+}

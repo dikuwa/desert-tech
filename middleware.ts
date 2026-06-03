@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// Simple middleware — dashboard routes are currently unprotected during development
-// Will be upgraded to use Better Auth once installed for production
 const publicPaths = [
   "/",
   "/shop",
@@ -37,8 +35,16 @@ export default async function middleware(req: NextRequest) {
   )
     return NextResponse.next();
 
-  // During development, allow dashboard access without auth
-  // This will be replaced with proper Better Auth session check
+  // Protect dashboard routes — redirect to sign-in if no session cookie
+  if (pathname.startsWith("/dashboard")) {
+    const sessionCookie = req.cookies.get("better-auth.session_token");
+    if (!sessionCookie?.value) {
+      const signInUrl = new URL("/auth/sign-in", req.url);
+      signInUrl.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(signInUrl);
+    }
+  }
+
   return NextResponse.next();
 }
 
