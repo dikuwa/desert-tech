@@ -22,16 +22,26 @@ import {
   ChevronDown,
   ChevronUp,
   Eye,
+  EyeOff,
+  Pencil,
   Banknote,
 } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
-import type { PaymentMethod } from "@/lib/dashboard-data";
+import type { BankDetail, ContactDetail, PaymentMethod } from "@/lib/dashboard-data";
 
 export default function SettingsPage() {
   const settings = useDashboardStore((s) => s.settings);
+  const contactDetails = useDashboardStore((s) => s.contactDetails);
+  const bankDetails = useDashboardStore((s) => s.bankDetails);
   const paymentMethods = useDashboardStore((s) => s.paymentMethods);
   const updateSettings = useDashboardStore((s) => s.updateSettings);
+  const addContactDetail = useDashboardStore((s) => s.addContactDetail);
+  const updateContactDetail = useDashboardStore((s) => s.updateContactDetail);
+  const deleteContactDetail = useDashboardStore((s) => s.deleteContactDetail);
+  const addBankDetail = useDashboardStore((s) => s.addBankDetail);
+  const updateBankDetail = useDashboardStore((s) => s.updateBankDetail);
+  const deleteBankDetail = useDashboardStore((s) => s.deleteBankDetail);
   const addPaymentMethod = useDashboardStore((s) => s.addPaymentMethod);
   const updatePaymentMethod = useDashboardStore((s) => s.updatePaymentMethod);
   const deletePaymentMethod = useDashboardStore((s) => s.deletePaymentMethod);
@@ -41,6 +51,16 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<"store" | "hero" | "contact" | "banking" | "payment-methods">("store");
   const [uploading, setUploading] = useState(false);
   const heroImageInputRef = useRef<HTMLInputElement>(null);
+
+  // Contact detail form
+  const [showContactForm, setShowContactForm] = useState(false);
+  const [contactForm, setContactForm] = useState({ type: "phone" as ContactDetail["type"], label: "", value: "", isActive: true });
+  const [editingContactId, setEditingContactId] = useState<string | null>(null);
+
+  // Bank detail form
+  const [showBankForm, setShowBankForm] = useState(false);
+  const [bankForm, setBankForm] = useState({ bankName: "", accountName: "", accountNumber: "", branchCode: "", isActive: true });
+  const [editingBankId, setEditingBankId] = useState<string | null>(null);
 
   // Payment method form
   const [showPaymentForm, setShowPaymentForm] = useState(false);
@@ -75,6 +95,48 @@ export default function SettingsPage() {
       setUploading(false);
       if (heroImageInputRef.current) heroImageInputRef.current.value = "";
     }
+  };
+
+  const resetContactForm = () =>
+    setContactForm({ type: "phone", label: "", value: "", isActive: true });
+
+  const handleAddContact = () => {
+    if (!contactForm.label.trim() || !contactForm.value.trim()) return;
+    if (editingContactId) {
+      updateContactDetail(editingContactId, contactForm);
+      setEditingContactId(null);
+    } else {
+      addContactDetail(contactForm);
+    }
+    resetContactForm();
+    setShowContactForm(false);
+  };
+
+  const startEditContact = (cd: ContactDetail) => {
+    setContactForm({ type: cd.type, label: cd.label, value: cd.value, isActive: cd.isActive });
+    setEditingContactId(cd.id);
+    setShowContactForm(true);
+  };
+
+  const resetBankForm = () =>
+    setBankForm({ bankName: "", accountName: "", accountNumber: "", branchCode: "", isActive: true });
+
+  const handleAddBank = () => {
+    if (!bankForm.bankName.trim() || !bankForm.accountName.trim() || !bankForm.accountNumber.trim()) return;
+    if (editingBankId) {
+      updateBankDetail(editingBankId, bankForm);
+      setEditingBankId(null);
+    } else {
+      addBankDetail(bankForm);
+    }
+    resetBankForm();
+    setShowBankForm(false);
+  };
+
+  const startEditBank = (bd: BankDetail) => {
+    setBankForm({ bankName: bd.bankName, accountName: bd.accountName, accountNumber: bd.accountNumber, branchCode: bd.branchCode, isActive: bd.isActive });
+    setEditingBankId(bd.id);
+    setShowBankForm(true);
   };
 
   const resetPaymentForm = () =>
@@ -320,103 +382,322 @@ export default function SettingsPage() {
 
         {/* === CONTACT TAB === */}
         {activeTab === "contact" && (
-          <div className="rounded-xl border border-border bg-card p-6 space-y-5">
-            <div className="flex items-center gap-2 pb-2 border-b border-border">
-              <Phone className="h-5 w-5 text-primary" />
-              <h2 className="text-base font-semibold text-foreground">Contact Details</h2>
-            </div>
-            <div className="grid gap-5 sm:grid-cols-2">
-              <div>
-                <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                  <Phone className="h-3.5 w-3.5" /> Phone
-                </label>
-                <input
-                  value={form.phone}
-                  onChange={(e) => updateField("phone", e.target.value)}
-                  className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-                  placeholder="+264 85 277 5140"
-                />
+          <div className="space-y-4">
+            <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-border">
+                <div className="flex items-center gap-2">
+                  <Phone className="h-5 w-5 text-primary" />
+                  <h2 className="text-base font-semibold text-foreground">Contact Details</h2>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowContactForm(true);
+                    setEditingContactId(null);
+                    resetContactForm();
+                  }}
+                  className="flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add Contact
+                </button>
               </div>
-              <div>
-                <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                  <MessageCircle className="h-3.5 w-3.5" /> WhatsApp Number
-                </label>
-                <input
-                  value={form.whatsapp}
-                  onChange={(e) => updateField("whatsapp", e.target.value)}
-                  className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-                  placeholder="264852775140"
-                />
-                <p className="mt-1 text-[10px] text-muted-foreground">
-                  Without + prefix. Used for WhatsApp links.
-                </p>
+
+              {/* Contact Details List */}
+              <div className="space-y-3">
+                {contactDetails.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <Phone className="h-8 w-8 text-muted-foreground/40 mb-2" />
+                    <p className="text-sm font-medium text-foreground">No contact details yet</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Add phone numbers, WhatsApp, email, or addresses to display on your storefront.
+                    </p>
+                  </div>
+                )}
+
+                {contactDetails.map((cd) => {
+                  const typeIcon = cd.type === "phone" ? Phone : cd.type === "whatsapp" ? MessageCircle : cd.type === "email" ? Mail : MapPin;
+                  const Icon = typeIcon;
+                  return (
+                    <div
+                      key={cd.id}
+                      className={cn(
+                        "rounded-lg border bg-card p-4 transition-all hover:shadow-sm",
+                        cd.isActive ? "border-border" : "border-dashed border-border opacity-60",
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent text-primary">
+                            <Icon className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-sm font-semibold text-foreground">{cd.label}</h3>
+                              <span className="rounded-md border border-border/50 bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground capitalize">
+                                {cd.type === "whatsapp" ? "WhatsApp" : cd.type}
+                              </span>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-0.5 font-mono">{cd.value}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() =>
+                              updateContactDetail(cd.id, { isActive: !cd.isActive })
+                            }
+                            className={cn(
+                              "rounded-lg p-1.5 transition-colors",
+                              cd.isActive ? "text-success hover:bg-success/10" : "text-muted-foreground hover:bg-muted",
+                            )}
+                          >
+                            {cd.isActive ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                          </button>
+                          <button
+                            onClick={() => startEditContact(cd)}
+                            className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            onClick={() => deleteContactDetail(cd.id)}
+                            className="rounded-lg p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <div>
-                <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                  <Mail className="h-3.5 w-3.5" /> Email
-                </label>
-                <input
-                  value={form.email}
-                  onChange={(e) => updateField("email", e.target.value)}
-                  className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-                  placeholder="info@deserttechnology.com.na"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5" /> Address / Location
-                </label>
-                <input
-                  value={form.address}
-                  onChange={(e) => updateField("address", e.target.value)}
-                  className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-                  placeholder="Windhoek, Namibia"
-                />
-              </div>
+
+              {/* Add / Edit Contact Detail Form */}
+              {(showContactForm || editingContactId) && (
+                <div className="rounded-lg border border-border bg-muted/30 p-5 space-y-4">
+                  <h3 className="text-sm font-semibold text-foreground">
+                    {editingContactId ? "Edit Contact Detail" : "New Contact Detail"}
+                  </h3>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="text-xs font-medium text-foreground">Type</label>
+                      <select
+                        value={contactForm.type}
+                        onChange={(e) =>
+                          setContactForm((f) => ({ ...f, type: e.target.value as ContactDetail["type"] }))
+                        }
+                        className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none"
+                      >
+                        <option value="phone">Phone</option>
+                        <option value="whatsapp">WhatsApp</option>
+                        <option value="email">Email</option>
+                        <option value="address">Address / Location</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-foreground">Label</label>
+                      <input
+                        value={contactForm.label}
+                        onChange={(e) => setContactForm((f) => ({ ...f, label: e.target.value }))}
+                        placeholder="e.g. Main, Support, Sales, Physical"
+                        className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-foreground">Value</label>
+                    <input
+                      value={contactForm.value}
+                      onChange={(e) => setContactForm((f) => ({ ...f, value: e.target.value }))}
+                      placeholder={contactForm.type === "phone" ? "+264 85 277 5140" : contactForm.type === "whatsapp" ? "264852775140" : contactForm.type === "email" ? "info@example.com" : "Windhoek, Namibia"}
+                      className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm font-mono focus:border-primary focus:outline-none"
+                    />
+                    {contactForm.type === "whatsapp" && (
+                      <p className="mt-1 text-[10px] text-muted-foreground">Without + prefix. Used for WhatsApp links.</p>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleAddContact}
+                      className="flex items-center gap-1 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                    >
+                      <Check className="h-3 w-3" />
+                      {editingContactId ? "Save Changes" : "Add Contact"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowContactForm(false);
+                        setEditingContactId(null);
+                        resetContactForm();
+                      }}
+                      className="flex items-center gap-1 rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
+                    >
+                      <X className="h-3 w-3" />
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
 
         {/* === BANKING TAB === */}
         {activeTab === "banking" && (
-          <div className="rounded-xl border border-border bg-card p-6 space-y-5">
-            <div className="flex items-center gap-2 pb-2 border-b border-border">
-              <CreditCard className="h-5 w-5 text-primary" />
-              <h2 className="text-base font-semibold text-foreground">Banking Details</h2>
-            </div>
-            <div className="grid gap-5 sm:grid-cols-2">
-              <div>
-                <label className="text-sm font-medium text-foreground">Bank Name</label>
-                <input
-                  value={form.bankName}
-                  onChange={(e) => updateField("bankName", e.target.value)}
-                  className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-                />
+          <div className="space-y-4">
+            <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-border">
+                <div className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-primary" />
+                  <h2 className="text-base font-semibold text-foreground">Banking Details</h2>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowBankForm(true);
+                    setEditingBankId(null);
+                    resetBankForm();
+                  }}
+                  className="flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add Bank
+                </button>
               </div>
-              <div>
-                <label className="text-sm font-medium text-foreground">Account Name</label>
-                <input
-                  value={form.bankAccountName}
-                  onChange={(e) => updateField("bankAccountName", e.target.value)}
-                  className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-                />
+
+              {/* Bank Details List */}
+              <div className="space-y-3">
+                {bankDetails.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <CreditCard className="h-8 w-8 text-muted-foreground/40 mb-2" />
+                    <p className="text-sm font-medium text-foreground">No bank details yet</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Add your business bank accounts for customers to make payments.
+                    </p>
+                  </div>
+                )}
+
+                {bankDetails.map((bd) => (
+                  <div
+                    key={bd.id}
+                    className={cn(
+                      "rounded-lg border bg-card p-4 transition-all hover:shadow-sm",
+                      bd.isActive ? "border-border" : "border-dashed border-border opacity-60",
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent text-primary">
+                          <Building2 className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-semibold text-foreground">{bd.bankName}</h3>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {bd.accountName} &middot; {bd.accountNumber}
+                          </p>
+                          {bd.branchCode && (
+                            <p className="text-[11px] text-muted-foreground/70 mt-0.5">
+                              Branch Code: {bd.branchCode}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() =>
+                            updateBankDetail(bd.id, { isActive: !bd.isActive })
+                          }
+                          className={cn(
+                            "rounded-lg p-1.5 transition-colors",
+                            bd.isActive ? "text-success hover:bg-success/10" : "text-muted-foreground hover:bg-muted",
+                          )}
+                        >
+                          {bd.isActive ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                        </button>
+                        <button
+                          onClick={() => startEditBank(bd)}
+                          className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => deleteBankDetail(bd.id)}
+                          className="rounded-lg p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div>
-                <label className="text-sm font-medium text-foreground">Account Number</label>
-                <input
-                  value={form.bankAccountNumber}
-                  onChange={(e) => updateField("bankAccountNumber", e.target.value)}
-                  className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm font-mono focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground">Branch Code</label>
-                <input
-                  value={form.bankBranchCode}
-                  onChange={(e) => updateField("bankBranchCode", e.target.value)}
-                  className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm font-mono focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-                />
-              </div>
+
+              {/* Add / Edit Bank Detail Form */}
+              {(showBankForm || editingBankId) && (
+                <div className="rounded-lg border border-border bg-muted/30 p-5 space-y-4">
+                  <h3 className="text-sm font-semibold text-foreground">
+                    {editingBankId ? "Edit Bank Details" : "New Bank Account"}
+                  </h3>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="text-xs font-medium text-foreground">Bank Name</label>
+                      <input
+                        value={bankForm.bankName}
+                        onChange={(e) => setBankForm((f) => ({ ...f, bankName: e.target.value }))}
+                        placeholder="e.g. Standard Bank, FirstBank"
+                        className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-foreground">Account Name</label>
+                      <input
+                        value={bankForm.accountName}
+                        onChange={(e) => setBankForm((f) => ({ ...f, accountName: e.target.value }))}
+                        placeholder="e.g. Desert TECHNOLOGIES"
+                        className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="text-xs font-medium text-foreground">Account Number</label>
+                      <input
+                        value={bankForm.accountNumber}
+                        onChange={(e) => setBankForm((f) => ({ ...f, accountNumber: e.target.value }))}
+                        placeholder="e.g. 60003162833"
+                        className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm font-mono focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-foreground">Branch Code</label>
+                      <input
+                        value={bankForm.branchCode}
+                        onChange={(e) => setBankForm((f) => ({ ...f, branchCode: e.target.value }))}
+                        placeholder="e.g. 082672"
+                        className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm font-mono focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleAddBank}
+                      className="flex items-center gap-1 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                    >
+                      <Check className="h-3 w-3" />
+                      {editingBankId ? "Save Changes" : "Add Bank"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowBankForm(false);
+                        setEditingBankId(null);
+                        resetBankForm();
+                      }}
+                      className="flex items-center gap-1 rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
+                    >
+                      <X className="h-3 w-3" />
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

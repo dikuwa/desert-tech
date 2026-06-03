@@ -1,22 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { Phone, MessageCircle, MapPin } from "lucide-react";
+import { Phone, MessageCircle, Mail, MapPin, Building2, Banknote } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
-const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
 
 export function StorefrontFooter() {
-  const settings = useDashboardStore((s) => s.settings);
-  const whatsapp = settings.whatsapp || WHATSAPP_NUMBER;
-  const phone = settings.phone || PHONE_NUMBER;
-  const email = settings.email || "info@deserttechnology.com.na";
-  const address = settings.address || "Windhoek, Namibia";
-  const bankName = settings.bankName || "Standard Bank";
-  const bankAccountName = settings.bankAccountName || "Desert TECHNOLOGIES";
-  const bankAccountNumber = settings.bankAccountNumber || "60003162833";
-  const bankBranchCode = settings.bankBranchCode || "082672";
+  const contactDetails = useDashboardStore((s) => s.contactDetails);
+  const bankDetails = useDashboardStore((s) => s.bankDetails);
+  const paymentMethods = useDashboardStore((s) => s.paymentMethods);
+
+  const activeContacts = contactDetails.filter((c) => c.isActive);
+  const phones = activeContacts.filter((c) => c.type === "phone");
+  const whatsapps = activeContacts.filter((c) => c.type === "whatsapp");
+  const emails = activeContacts.filter((c) => c.type === "email");
+  const addresses = activeContacts.filter((c) => c.type === "address");
+  const activeBanks = bankDetails.filter((b) => b.isActive);
+  const activePayments = paymentMethods.filter((p) => p.isActive);
+
   return (
     <footer className="bg-[#0d41e1] text-white">
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -58,43 +60,93 @@ export function StorefrontFooter() {
             </ul>
           </div>
 
-          {/* Contact */}
-          <div>
-            <h4 className="text-sm font-semibold text-white/80 uppercase tracking-wider">Contact</h4>
-            <ul className="mt-4 space-y-3">
-              <li>
-                <a
-                  href={`tel:${phone}`}
-                  className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors"
-                >
-                  <Phone className="h-4 w-4 flex-shrink-0" />
-                  {phone}
-                </a>
-              </li>
-              <li>
-                <a
-                  href={`https://wa.me/${whatsapp}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors"
-                >
-                  <MessageCircle className="h-4 w-4 flex-shrink-0" />
-                  WhatsApp Us
-                </a>
-              </li>
-              <li className="flex items-start gap-2 text-sm text-white/60">
-                <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                <span>{address}</span>
-              </li>
-            </ul>
-
-            <div className="mt-5 pt-4 border-t border-white/10">
-              <h5 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2">Banking Details</h5>
-              <div className="space-y-1 text-xs text-white/50">
-                <p>{bankAccountName} — {bankName}</p>
-                <p className="font-mono">Account: {bankAccountNumber} | Branch: {bankBranchCode}</p>
-              </div>
+          {/* Contact & Banking */}
+          <div className="space-y-5">
+            {/* Contact */}
+            <div>
+              <h4 className="text-sm font-semibold text-white/80 uppercase tracking-wider">Contact</h4>
+              <ul className="mt-4 space-y-3">
+                {phones.length > 0 && phones.map((c) => (
+                  <li key={c.id}>
+                    <a
+                      href={`tel:${c.value}`}
+                      className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors"
+                    >
+                      <Phone className="h-4 w-4 flex-shrink-0" />
+                      {c.label !== "Main" ? `${c.label}: ` : ""}{c.value}
+                    </a>
+                  </li>
+                ))}
+                {whatsapps.length > 0 && whatsapps.map((c) => (
+                  <li key={c.id}>
+                    <a
+                      href={`https://wa.me/${c.value}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors"
+                    >
+                      <MessageCircle className="h-4 w-4 flex-shrink-0" />
+                      {c.label !== "Sales" ? `${c.label}: ` : ""}WhatsApp
+                    </a>
+                  </li>
+                ))}
+                {emails.length > 0 && emails.map((c) => (
+                  <li key={c.id}>
+                    <a
+                      href={`mailto:${c.value}`}
+                      className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors"
+                    >
+                      <Mail className="h-4 w-4 flex-shrink-0" />
+                      {c.label !== "General" ? `${c.label}: ` : ""}{c.value}
+                    </a>
+                  </li>
+                ))}
+                {addresses.map((c) => (
+                  <li key={c.id} className="flex items-start gap-2 text-sm text-white/60">
+                    <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                    <span>{c.value}{c.label !== "Physical" ? ` (${c.label})` : ""}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
+
+            {/* Banking Details */}
+            {activeBanks.length > 0 && (
+              <div className="pt-4 border-t border-white/10 space-y-3">
+                <h5 className="text-xs font-semibold text-white/60 uppercase tracking-wider">Banking Details</h5>
+                {activeBanks.map((b) => (
+                  <div key={b.id} className="text-xs text-white/50">
+                    <div className="flex items-center gap-1.5">
+                      <Building2 className="h-3 w-3" />
+                      <p className="font-medium text-white/70">{b.bankName}</p>
+                    </div>
+                    <p className="ml-5">{b.accountName}</p>
+                    <p className="ml-5 font-mono">
+                      Account: {b.accountNumber}
+                      {b.branchCode ? ` | Branch: ${b.branchCode}` : ""}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Payment Methods */}
+            {activePayments.length > 0 && (
+              <div className="pt-4 border-t border-white/10">
+                <h5 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-3">We Accept</h5>
+                <div className="flex flex-wrap gap-2">
+                  {activePayments.map((pm) => (
+                    <span
+                      key={pm.id}
+                      className="inline-flex items-center gap-1 rounded-md bg-white/10 px-2.5 py-1 text-[11px] font-medium text-white/70"
+                    >
+                      <Banknote className="h-3 w-3" />
+                      {pm.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

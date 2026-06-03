@@ -86,6 +86,25 @@ export interface DashboardPromotion {
   ctaLabel?: string;
 }
 
+export type ContactType = "phone" | "whatsapp" | "email" | "address";
+
+export interface ContactDetail {
+  id: string;
+  type: ContactType;
+  label: string;
+  value: string;
+  isActive: boolean;
+}
+
+export interface BankDetail {
+  id: string;
+  bankName: string;
+  accountName: string;
+  accountNumber: string;
+  branchCode: string;
+  isActive: boolean;
+}
+
 export interface PaymentMethod {
   id: string;
   name: string;
@@ -239,6 +258,17 @@ export const storeSettings = {
   heroSubheading: "Shop laptops, phones, gaming builds, CCTV, networking and POS gear with clear pricing, tested stock and direct local assistance.",
   heroImageUrl: "/images/DTC-BG.webp",
 };
+
+export const defaultContactDetails: ContactDetail[] = [
+  { id: "cd1", type: "phone", label: "Main", value: "+264 85 277 5140", isActive: true },
+  { id: "cd2", type: "whatsapp", label: "Sales", value: "264852775140", isActive: true },
+  { id: "cd3", type: "email", label: "General", value: "info@deserttechnology.com.na", isActive: true },
+  { id: "cd4", type: "address", label: "Physical", value: "Windhoek, Namibia", isActive: true },
+];
+
+export const defaultBankDetails: BankDetail[] = [
+  { id: "bd1", bankName: "Standard Bank", accountName: "Desert TECHNOLOGIES", accountNumber: "60003162833", branchCode: "082672", isActive: true },
+];
 
 export const defaultPaymentMethods: PaymentMethod[] = [
   { id: "pm1", name: "Bank Transfer", type: "BankTransfer", details: "Standard Bank", instructions: "Use your order reference as payment reference", isActive: true },

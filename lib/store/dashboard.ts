@@ -11,6 +11,8 @@ import {
   mockNotifications as initialNotifications,
   mockPayments as initialPayments,
   storeSettings as initialSettings,
+  defaultContactDetails,
+  defaultBankDetails,
   defaultPaymentMethods,
 } from "@/lib/dashboard-data";
 import type {
@@ -23,6 +25,8 @@ import type {
   DashboardFollowUp,
   DashboardNotification,
   DashboardPayment,
+  BankDetail,
+  ContactDetail,
   PaymentMethod,
 } from "@/lib/dashboard-data";
 
@@ -33,6 +37,8 @@ let nextStaffId = 10;
 let nextFollowUpId = 10;
 let nextNotificationId = 10;
 let nextPaymentId = 10;
+let nextContactDetailId = 10;
+let nextBankDetailId = 10;
 let nextPaymentMethodId = 10;
 let nextInviteId = 10;
 
@@ -47,6 +53,8 @@ interface DashboardState {
   followUps: DashboardFollowUp[];
   notifications: DashboardNotification[];
   payments: DashboardPayment[];
+  contactDetails: ContactDetail[];
+  bankDetails: BankDetail[];
   paymentMethods: PaymentMethod[];
   settings: typeof initialSettings;
   userRole: "Admin" | "Staff";
@@ -94,6 +102,16 @@ interface DashboardState {
   // Settings
   updateSettings: (data: Partial<typeof initialSettings>) => void;
 
+  // Contact Details CRUD
+  addContactDetail: (c: Omit<ContactDetail, "id">) => void;
+  updateContactDetail: (id: string, data: Partial<ContactDetail>) => void;
+  deleteContactDetail: (id: string) => void;
+
+  // Bank Details CRUD
+  addBankDetail: (b: Omit<BankDetail, "id">) => void;
+  updateBankDetail: (id: string, data: Partial<BankDetail>) => void;
+  deleteBankDetail: (id: string) => void;
+
   // Payment Methods CRUD
   addPaymentMethod: (p: Omit<PaymentMethod, "id">) => void;
   updatePaymentMethod: (id: string, data: Partial<PaymentMethod>) => void;
@@ -116,6 +134,25 @@ function slugify(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
+function syncContactSettings(
+  details: ContactDetail[],
+  settings: typeof initialSettings,
+): typeof initialSettings {
+  const firstActive = (type: ContactDetail["type"]) =>
+    details.find((cd) => cd.type === type && cd.isActive);
+  const phone = firstActive("phone");
+  const whatsapp = firstActive("whatsapp");
+  const email = firstActive("email");
+  const address = firstActive("address");
+  return {
+    ...settings,
+    phone: phone?.value ?? settings.phone,
+    whatsapp: whatsapp?.value ?? settings.whatsapp,
+    email: email?.value ?? settings.email,
+    address: address?.value ?? settings.address,
+  };
+}
+
 export const useDashboardStore = create<DashboardState>()(
   persist(
     (set, get) => ({
@@ -128,6 +165,8 @@ export const useDashboardStore = create<DashboardState>()(
       followUps: initialFollowUps,
       notifications: initialNotifications,
       payments: initialPayments,
+      contactDetails: defaultContactDetails,
+      bankDetails: defaultBankDetails,
       paymentMethods: defaultPaymentMethods,
       settings: initialSettings,
       userRole: "Admin",
@@ -138,6 +177,45 @@ export const useDashboardStore = create<DashboardState>()(
       updateSettings: (data) =>
         set((s) => ({
           settings: { ...s.settings, ...data },
+        })),
+
+      // === Contact Details ===
+      addContactDetail: (c) => {
+        const id = `cd${nextContactDetailId++}`;
+        set((s) => {
+          const newDetails = [...s.contactDetails, { ...c, id }];
+          return { contactDetails: newDetails, settings: syncContactSettings(newDetails, s.settings) };
+        });
+      },
+      updateContactDetail: (id, data) =>
+        set((s) => {
+          const newDetails = s.contactDetails.map((cd) =>
+            cd.id === id ? { ...cd, ...data } : cd
+          );
+          return { contactDetails: newDetails, settings: syncContactSettings(newDetails, s.settings) };
+        }),
+      deleteContactDetail: (id) =>
+        set((s) => {
+          const newDetails = s.contactDetails.filter((cd) => cd.id !== id);
+          return { contactDetails: newDetails, settings: syncContactSettings(newDetails, s.settings) };
+        }),
+
+      // === Bank Details ===
+      addBankDetail: (b) => {
+        const id = `bd${nextBankDetailId++}`;
+        set((s) => ({
+          bankDetails: [...s.bankDetails, { ...b, id }],
+        }));
+      },
+      updateBankDetail: (id, data) =>
+        set((s) => ({
+          bankDetails: s.bankDetails.map((bd) =>
+            bd.id === id ? { ...bd, ...data } : bd
+          ),
+        })),
+      deleteBankDetail: (id) =>
+        set((s) => ({
+          bankDetails: s.bankDetails.filter((bd) => bd.id !== id),
         })),
 
       // === Payment Methods ===

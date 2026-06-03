@@ -12,6 +12,7 @@ import {
   Clock,
 } from "lucide-react";
 import { formatNAD } from "@/lib/data";
+import { useDashboardStore } from "@/lib/store/dashboard";
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
 const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
@@ -30,6 +31,12 @@ interface OrderData {
 export default function OrderSuccessPage() {
   const params = useParams();
   const orderNumber = params.orderNumber as string;
+  const contactDetails = useDashboardStore((s) => s.contactDetails);
+  const activeContacts = contactDetails.filter((c) => c.isActive);
+  const whatsappContact = activeContacts.find((c) => c.type === "whatsapp");
+  const phoneContact = activeContacts.find((c) => c.type === "phone");
+  const whatsapp = whatsappContact?.value || WHATSAPP_NUMBER;
+  const phone = phoneContact?.value || PHONE_NUMBER;
   const [order, setOrder] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -138,7 +145,7 @@ export default function OrderSuccessPage() {
       {/* Contact CTAs */}
       <div className="space-y-3">
         <a
-          href={`https://wa.me/${WHATSAPP_NUMBER}?text=${shareMessage}`}
+          href={`https://wa.me/${whatsapp}?text=${shareMessage}`}
           target="_blank"
           rel="noopener noreferrer"
           className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-whatsapp/20 bg-whatsapp-soft px-6 py-3.5 text-sm font-semibold text-whatsapp transition-all hover:-translate-y-0.5 hover:border-whatsapp/30 hover:bg-whatsapp hover:text-white hover:shadow-md active:translate-y-0"
@@ -147,11 +154,11 @@ export default function OrderSuccessPage() {
           Chat on WhatsApp
         </a>
         <a
-          href={`tel:${PHONE_NUMBER}`}
+          href={`tel:${phone}`}
           className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-border px-6 py-3.5 text-sm font-semibold text-foreground transition-all hover:bg-muted hover:shadow-sm active:scale-[0.98]"
         >
           <Phone className="h-5 w-5" />
-          Call {PHONE_NUMBER}
+          Call {phone}
         </a>
       </div>
 

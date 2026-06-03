@@ -1,21 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { Phone, MessageCircle, Mail, MapPin, Building2, Send, Check, AlertCircle } from "lucide-react";
+import { Phone, MessageCircle, Mail, MapPin, Building2, Banknote, Send, Check, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDashboardStore } from "@/lib/store/dashboard";
 
-const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
-const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
-const STORE_EMAIL = process.env.NEXT_PUBLIC_STORE_EMAIL || "info@deserttechnology.com.na";
-
 export default function ContactPage() {
-  const settings = useDashboardStore((s) => s.settings);
+  const contactDetails = useDashboardStore((s) => s.contactDetails);
+  const bankDetails = useDashboardStore((s) => s.bankDetails);
   const paymentMethods = useDashboardStore((s) => s.paymentMethods);
-  const whatsapp = settings.whatsapp || WHATSAPP_NUMBER;
-  const phone = settings.phone || PHONE_NUMBER;
-  const storeEmail = settings.email || STORE_EMAIL;
-  const address = settings.address || "Windhoek, Namibia";
+
+  const activeContacts = contactDetails.filter((c) => c.isActive);
+  const activeBanks = bankDetails.filter((b) => b.isActive);
+  const activePayments = paymentMethods.filter((p) => p.isActive);
+
   const [formState, setFormState] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [formData, setFormData] = useState({
     fullName: "",
@@ -30,7 +28,6 @@ export default function ContactPage() {
     if (!formData.fullName || !formData.message) return;
 
     setFormState("submitting");
-    // Simulate submission
     await new Promise((resolve) => setTimeout(resolve, 800));
     setFormState("success");
     setFormData({ fullName: "", email: "", phone: "", subject: "", message: "" });
@@ -40,37 +37,6 @@ export default function ContactPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
-
-  const contactMethods = [
-    {
-      icon: Phone,
-      label: "Call Us",
-      value: phone,
-      href: `tel:${phone}`,
-      color: "text-primary",
-    },
-    {
-      icon: MessageCircle,
-      label: "WhatsApp",
-      value: phone,
-      href: `https://wa.me/${whatsapp}`,
-      color: "text-whatsapp",
-    },
-    {
-      icon: Mail,
-      label: "Email",
-      value: storeEmail,
-      href: `mailto:${storeEmail}`,
-      color: "text-primary",
-    },
-    {
-      icon: MapPin,
-      label: "Location",
-      value: address,
-      href: "#",
-      color: "text-primary",
-    },
-  ];
 
   return (
     <div>
@@ -93,23 +59,25 @@ export default function ContactPage() {
             <div className="lg:col-span-2 space-y-8">
               {/* Contact Methods */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {contactMethods.map((method) => {
-                  const Icon = method.icon;
+                {activeContacts.map((c) => {
+                  const Icon = c.type === "phone" ? Phone : c.type === "whatsapp" ? MessageCircle : c.type === "email" ? Mail : MapPin;
+                  const href = c.type === "phone" ? `tel:${c.value}` : c.type === "whatsapp" ? `https://wa.me/${c.value}` : c.type === "email" ? `mailto:${c.value}` : "#";
+                  const color = c.type === "whatsapp" ? "text-whatsapp" : "text-primary";
                   return (
                     <a
-                      key={method.label}
-                      href={method.href}
-                      target={method.label === "WhatsApp" || method.label === "Email" ? "_blank" : undefined}
-                      rel={method.label === "WhatsApp" || method.label === "Email" ? "noopener noreferrer" : undefined}
+                      key={c.id}
+                      href={href}
+                      target={c.type === "whatsapp" || c.type === "email" ? "_blank" : undefined}
+                      rel={c.type === "whatsapp" || c.type === "email" ? "noopener noreferrer" : undefined}
                       className="flex flex-col gap-2 rounded-xl border border-border bg-card p-5 transition-all hover:shadow-sm hover:-translate-y-0.5"
                     >
-                      <Icon className={cn("h-5 w-5", method.color)} />
+                      <Icon className={cn("h-5 w-5", color)} />
                       <div>
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                          {method.label}
+                          {c.label} {c.type === "whatsapp" ? "WhatsApp" : c.type === "phone" ? "Phone" : c.type === "email" ? "Email" : "Address"}
                         </p>
                         <p className="mt-0.5 text-sm font-medium text-foreground">
-                          {method.value}
+                          {c.value}
                         </p>
                       </div>
                     </a>
@@ -118,32 +86,63 @@ export default function ContactPage() {
               </div>
 
               {/* Banking Details */}
-              <div className="rounded-xl border border-border bg-card p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <Building2 className="h-5 w-5 text-primary" />
-                  <h2 className="text-sm font-semibold text-foreground">Banking Details</h2>
-                </div>                  <div className="space-y-2 text-sm text-muted-foreground">
-                  <div className="flex justify-between">
-                    <span className="text-foreground/60">Account Name</span>
-                    <span className="font-medium text-foreground">{settings.bankAccountName}</span>
+              {activeBanks.length > 0 && (
+                <div className="rounded-xl border border-border bg-card p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Building2 className="h-5 w-5 text-primary" />
+                    <h2 className="text-sm font-semibold text-foreground">Banking Details</h2>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-foreground/60">Bank</span>
-                    <span className="font-medium text-foreground">{settings.bankName}</span>
+                  <div className="space-y-4">
+                    {activeBanks.map((b) => (
+                      <div key={b.id} className="space-y-1.5 text-sm">
+                        <p className="font-semibold text-foreground">{b.bankName}</p>
+                        <div className="space-y-1 text-muted-foreground">
+                          <div className="flex justify-between">
+                            <span className="text-foreground/60">Account Name</span>
+                            <span className="font-medium text-foreground">{b.accountName}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-foreground/60">Account Number</span>
+                            <span className="font-mono font-medium text-foreground">{b.accountNumber}</span>
+                          </div>
+                          {b.branchCode && (
+                            <div className="flex justify-between">
+                              <span className="text-foreground/60">Branch Code</span>
+                              <span className="font-mono font-medium text-foreground">{b.branchCode}</span>
+                            </div>
+                          )}
+                        </div>
+                        {activeBanks.indexOf(b) < activeBanks.length - 1 && (
+                          <div className="border-t border-border mt-3" />
+                        )}
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-foreground/60">Account Number</span>
-                    <span className="font-mono font-medium text-foreground">{settings.bankAccountNumber}</span>
+                  <p className="mt-4 text-xs text-muted-foreground">
+                    Use your order reference as payment reference when making transfers.
+                  </p>
+                </div>
+              )}
+
+              {/* Payment Methods */}
+              {activePayments.length > 0 && (
+                <div className="rounded-xl border border-border bg-card p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Banknote className="h-5 w-5 text-primary" />
+                    <h2 className="text-sm font-semibold text-foreground">Payment Methods</h2>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-foreground/60">Branch Code</span>
-                    <span className="font-mono font-medium text-foreground">{settings.bankBranchCode}</span>
+                  <div className="flex flex-wrap gap-2">
+                    {activePayments.map((pm) => (
+                      <span
+                        key={pm.id}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted/50 px-3 py-1.5 text-xs font-medium text-foreground"
+                      >
+                        {pm.name}
+                      </span>
+                    ))}
                   </div>
                 </div>
-                <p className="mt-4 text-xs text-muted-foreground">
-                  Use your order reference as payment reference when making transfers.
-                </p>
-              </div>
+              )}
             </div>
 
             {/* Right: Form */}

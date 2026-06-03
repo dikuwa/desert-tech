@@ -8,6 +8,7 @@ import {
   X,
   Phone,
   MessageCircle,
+  Mail,
   Search,
   BadgeCheck,
   ArrowRight,
@@ -48,8 +49,12 @@ const navLinks = [
 export function StorefrontHeader() {
   const router = useRouter();
   const settings = useDashboardStore((s) => s.settings);
+  const contactDetails = useDashboardStore((s) => s.contactDetails);
+  const paymentMethods = useDashboardStore((s) => s.paymentMethods);
+  const bankDetails = useDashboardStore((s) => s.bankDetails);
   const whatsapp = settings.whatsapp || WHATSAPP_NUMBER;
   const phone = settings.phone || PHONE_NUMBER;
+  const activePayments = paymentMethods.filter((p) => p.isActive);
   const { isOpen: mobileMenuOpen, toggle: toggleMobileMenu, close: closeMobileMenu } = useMobileMenu();
   const [activeCategory, setActiveCategory] = useState("All Products");
   const [searchQuery, setSearchQuery] = useState("");
@@ -121,28 +126,46 @@ export function StorefrontHeader() {
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur">
       <div className="bg-[#0d41e1] text-white">
         <div className="mx-auto flex h-9 max-w-7xl items-center justify-between px-4 text-xs sm:px-6 lg:px-8">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 overflow-x-auto">
             <a
               href={`tel:${phone}`}
-              className="flex items-center gap-1 font-semibold text-white/90 hover:text-white transition-colors"
+              className="flex items-center gap-1 font-semibold text-white/90 hover:text-white transition-colors shrink-0"
             >
               <Phone className="h-3.5 w-3.5" />
-              <span>{phone}</span>
+              <span className="whitespace-nowrap">{phone}</span>
             </a>
-            <span className="hidden sm:block text-white/30">|</span>
+            <span className="text-white/30">|</span>
             <a
               href={`https://wa.me/${whatsapp}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden sm:flex items-center gap-1 font-semibold text-white/90 hover:text-white transition-colors"
+              className="flex items-center gap-1 font-semibold text-white/90 hover:text-white transition-colors shrink-0"
             >
               <MessageCircle className="h-3.5 w-3.5" />
-              <span>WhatsApp</span>
+              <span className="whitespace-nowrap">WhatsApp</span>
             </a>
+            {/* Show additional contacts if available (hidden on small screens) */}
+            {contactDetails.filter(c => c.isActive && c.type !== "phone" && c.type !== "whatsapp").length > 0 && (
+              <>
+                <span className="hidden sm:block text-white/30">|</span>
+                {contactDetails.filter(c => c.isActive && c.type === "email").slice(0, 1).map(c => (
+                  <a key={c.id} href={`mailto:${c.value}`} className="hidden sm:flex items-center gap-1 font-medium text-white/70 hover:text-white transition-colors shrink-0">
+                    <Mail className="h-3 w-3" />
+                    <span className="whitespace-nowrap">{c.value}</span>
+                  </a>
+                ))}
+              </>
+            )}
           </div>
-          <div className="flex items-center gap-1 font-medium text-white/80">
-            <span>Cash at store or Bank Transfer</span>
-            <span className="hidden sm:inline">, Standard Bank</span>
+          <div className="flex items-center gap-1 font-medium text-white/80 shrink-0 ml-auto">
+            {activePayments.length > 0 ? (
+              <span className="truncate max-w-[200px] sm:max-w-none">
+                {activePayments.slice(0, 2).map(p => p.name).join(", ")}
+                {activePayments.length > 2 ? ` +${activePayments.length - 2}` : ""}
+              </span>
+            ) : (
+              <span>Cash at store or Bank Transfer</span>
+            )}
           </div>
         </div>
       </div>

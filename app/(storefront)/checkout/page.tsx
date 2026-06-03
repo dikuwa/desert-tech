@@ -42,8 +42,13 @@ export default function CheckoutPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const settings = useDashboardStore((s) => s.settings);
+  const contactDetails = useDashboardStore((s) => s.contactDetails);
+  const paymentMethods = useDashboardStore((s) => s.paymentMethods);
+  const bankDetails = useDashboardStore((s) => s.bankDetails);
   const whatsapp = settings.whatsapp || WHATSAPP_NUMBER;
   const phone = settings.phone || PHONE_NUMBER;
+  const activePayments = paymentMethods.filter((p) => p.isActive);
+  const activeBanks = bankDetails.filter((b) => b.isActive);
   const subtotal = getSubtotal();
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
 
@@ -272,16 +277,36 @@ export default function CheckoutPage() {
               />
             </div>
 
-            {/* Payment Note */}
+            {/* Payment Information */}
             <div className="rounded-xl border border-border bg-accent/50 p-4">
               <div className="flex items-start gap-3">
                 <CreditCard className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                <div>
+                <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-foreground">Payment Information</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    We accept cash at our store or bank transfer. We&apos;ll confirm payment details
-                    when we contact you. No online payment required.
+                    We accept the following payment methods. We&apos;ll confirm details when we contact you.
                   </p>
+                  {activePayments.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {activePayments.map((pm) => (
+                        <span
+                          key={pm.id}
+                          className="inline-flex items-center rounded-md border border-border bg-background px-2 py-0.5 text-[10px] font-medium text-foreground"
+                        >
+                          {pm.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {activeBanks.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-border/50 space-y-1">
+                      {activeBanks.map((b) => (
+                        <p key={b.id} className="text-[10px] text-muted-foreground">
+                          {b.bankName}: {b.accountName} &middot; {b.accountNumber}
+                        </p>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
