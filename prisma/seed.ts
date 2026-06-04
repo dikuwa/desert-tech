@@ -1,36 +1,88 @@
 /**
  * Prisma seed script — populates the database with initial sample data.
- * Run with: npx tsx prisma/seed.ts
+ * Run with: tsx prisma/seed.ts
  *
- * Note: This requires DATABASE_URL to be set in .env.local
- * and the database to be up-to-date (run `prisma db push` first).
+ * Note: Requires DATABASE_URL + ADMIN_EMAIL/ADMIN_PASSWORD env vars.
+ * Run `prisma db push` first to ensure tables exist.
+ *
+ * Admin credentials can be set via .env.local:
+ *   ADMIN_NAME="Desert Tech Admin"
+ *   ADMIN_EMAIL="admin@deserttech.com"
+ *   ADMIN_PASSWORD="your-secure-password"
+ *   STAFF_PASSWORD="staff-password"   (optional, defaults to "Staff@2025")
  */
 
 import { PrismaClient } from "../lib/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import bcrypt from "bcryptjs";
+import dotenv from "dotenv";
+import path from "path";
+
+// Load .env.local so the seed script can access DATABASE_URL and ADMIN_* vars
+dotenv.config({ path: path.resolve(__dirname, "../.env.local") });
 
 async function main() {
-  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
+  const DATABASE_URL = process.env.DATABASE_URL;
+  if (!DATABASE_URL) {
+    console.error("❌ DATABASE_URL is not set.");
+    process.exit(1);
+  }
+
+  const adapter = new PrismaPg({ connectionString: DATABASE_URL });
   const prisma = new PrismaClient({ adapter });
 
-  console.log("🌱 Seeding database...");
+  // Read admin credentials from env vars
+  const adminEmail = process.env.ADMIN_EMAIL || "admin@deserttech.com";
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  const adminName = process.env.ADMIN_NAME || "Admin User";
+  const staffPassword = process.env.STAFF_PASSWORD || "Staff@2025";
 
-  // Create admin user
+  if (!adminPassword) {
+    console.error("❌ ADMIN_PASSWORD is not set. Add it to .env.local");
+    process.exit(1);
+  }
+
+  console.log("🌱 Seeding database...");
+  console.log("   Admin email:", adminEmail);
+
+  // Hash passwords with bcrypt (Better Auth uses bcrypt for password verification)
+  console.log("   Hashing passwords...");
+  const [adminHash, staffHash] = await Promise.all([
+    bcrypt.hash(adminPassword, 10),
+    bcrypt.hash(staffPassword, 10),
+  ]);
+
+  // Create admin user + account with password
   const admin = await prisma.user.upsert({
-    where: { email: "admin@deserttech.com" },
-    update: {},
+    where: { email: adminEmail },
+    update: { name: adminName, role: "Admin", emailVerified: true },
     create: {
-      name: "Admin User",
-      email: "admin@deserttech.com",
+      name: adminName,
+      email: adminEmail,
       role: "Admin",
       emailVerified: true,
     },
   });
 
+  // Remove any existing email-password accounts for this user, then create fresh
+  await prisma.account.deleteMany({
+    where: { userId: admin.id, providerId: "email" },
+  });
+  await prisma.account.create({
+    data: {
+      userId: admin.id,
+      providerId: "email",
+      accountId: adminEmail,
+      password: adminHash,
+    },
+  });
+
+  console.log(`  ✓ Admin user: ${adminEmail} (${admin.role})`);
+
   // Create staff user
-  await prisma.user.upsert({
+  const staff = await prisma.user.upsert({
     where: { email: "staff@deserttech.com" },
-    update: {},
+    update: { name: "Staff User", role: "Staff", emailVerified: true },
     create: {
       name: "Staff User",
       email: "staff@deserttech.com",
@@ -39,7 +91,19 @@ async function main() {
     },
   });
 
-  console.log("  ✓ Users created");
+  await prisma.account.deleteMany({
+    where: { userId: staff.id, providerId: "email" },
+  });
+  await prisma.account.create({
+    data: {
+      userId: staff.id,
+      providerId: "email",
+      accountId: "staff@deserttech.com",
+      password: staffHash,
+    },
+  });
+
+  console.log(`  ✓ Staff user: staff@deserttech.com (${staff.role})`);
 
   // Create categories
   const categories = [
