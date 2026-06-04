@@ -126,7 +126,7 @@ export function StorefrontHeader() {
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur">
       <div className="bg-[#0d41e1] text-white">
         <div className="mx-auto flex h-9 max-w-7xl items-center justify-between px-4 text-xs sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3 overflow-x-auto">
+          <div className="flex items-center gap-3">
             <a
               href={`tel:${phone}`}
               className="flex items-center gap-1 font-semibold text-white/90 hover:text-white transition-colors shrink-0"
@@ -157,13 +157,14 @@ export function StorefrontHeader() {
               </>
             )}
           </div>
-          <div className="flex items-center gap-1 shrink-0 ml-auto max-w-[300px] overflow-x-auto">
+          {/* Payment method tags - right side, hidden on mobile, no width constraint */}
+          <div className="hidden sm:flex items-center gap-1">
             {activePayments.length > 0 ? (
-              <div className="flex items-center gap-1 flex-nowrap">
+              <div className="flex items-center gap-1">
                 {activePayments.map(pm => (
                   <span
                     key={pm.id}
-                    className="inline-flex shrink-0 rounded-md bg-white/10 px-1.5 py-0.5 text-[10px] font-medium text-white/80 whitespace-nowrap"
+                    className="inline-flex rounded-md bg-white/10 px-1.5 py-0.5 text-[10px] font-medium text-white/80 whitespace-nowrap"
                   >
                     {pm.name}
                   </span>

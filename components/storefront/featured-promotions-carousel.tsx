@@ -160,7 +160,7 @@ export function FeaturedPromotionsCarousel() {
   return (
     <section className="bg-background py-14">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-6 flex items-end justify-between gap-4">
+        <div className="mb-6">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-primary">
               Limited offers
@@ -169,25 +169,6 @@ export function FeaturedPromotionsCarousel() {
               Featured promotions
             </h2>
           </div>
-          {/* Desktop arrows */}
-          {totalSlides > 1 && (
-            <div className="hidden sm:flex items-center gap-2">
-              <button
-                onClick={goPrev}
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                aria-label="Previous promotion"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                onClick={goNext}
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                aria-label="Next promotion"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Carousel */}
