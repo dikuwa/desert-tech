@@ -30,6 +30,10 @@ export const metadata: Metadata = {
     "Apple",
     "gaming",
   ],
+  icons: {
+    icon: "/images/desert-tech-logo.svg",
+    apple: "/images/desert-tech-logo.svg",
+  },
 };
 
 export default function RootLayout({
