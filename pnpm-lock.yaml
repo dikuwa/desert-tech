@@ -22,6 +22,9 @@ importers:
       '@better-auth/infra':
         specifier: ^0.2.11
         version: 0.2.11(66174c8de5c18b0e782dcca7eabd426c)
+      '@better-auth/prisma-adapter':
+        specifier: ^1.6.14
+        version: 1.6.14(@better-auth/core@1.6.14(@better-auth/utils@0.4.1)(@better-fetch/fetch@1.1.21)(better-call@1.3.5(zod@4.4.3))(jose@6.2.3)(kysely@0.29.2(patch_hash=1cb28d4a880df58431c5e8529a7c27b2db4bd429678380922775da0bdcbf4a1f))(nanostores@1.3.0))(@better-auth/utils@0.4.1)(@prisma/client@7.8.0(prisma@7.8.0(@types/react-dom@19.2.3(@types/react@19.2.16))(@types/react@19.2.16)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(typescript@5.9.3))(prisma@7.8.0(@types/react-dom@19.2.3(@types/react@19.2.16))(@types/react@19.2.16)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))
       '@hookform/resolvers':
         specifier: ^5.0.0
         version: 5.4.0(react-hook-form@7.77.0(react@19.2.4))

@@ -1,4 +1,6 @@
 import { betterAuth } from "better-auth";
+import { prismaAdapter } from "@better-auth/prisma-adapter";
+import { db } from "@/lib/db";
 
 const baseURL = process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
@@ -11,5 +13,6 @@ export function isAuthMockMode(): boolean {
 
 export const auth = betterAuth({
   baseURL,
+  database: db ? prismaAdapter(db, { provider: "postgresql" }) : undefined,
   emailAndPassword: { enabled: true },
 });
