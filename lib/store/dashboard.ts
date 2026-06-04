@@ -159,6 +159,7 @@ function syncContactSettings(
 export const useDashboardStore = create<DashboardState>()(
   persist(
     (set, get) => ({
+
       orders: initialOrders,
       products: initialProducts,
       customers: initialCustomers,
@@ -178,9 +179,29 @@ export const useDashboardStore = create<DashboardState>()(
 
       // === Settings ===
       updateSettings: (data) =>
-        set((s) => ({
-          settings: { ...s.settings, ...data },
-        })),
+        set((s) => {
+          const updatedSettings = { ...s.settings, ...data };
+          // Sync settings fields back to contact details if they changed
+          const fieldToContactType: Record<string, ContactDetail["type"]> = {
+            phone: "phone",
+            whatsapp: "whatsapp",
+            email: "email",
+            address: "address",
+          };
+          let updatedDetails = [...s.contactDetails];
+          for (const [field, contactType] of Object.entries(fieldToContactType)) {
+            if (field in data) {
+              const existing = updatedDetails.find((cd) => cd.type === contactType);
+              if (existing) {
+                const val = data[field as keyof typeof data];
+                updatedDetails = updatedDetails.map((cd) =>
+                  cd.id === existing.id ? { ...cd, value: val != null ? String(val) : "" } : cd,
+                );
+              }
+            }
+          }
+          return { settings: updatedSettings, contactDetails: updatedDetails };
+        }),
 
       // === Contact Details ===
       moveContactDetail: (id, direction) =>
@@ -494,3 +515,12 @@ export const useDashboardStore = create<DashboardState>()(
     },
   ),
 );
+
+// Auto-sync across browser tabs when localStorage changes
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => {
+    if (e.key === "desert-tech-dashboard") {
+      useDashboardStore.persist.rehydrate();
+    }
+  });
+}

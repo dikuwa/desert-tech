@@ -72,11 +72,11 @@ export default function ContactPage() {
                       className="flex flex-col gap-2 rounded-xl border border-border bg-card p-5 transition-all hover:shadow-sm hover:-translate-y-0.5"
                     >
                       <Icon className={cn("h-5 w-5", color)} />
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                           {c.label} {c.type === "whatsapp" ? "WhatsApp" : c.type === "phone" ? "Phone" : c.type === "email" ? "Email" : "Address"}
                         </p>
-                        <p className="mt-0.5 text-sm font-medium text-foreground">
+                        <p className="mt-0.5 text-sm font-medium text-foreground break-words">
                           {c.value}
                         </p>
                       </div>

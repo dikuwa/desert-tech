@@ -29,6 +29,13 @@ import {
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
 import type { BankDetail, ContactDetail, PaymentMethod } from "@/lib/dashboard-data";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function SettingsPage() {
   const settings = useDashboardStore((s) => s.settings);
@@ -231,6 +238,35 @@ export default function SettingsPage() {
                 <input
                   value={form.address}
                   onChange={(e) => updateField("address", e.target.value)}
+                  className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground">Phone Number</label>
+                <input
+                  value={form.phone}
+                  onChange={(e) => updateField("phone", e.target.value)}
+                  placeholder="+264 85 277 5140"
+                  className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                />
+                <p className="mt-1 text-[10px] text-muted-foreground">Primary phone displayed in header &amp; hero CTA.</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground">WhatsApp Number</label>
+                <input
+                  value={form.whatsapp}
+                  onChange={(e) => updateField("whatsapp", e.target.value)}
+                  placeholder="264852775140"
+                  className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                />
+                <p className="mt-1 text-[10px] text-muted-foreground">Without + prefix. Used in WhatsApp links across all pages.</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground">Email Address</label>
+                <input
+                  value={form.email}
+                  onChange={(e) => updateField("email", e.target.value)}
+                  placeholder="info@deserttechnology.com.na"
                   className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
                 />
               </div>
@@ -506,18 +542,22 @@ export default function SettingsPage() {
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
                       <label className="text-xs font-medium text-foreground">Type</label>
-                      <select
+                      <Select
                         value={contactForm.type}
-                        onChange={(e) =>
-                          setContactForm((f) => ({ ...f, type: e.target.value as ContactDetail["type"] }))
+                        onValueChange={(v) =>
+                          setContactForm((f) => ({ ...f, type: v as ContactDetail["type"] }))
                         }
-                        className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none"
                       >
-                        <option value="phone">Phone</option>
-                        <option value="whatsapp">WhatsApp</option>
-                        <option value="email">Email</option>
-                        <option value="address">Address / Location</option>
-                      </select>
+                        <SelectTrigger className="mt-1 h-10">
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="phone">Phone</SelectItem>
+                          <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                          <SelectItem value="email">Email</SelectItem>
+                          <SelectItem value="address">Address / Location</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div>
                       <label className="text-xs font-medium text-foreground">Label</label>
@@ -876,19 +916,23 @@ export default function SettingsPage() {
                     </div>
                     <div>
                       <label className="text-xs font-medium text-foreground">Type</label>
-                      <select
+                      <Select
                         value={paymentForm.type}
-                        onChange={(e) =>
-                          setPaymentForm((f) => ({ ...f, type: e.target.value as PaymentMethod["type"] }))
+                        onValueChange={(v) =>
+                          setPaymentForm((f) => ({ ...f, type: v as PaymentMethod["type"] }))
                         }
-                        className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none"
                       >
-                        <option value="BankTransfer">Bank Transfer</option>
-                        <option value="Cash">Cash</option>
-                        <option value="PhoneTransfer">Phone Transfer / Mobile Money</option>
-                        <option value="Card">Card Payment</option>
-                        <option value="Other">Other</option>
-                      </select>
+                        <SelectTrigger className="mt-1 h-10">
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="BankTransfer">Bank Transfer</SelectItem>
+                          <SelectItem value="Cash">Cash</SelectItem>
+                          <SelectItem value="PhoneTransfer">Phone Transfer / Mobile Money</SelectItem>
+                          <SelectItem value="Card">Card Payment</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                   <div>
