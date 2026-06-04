@@ -138,9 +138,8 @@ export function StorefrontFooter() {
                   {activePayments.map((pm) => (
                     <span
                       key={pm.id}
-                      className="inline-flex items-center gap-1 rounded-md bg-white/10 px-2.5 py-1 text-[11px] font-medium text-white/70"
+                      className="inline-flex items-center rounded-md bg-white/10 px-2.5 py-1 text-[11px] font-medium text-white/70"
                     >
-                      <Banknote className="h-3 w-3" />
                       {pm.name}
                     </span>
                   ))}

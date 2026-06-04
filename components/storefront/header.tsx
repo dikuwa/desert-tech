@@ -157,14 +157,20 @@ export function StorefrontHeader() {
               </>
             )}
           </div>
-          <div className="flex items-center gap-1 font-medium text-white/80 shrink-0 ml-auto">
+          <div className="flex items-center gap-1 shrink-0 ml-auto max-w-[300px] overflow-x-auto">
             {activePayments.length > 0 ? (
-              <span className="truncate max-w-[200px] sm:max-w-none">
-                {activePayments.slice(0, 2).map(p => p.name).join(", ")}
-                {activePayments.length > 2 ? ` +${activePayments.length - 2}` : ""}
-              </span>
+              <div className="flex items-center gap-1 flex-nowrap">
+                {activePayments.map(pm => (
+                  <span
+                    key={pm.id}
+                    className="inline-flex shrink-0 rounded-md bg-white/10 px-1.5 py-0.5 text-[10px] font-medium text-white/80 whitespace-nowrap"
+                  >
+                    {pm.name}
+                  </span>
+                ))}
+              </div>
             ) : (
-              <span>Cash at store or Bank Transfer</span>
+              <span className="text-[11px] font-medium text-white/70 whitespace-nowrap">Cash or Bank Transfer</span>
             )}
           </div>
         </div>

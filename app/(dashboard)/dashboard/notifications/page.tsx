@@ -85,8 +85,10 @@ export default function NotificationsPage() {
             <div
               key={n.id}
               className={cn(
-                "rounded-xl border bg-card p-4 transition-all cursor-pointer hover:shadow-sm group",
-                !n.isRead && "border-primary/20 bg-gradient-to-r from-accent/20 to-card",
+                "rounded-xl border p-4 transition-all cursor-pointer hover:shadow-sm group",
+                n.isRead
+                  ? "bg-accent/40 border-primary/10"
+                  : "bg-success-soft border-success/20",
               )}
               onClick={() => { if (!n.isRead) markNotificationRead(n.id); }}
             >

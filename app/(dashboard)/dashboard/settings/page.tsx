@@ -2,7 +2,6 @@
 
 import { useState, useRef } from "react";
 import {
-  Settings,
   Save,
   Building2,
   Phone,
@@ -18,13 +17,14 @@ import {
   Check,
   Trash2,
   Upload,
-  GripVertical,
   ChevronDown,
   ChevronUp,
   Eye,
   EyeOff,
   Pencil,
   Banknote,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
@@ -45,6 +45,9 @@ export default function SettingsPage() {
   const addPaymentMethod = useDashboardStore((s) => s.addPaymentMethod);
   const updatePaymentMethod = useDashboardStore((s) => s.updatePaymentMethod);
   const deletePaymentMethod = useDashboardStore((s) => s.deletePaymentMethod);
+  const movePaymentMethod = useDashboardStore((s) => s.movePaymentMethod);
+  const moveContactDetail = useDashboardStore((s) => s.moveContactDetail);
+  const moveBankDetail = useDashboardStore((s) => s.moveBankDetail);
 
   const [saved, setSaved] = useState(false);
   const [form, setForm] = useState(settings);
@@ -96,6 +99,13 @@ export default function SettingsPage() {
       if (heroImageInputRef.current) heroImageInputRef.current.value = "";
     }
   };
+
+  const isFirstContact = (id: string) => contactDetails.findIndex(c => c.id === id) === 0;
+  const isLastContact = (id: string) => contactDetails.findIndex(c => c.id === id) === contactDetails.length - 1;
+  const isFirstBank = (id: string) => bankDetails.findIndex(b => b.id === id) === 0;
+  const isLastBank = (id: string) => bankDetails.findIndex(b => b.id === id) === bankDetails.length - 1;
+  const isFirstPayment = (id: string) => paymentMethods.findIndex(p => p.id === id) === 0;
+  const isLastPayment = (id: string) => paymentMethods.findIndex(p => p.id === id) === paymentMethods.length - 1;
 
   const resetContactForm = () =>
     setContactForm({ type: "phone", label: "", value: "", isActive: true });
@@ -414,7 +424,7 @@ export default function SettingsPage() {
                   </div>
                 )}
 
-                {contactDetails.map((cd) => {
+                {contactDetails.map((cd, idx) => {
                   const typeIcon = cd.type === "phone" ? Phone : cd.type === "whatsapp" ? MessageCircle : cd.type === "email" ? Mail : MapPin;
                   const Icon = typeIcon;
                   return (
@@ -441,6 +451,22 @@ export default function SettingsPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-1">
+                          <div className="flex flex-col gap-0.5 mr-1">
+                            <button
+                              onClick={() => moveContactDetail(cd.id, "up")}
+                              disabled={isFirstContact(cd.id)}
+                              className="rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-20 disabled:pointer-events-none"
+                            >
+                              <ArrowUp className="h-3 w-3" />
+                            </button>
+                            <button
+                              onClick={() => moveContactDetail(cd.id, "down")}
+                              disabled={isLastContact(cd.id)}
+                              className="rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-20 disabled:pointer-events-none"
+                            >
+                              <ArrowDown className="h-3 w-3" />
+                            </button>
+                          </div>
                           <button
                             onClick={() =>
                               updateContactDetail(cd.id, { isActive: !cd.isActive })
@@ -575,7 +601,7 @@ export default function SettingsPage() {
                   </div>
                 )}
 
-                {bankDetails.map((bd) => (
+                {bankDetails.map((bd, idx) => (
                   <div
                     key={bd.id}
                     className={cn(
@@ -601,6 +627,22 @@ export default function SettingsPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
+                        <div className="flex flex-col gap-0.5 mr-1">
+                          <button
+                            onClick={() => moveBankDetail(bd.id, "up")}
+                            disabled={isFirstBank(bd.id)}
+                            className="rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-20 disabled:pointer-events-none"
+                          >
+                            <ArrowUp className="h-3 w-3" />
+                          </button>
+                          <button
+                            onClick={() => moveBankDetail(bd.id, "down")}
+                            disabled={isLastBank(bd.id)}
+                            className="rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-20 disabled:pointer-events-none"
+                          >
+                            <ArrowDown className="h-3 w-3" />
+                          </button>
+                        </div>
                         <button
                           onClick={() =>
                             updateBankDetail(bd.id, { isActive: !bd.isActive })
@@ -736,7 +778,7 @@ export default function SettingsPage() {
                   </div>
                 )}
 
-                {paymentMethods.map((pm) => (
+                {paymentMethods.map((pm, idx) => (
                   <div
                     key={pm.id}
                     className={cn(
@@ -771,6 +813,22 @@ export default function SettingsPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
+                        <div className="flex flex-col gap-0.5 mr-1">
+                          <button
+                            onClick={() => movePaymentMethod(pm.id, "up")}
+                            disabled={isFirstPayment(pm.id)}
+                            className="rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-20 disabled:pointer-events-none"
+                          >
+                            <ArrowUp className="h-3 w-3" />
+                          </button>
+                          <button
+                            onClick={() => movePaymentMethod(pm.id, "down")}
+                            disabled={isLastPayment(pm.id)}
+                            className="rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-20 disabled:pointer-events-none"
+                          >
+                            <ArrowDown className="h-3 w-3" />
+                          </button>
+                        </div>
                         <button
                           onClick={() =>
                             updatePaymentMethod(pm.id, { isActive: !pm.isActive })
@@ -786,7 +844,7 @@ export default function SettingsPage() {
                           onClick={() => startEditPayment(pm)}
                           className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                         >
-                          <Settings className="h-3.5 w-3.5" />
+                          <Pencil className="h-3.5 w-3.5" />
                         </button>
                         <button
                           onClick={() => deletePaymentMethod(pm.id)}

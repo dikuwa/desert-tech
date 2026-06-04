@@ -116,6 +116,9 @@ interface DashboardState {
   addPaymentMethod: (p: Omit<PaymentMethod, "id">) => void;
   updatePaymentMethod: (id: string, data: Partial<PaymentMethod>) => void;
   deletePaymentMethod: (id: string) => void;
+  movePaymentMethod: (id: string, direction: "up" | "down") => void;
+  moveContactDetail: (id: string, direction: "up" | "down") => void;
+  moveBankDetail: (id: string, direction: "up" | "down") => void;
 
   // Staff
   updateStaffRole: (id: string, role: string) => void;
@@ -180,6 +183,16 @@ export const useDashboardStore = create<DashboardState>()(
         })),
 
       // === Contact Details ===
+      moveContactDetail: (id, direction) =>
+        set((s) => {
+          const idx = s.contactDetails.findIndex((cd) => cd.id === id);
+          if (idx === -1) return s;
+          const newIdx = direction === "up" ? idx - 1 : idx + 1;
+          if (newIdx < 0 || newIdx >= s.contactDetails.length) return s;
+          const items = [...s.contactDetails];
+          [items[idx], items[newIdx]] = [items[newIdx], items[idx]];
+          return { contactDetails: items };
+        }),
       addContactDetail: (c) => {
         const id = `cd${nextContactDetailId++}`;
         set((s) => {
@@ -201,6 +214,16 @@ export const useDashboardStore = create<DashboardState>()(
         }),
 
       // === Bank Details ===
+      moveBankDetail: (id, direction) =>
+        set((s) => {
+          const idx = s.bankDetails.findIndex((bd) => bd.id === id);
+          if (idx === -1) return s;
+          const newIdx = direction === "up" ? idx - 1 : idx + 1;
+          if (newIdx < 0 || newIdx >= s.bankDetails.length) return s;
+          const items = [...s.bankDetails];
+          [items[idx], items[newIdx]] = [items[newIdx], items[idx]];
+          return { bankDetails: items };
+        }),
       addBankDetail: (b) => {
         const id = `bd${nextBankDetailId++}`;
         set((s) => ({
@@ -225,6 +248,16 @@ export const useDashboardStore = create<DashboardState>()(
           paymentMethods: [{ ...p, id }, ...s.paymentMethods],
         }));
       },
+      movePaymentMethod: (id, direction) =>
+        set((s) => {
+          const idx = s.paymentMethods.findIndex((pm) => pm.id === id);
+          if (idx === -1) return s;
+          const newIdx = direction === "up" ? idx - 1 : idx + 1;
+          if (newIdx < 0 || newIdx >= s.paymentMethods.length) return s;
+          const items = [...s.paymentMethods];
+          [items[idx], items[newIdx]] = [items[newIdx], items[idx]];
+          return { paymentMethods: items };
+        }),
       updatePaymentMethod: (id, data) =>
         set((s) => ({
           paymentMethods: s.paymentMethods.map((pm) =>
