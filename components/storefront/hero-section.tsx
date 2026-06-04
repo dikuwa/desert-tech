@@ -10,6 +10,7 @@ import {
   Truck,
 } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
+import { decodeHTMLEntities } from "@/lib/utils";
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
 const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
@@ -48,11 +49,10 @@ export function HeroSection() {
             Desert Technology Consultant, Namibia
           </div>
 
-          {/* Admin-controlled heading rendered with HTML entities support for &rsquo; etc. */}
-          <h1
-            className="max-w-2xl text-4xl font-semibold leading-[1.04] text-foreground sm:text-5xl"
-            dangerouslySetInnerHTML={{ __html: heading }}
-          />
+          {/* Admin-controlled heading - safely renders HTML entities like &rsquo; without XSS risk */}
+          <h1 className="max-w-2xl text-4xl font-semibold leading-[1.04] text-foreground sm:text-5xl">
+            {decodeHTMLEntities(heading)}
+          </h1>
 
           <p className="mt-5 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">
             {subheading}

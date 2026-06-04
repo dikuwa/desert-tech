@@ -24,7 +24,7 @@ export type Session = {
  * Use in server components and API routes.
  */
 export async function getSession(): Promise<Session> {
-  if (isAuthMockMode) {
+  if (isAuthMockMode()) {
     return {
       user: {
         id: "admin-1",

@@ -27,7 +27,7 @@ import {
   ArrowDown,
 } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
-import { cn } from "@/lib/utils";
+import { cn, decodeHTMLEntities } from "@/lib/utils";
 import type { BankDetail, ContactDetail, PaymentMethod } from "@/lib/dashboard-data";
 import {
   Select,
@@ -415,10 +415,9 @@ export default function SettingsPage() {
                   <div className="mb-2 inline-flex rounded-full border border-border bg-card px-3 py-1 text-[10px] font-semibold text-muted-foreground">
                     Desert Technology Consultant, Namibia
                   </div>
-                  <h3
-                    className="text-lg font-semibold leading-tight text-foreground"
-                    dangerouslySetInnerHTML={{ __html: form.heroHeading }}
-                  />
+                  <h3 className="text-lg font-semibold leading-tight text-foreground">
+                    {decodeHTMLEntities(form.heroHeading)}
+                  </h3>
                   <p className="mt-2 text-xs text-muted-foreground line-clamp-2">{form.heroSubheading}</p>
                 </div>
               </div>
