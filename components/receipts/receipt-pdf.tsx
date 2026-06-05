@@ -2,6 +2,8 @@
  * PDF Receipt template rendered with @react-pdf/renderer.
  */
 import { Document, Page, View, Text, Image, StyleSheet, Font } from "@react-pdf/renderer";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 
 // Register fonts
 Font.register({
@@ -19,6 +21,9 @@ const colors = {
   border: "#e5e7eb",
   success: "#15803D",
 };
+
+const logoPath = path.join(process.cwd(), "public", "images", "desertech-doc-logo.png");
+const logoDataUri = `data:image/png;base64,${readFileSync(logoPath).toString("base64")}`;
 
 const styles = StyleSheet.create({
   page: {
@@ -231,7 +236,7 @@ export function ReceiptPDF({
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Image src={`${process.cwd()}/public/images/desertech-doc-logo.png`} style={styles.logo} />
+            <Image src={logoDataUri} style={styles.logo} />
             <View style={styles.companyDetails}>
               <Text style={styles.companyDetailText}>{storeLocation}</Text>
               <Text style={styles.companyDetailText}>{storePhone}</Text>
