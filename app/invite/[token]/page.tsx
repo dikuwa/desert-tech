@@ -91,7 +91,7 @@ export default function AcceptInvitePage() {
             This invitation link is invalid or has expired. Please ask your admin to send a new invite.
           </p>
           <Link
-            href="/auth/sign-in"
+            href="/admin"
             className="mt-6 inline-flex items-center gap-1.5 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90"
           >
             Go to Sign In
@@ -113,7 +113,7 @@ export default function AcceptInvitePage() {
             This invitation has already been used. Please sign in with your account.
           </p>
           <Link
-            href="/auth/sign-in"
+            href="/admin"
             className="mt-6 inline-flex items-center gap-1.5 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90"
           >
             Sign In
@@ -135,7 +135,7 @@ export default function AcceptInvitePage() {
             Your account has been set up successfully.
           </p>
           <Link
-            href="/auth/sign-in"
+            href="/admin"
             className="mt-6 inline-flex items-center gap-1.5 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90"
           >
             Go to Sign In

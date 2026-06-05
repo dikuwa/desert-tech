@@ -11,21 +11,39 @@ const publicPaths = [
   "/promotions",
   "/contact",
   "/search",
+  "/admin",
   "/auth/sign-in",
   "/auth/sign-up",
+  "/auth/signin",
+  "/auth/signup",
   "/auth/forgot-password",
   "/auth/reset-password",
   "/auth/verify-email",
 ];
 const apiAuthPrefix = "/api/auth";
 
+function isPublicPath(pathname: string) {
+  return publicPaths.some((path) => {
+    if (path === "/") return pathname === "/";
+    return pathname === path || pathname.startsWith(`${path}/`);
+  });
+}
+
 export default async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  if (pathname === "/auth/sign-in" || pathname === "/auth/signin") {
+    return NextResponse.redirect(new URL("/admin", req.url));
+  }
+
+  if (pathname === "/auth/sign-up" || pathname === "/auth/signup") {
+    return NextResponse.redirect(new URL("/admin?mode=signup", req.url));
+  }
 
   // Allow auth API routes
   if (pathname.startsWith(apiAuthPrefix)) return NextResponse.next();
   // Allow public paths
-  if (publicPaths.some((p) => pathname.startsWith(p))) return NextResponse.next();
+  if (isPublicPath(pathname)) return NextResponse.next();
   // Allow static files
   if (
     pathname.startsWith("/_next") ||
@@ -39,7 +57,7 @@ export default async function middleware(req: NextRequest) {
   if (pathname.startsWith("/dashboard")) {
     const sessionCookie = req.cookies.get("better-auth.session_token");
     if (!sessionCookie?.value) {
-      const signInUrl = new URL("/auth/sign-in", req.url);
+      const signInUrl = new URL("/admin", req.url);
       signInUrl.searchParams.set("redirect", pathname);
       return NextResponse.redirect(signInUrl);
     }

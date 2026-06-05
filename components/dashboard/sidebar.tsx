@@ -64,7 +64,7 @@ export function DashboardSidebar() {
     try {
       await fetch("/api/auth/sign-out", { method: "POST" });
     } catch {}
-    window.location.href = "/auth/sign-in";
+    window.location.href = "/admin";
   };
 
   return (

@@ -1,7 +1,7 @@
 /**
  * PDF Receipt template rendered with @react-pdf/renderer.
  */
-import { Document, Page, View, Text, StyleSheet, Font } from "@react-pdf/renderer";
+import { Document, Page, View, Text, Image, StyleSheet, Font } from "@react-pdf/renderer";
 
 // Register fonts
 Font.register({
@@ -35,13 +35,16 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     borderBottom: `1px solid ${colors.border}`,
   },
-  storeName: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: colors.text,
+  logo: {
+    width: 190,
+    height: 58,
+    objectFit: "contain" as const,
   },
-  storeTagline: {
-    fontSize: 9,
+  companyDetails: {
+    marginTop: 3,
+  },
+  companyDetailText: {
+    fontSize: 8,
     color: colors.muted,
     marginTop: 2,
   },
@@ -201,6 +204,8 @@ interface ReceiptPDFProps {
   items: ReceiptItem[];
   subtotal: number;
   paymentStatus: string;
+  storeLocation?: string;
+  storePhone?: string;
 }
 
 function formatCurrency(cents: number): string {
@@ -217,6 +222,8 @@ export function ReceiptPDF({
   items,
   subtotal,
   paymentStatus,
+  storeLocation = "Windhoek, Namibia",
+  storePhone = "+264 85 277 5140",
 }: ReceiptPDFProps) {
   return (
     <Document>
@@ -224,10 +231,11 @@ export function ReceiptPDF({
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.storeName}>Desert Technology</Text>
-            <Text style={styles.storeTagline}>Consultant, Namibia</Text>
-            <Text style={styles.storeTagline}>Windhoek, Namibia</Text>
-            <Text style={styles.storeTagline}>+264 85 277 5140</Text>
+            <Image src={`${process.cwd()}/public/images/desertech-doc-logo.png`} style={styles.logo} />
+            <View style={styles.companyDetails}>
+              <Text style={styles.companyDetailText}>{storeLocation}</Text>
+              <Text style={styles.companyDetailText}>{storePhone}</Text>
+            </View>
           </View>
           <View>
             <Text style={styles.receiptBadge}>RECEIPT</Text>

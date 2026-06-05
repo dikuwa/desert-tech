@@ -31,8 +31,9 @@ export const metadata: Metadata = {
     "gaming",
   ],
   icons: {
-    icon: "/images/desert-tech-logo.svg",
-    apple: "/images/desert-tech-logo.svg",
+    icon: "/images/desertech-favicon.svg",
+    shortcut: "/images/desertech-favicon.svg",
+    apple: "/images/desertech-favicon.svg",
   },
 };
 

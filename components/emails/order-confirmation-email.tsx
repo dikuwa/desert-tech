@@ -5,6 +5,7 @@ import {
   Heading,
   Hr,
   Html,
+  Img,
   Link,
   Preview,
   Section,
@@ -35,7 +36,13 @@ export function OrderConfirmationEmail({
       <Body style={main}>
         <Container style={container}>
           <Section style={header}>
-            <Text style={logo}>{storeName}</Text>
+            <Img
+              src={`${baseUrl}/images/desertech-doc-logo.svg`}
+              alt={storeName}
+              width="180"
+              height="54"
+              style={logo}
+            />
             <Text style={tagline}>Thank you for your order</Text>
           </Section>
 
@@ -107,10 +114,11 @@ const header = {
 };
 
 const logo = {
-  fontSize: 22,
-  fontWeight: 700,
-  color: "#1a1a2e",
-  margin: 0,
+  display: "block",
+  height: "54px",
+  margin: "0 auto",
+  objectFit: "contain" as const,
+  width: "180px",
 };
 
 const tagline = {
