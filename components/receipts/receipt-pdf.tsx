@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
     fontSize: 8,
     color: colors.muted,
     marginTop: 2,
-    textAlign: "center" as const,
+    textAlign: "right" as const,
   },
   receiptBadge: {
     backgroundColor: colors.primary,
