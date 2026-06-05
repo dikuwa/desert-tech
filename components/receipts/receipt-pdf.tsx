@@ -238,8 +238,7 @@ export function ReceiptPDF({
           <View>
             <Image src={logoDataUri} style={styles.logo} />
             <View style={styles.companyDetails}>
-              <Text style={styles.companyDetailText}>{storeLocation}</Text>
-              <Text style={styles.companyDetailText}>{storePhone}</Text>
+              <Text style={styles.companyDetailText}>{storeLocation}, {storePhone}</Text>
             </View>
           </View>
           <View>
