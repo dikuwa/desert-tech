@@ -657,7 +657,7 @@ export const useDashboardStore = create<DashboardState>()(
     }),
     {
       name: "desert-tech-dashboard",
-      version: 2,
+      version: 3,
     },
   ),
 );
