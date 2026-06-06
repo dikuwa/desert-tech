@@ -98,6 +98,11 @@ export type FollowUp = Prisma.FollowUpModel
  */
 export type Notification = Prisma.NotificationModel
 /**
+ * Model BackInStockRequest
+ * 
+ */
+export type BackInStockRequest = Prisma.BackInStockRequestModel
+/**
  * Model ContactMessage
  * 
  */

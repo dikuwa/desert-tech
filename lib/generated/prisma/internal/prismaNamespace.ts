@@ -400,6 +400,7 @@ export const ModelName = {
   Receipt: 'Receipt',
   FollowUp: 'FollowUp',
   Notification: 'Notification',
+  BackInStockRequest: 'BackInStockRequest',
   ContactMessage: 'ContactMessage',
   StoreSetting: 'StoreSetting'
 } as const
@@ -417,7 +418,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "session" | "account" | "verification" | "customer" | "category" | "product" | "productImage" | "promotion" | "promotionProduct" | "order" | "orderItem" | "paymentRecord" | "receipt" | "followUp" | "notification" | "contactMessage" | "storeSetting"
+    modelProps: "user" | "session" | "account" | "verification" | "customer" | "category" | "product" | "productImage" | "promotion" | "promotionProduct" | "order" | "orderItem" | "paymentRecord" | "receipt" | "followUp" | "notification" | "backInStockRequest" | "contactMessage" | "storeSetting"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1605,6 +1606,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    BackInStockRequest: {
+      payload: Prisma.$BackInStockRequestPayload<ExtArgs>
+      fields: Prisma.BackInStockRequestFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BackInStockRequestFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackInStockRequestPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BackInStockRequestFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackInStockRequestPayload>
+        }
+        findFirst: {
+          args: Prisma.BackInStockRequestFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackInStockRequestPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BackInStockRequestFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackInStockRequestPayload>
+        }
+        findMany: {
+          args: Prisma.BackInStockRequestFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackInStockRequestPayload>[]
+        }
+        create: {
+          args: Prisma.BackInStockRequestCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackInStockRequestPayload>
+        }
+        createMany: {
+          args: Prisma.BackInStockRequestCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.BackInStockRequestCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackInStockRequestPayload>[]
+        }
+        delete: {
+          args: Prisma.BackInStockRequestDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackInStockRequestPayload>
+        }
+        update: {
+          args: Prisma.BackInStockRequestUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackInStockRequestPayload>
+        }
+        deleteMany: {
+          args: Prisma.BackInStockRequestDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BackInStockRequestUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.BackInStockRequestUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackInStockRequestPayload>[]
+        }
+        upsert: {
+          args: Prisma.BackInStockRequestUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackInStockRequestPayload>
+        }
+        aggregate: {
+          args: Prisma.BackInStockRequestAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBackInStockRequest>
+        }
+        groupBy: {
+          args: Prisma.BackInStockRequestGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BackInStockRequestGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.BackInStockRequestCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BackInStockRequestCountAggregateOutputType> | number
+        }
+      }
+    }
     ContactMessage: {
       payload: Prisma.$ContactMessagePayload<ExtArgs>
       fields: Prisma.ContactMessageFieldRefs
@@ -1952,8 +2027,9 @@ export const OrderScalarFieldEnum = {
   id: 'id',
   orderNumber: 'orderNumber',
   customerId: 'customerId',
-  status: 'status',
+  contactStatus: 'contactStatus',
   paymentStatus: 'paymentStatus',
+  fulfillmentStatus: 'fulfillmentStatus',
   preferredContact: 'preferredContact',
   subtotalCents: 'subtotalCents',
   notes: 'notes',
@@ -2033,6 +2109,23 @@ export const NotificationScalarFieldEnum = {
 } as const
 
 export type NotificationScalarFieldEnum = (typeof NotificationScalarFieldEnum)[keyof typeof NotificationScalarFieldEnum]
+
+
+export const BackInStockRequestScalarFieldEnum = {
+  id: 'id',
+  productId: 'productId',
+  productName: 'productName',
+  customerName: 'customerName',
+  preferredContact: 'preferredContact',
+  contactValue: 'contactValue',
+  urgency: 'urgency',
+  note: 'note',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BackInStockRequestScalarFieldEnum = (typeof BackInStockRequestScalarFieldEnum)[keyof typeof BackInStockRequestScalarFieldEnum]
 
 
 export const ContactMessageScalarFieldEnum = {
@@ -2276,6 +2369,7 @@ export type GlobalOmitConfig = {
   receipt?: Prisma.ReceiptOmit
   followUp?: Prisma.FollowUpOmit
   notification?: Prisma.NotificationOmit
+  backInStockRequest?: Prisma.BackInStockRequestOmit
   contactMessage?: Prisma.ContactMessageOmit
   storeSetting?: Prisma.StoreSettingOmit
 }

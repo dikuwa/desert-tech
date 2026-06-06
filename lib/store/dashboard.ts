@@ -30,6 +30,7 @@ import type {
   BackInStockStatus,
   BackInStockUrgency,
   BackInStockContactMethod,
+  OrderContactStatus,
   BankDetail,
   ContactDetail,
   PaymentMethod,
@@ -86,8 +87,9 @@ interface DashboardState {
   togglePromotionActive: (id: string) => void;
 
   // Orders
-  updateOrderStatus: (id: string, status: string) => void;
-  updatePaymentStatus: (id: string, paymentStatus: string) => void;
+  updateOrderContactStatus: (id: string, contactStatus: OrderContactStatus) => void;
+  updateOrderPaymentStatus: (id: string, paymentStatus: string) => void;
+  updateOrderFulfillmentStatus: (id: string, fulfillmentStatus: string) => void;
   addPayment: (p: Omit<DashboardPayment, "id" | "recordedAt">) => void;
   addNotification: (n: Omit<DashboardNotification, "id" | "createdAt" | "isRead">) => void;
 
@@ -451,16 +453,28 @@ export const useDashboardStore = create<DashboardState>()(
         })),
 
       // === Orders ===
-      updateOrderStatus: (id, status) =>
+      updateOrderContactStatus: (id, contactStatus) =>
         set((s) => ({
           orders: s.orders.map((o) =>
-            o.id === id ? { ...o, status, updatedAt: new Date().toISOString() } : o
+            o.id === id
+              ? { ...o, contactStatus: contactStatus as DashboardOrder["contactStatus"], updatedAt: new Date().toISOString() }
+              : o
           ),
         })),
-      updatePaymentStatus: (id, paymentStatus) =>
+      updateOrderPaymentStatus: (id, paymentStatus) =>
         set((s) => ({
           orders: s.orders.map((o) =>
-            o.id === id ? { ...o, paymentStatus, updatedAt: new Date().toISOString() } : o
+            o.id === id
+              ? { ...o, paymentStatus: paymentStatus as DashboardOrder["paymentStatus"], updatedAt: new Date().toISOString() }
+              : o
+          ),
+        })),
+      updateOrderFulfillmentStatus: (id, fulfillmentStatus) =>
+        set((s) => ({
+          orders: s.orders.map((o) =>
+            o.id === id
+              ? { ...o, fulfillmentStatus: fulfillmentStatus as DashboardOrder["fulfillmentStatus"], updatedAt: new Date().toISOString() }
+              : o
           ),
         })),
       addPayment: (p) => {
@@ -625,7 +639,7 @@ export const useDashboardStore = create<DashboardState>()(
     }),
     {
       name: "desert-tech-dashboard",
-      version: 1,
+      version: 2,
     },
   ),
 );

@@ -67,6 +67,7 @@ export const ModelName = {
   Receipt: 'Receipt',
   FollowUp: 'FollowUp',
   Notification: 'Notification',
+  BackInStockRequest: 'BackInStockRequest',
   ContactMessage: 'ContactMessage',
   StoreSetting: 'StoreSetting'
 } as const
@@ -247,8 +248,9 @@ export const OrderScalarFieldEnum = {
   id: 'id',
   orderNumber: 'orderNumber',
   customerId: 'customerId',
-  status: 'status',
+  contactStatus: 'contactStatus',
   paymentStatus: 'paymentStatus',
+  fulfillmentStatus: 'fulfillmentStatus',
   preferredContact: 'preferredContact',
   subtotalCents: 'subtotalCents',
   notes: 'notes',
@@ -328,6 +330,23 @@ export const NotificationScalarFieldEnum = {
 } as const
 
 export type NotificationScalarFieldEnum = (typeof NotificationScalarFieldEnum)[keyof typeof NotificationScalarFieldEnum]
+
+
+export const BackInStockRequestScalarFieldEnum = {
+  id: 'id',
+  productId: 'productId',
+  productName: 'productName',
+  customerName: 'customerName',
+  preferredContact: 'preferredContact',
+  contactValue: 'contactValue',
+  urgency: 'urgency',
+  note: 'note',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BackInStockRequestScalarFieldEnum = (typeof BackInStockRequestScalarFieldEnum)[keyof typeof BackInStockRequestScalarFieldEnum]
 
 
 export const ContactMessageScalarFieldEnum = {

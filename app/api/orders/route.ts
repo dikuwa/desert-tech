@@ -79,7 +79,9 @@ export async function POST(req: Request) {
         data: {
           orderNumber,
           customerId: customer.id,
-          status: "PendingContact",
+          contactStatus: "NotContacted",
+          paymentStatus: "Unpaid",
+          fulfillmentStatus: "Pending",
           preferredContact: validated.preferredContact,
           subtotalCents,
           notes: validated.notes || null,
@@ -114,8 +116,9 @@ export async function POST(req: Request) {
       customerPhone: validated.phone,
       itemCount: validated.items.reduce((sum, i) => sum + i.quantity, 0),
       subtotalCents,
-      status: "PendingContact",
+      contactStatus: "NotContacted",
       paymentStatus: "Unpaid",
+      fulfillmentStatus: "Pending",
       preferredContact: validated.preferredContact,
       notes: validated.notes || undefined,
       items: validated.items.map((i) => ({

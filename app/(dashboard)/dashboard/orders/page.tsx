@@ -11,8 +11,8 @@ import { cn } from "@/lib/utils";
 
 const ITEMS_PER_PAGE = 10;
 
-const STATUS_OPTIONS = ["All", "PendingContact", "Contacted", "AwaitingPayment", "DepositPaid", "Paid", "ReadyForCollection", "Completed", "Cancelled"];
-const PAYMENT_OPTIONS = ["All", "Unpaid", "DepositPaid", "Paid", "Refunded", "Cancelled"];
+const STATUS_OPTIONS = ["All", "NotContacted", "Contacted"];
+const PAYMENT_OPTIONS = ["All", "Unpaid", "DepositPaid", "PaidInFull"];
 
 export default function OrdersPage() {
   const [search, setSearch] = useState("");
@@ -30,7 +30,7 @@ export default function OrdersPage() {
       const q = search.toLowerCase();
       result = result.filter(o => o.orderNumber.toLowerCase().includes(q) || o.customerName.toLowerCase().includes(q) || o.customerPhone.includes(q));
     }
-    if (statusFilter !== "All") result = result.filter(o => o.status === statusFilter);
+    if (statusFilter !== "All") result = result.filter(o => o.contactStatus === statusFilter);
     if (paymentFilter !== "All") result = result.filter(o => o.paymentStatus === paymentFilter);
     result.sort((a, b) => {
       const valA = (a as any)[sortField];
@@ -123,7 +123,7 @@ export default function OrdersPage() {
                 { key: "customerName", label: "Customer" },
                 { key: "itemCount", label: "Items" },
                 { key: "subtotalCents", label: "Total" },
-                { key: "status", label: "Status" },
+                { key: "contactStatus", label: "Contact" },
                 { key: "paymentStatus", label: "Payment" },
                 { key: "createdAt", label: "Date" },
               ].map(col => (
@@ -153,8 +153,8 @@ export default function OrdersPage() {
                 <td className="px-4 py-3 text-sm text-muted-foreground">{order.itemCount}</td>
                 <td className="px-4 py-3 text-sm font-semibold text-foreground">{formatCents(order.subtotalCents)}</td>
                 <td className="px-4 py-3">
-                  <span className={cn("inline-block rounded-md border px-2 py-0.5 text-[10px] font-semibold", getStatusBadgeClass(order.status))}>
-                    {getStatusLabel(order.status)}
+                  <span className={cn("inline-block rounded-md border px-2 py-0.5 text-[10px] font-semibold", getStatusBadgeClass(order.contactStatus))}>
+                    {getStatusLabel(order.contactStatus)}
                   </span>
                 </td>
                 <td className="px-4 py-3">

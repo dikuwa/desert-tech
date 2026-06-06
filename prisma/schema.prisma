@@ -123,6 +123,7 @@ model Product {
   images       ProductImage[]
   orderItems   OrderItem[]
   promotions   PromotionProduct[]
+  backInStockRequests BackInStockRequest[]
 }
 
 model ProductImage {
@@ -162,25 +163,24 @@ model PromotionProduct {
   product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([promotionId, productId])
-}
+}model Order {
+  id                String   @id @default(cuid())
+  orderNumber       String   @unique
+  customerId        String
+  contactStatus     String   @default("NotContacted")
+  paymentStatus     String   @default("Unpaid")
+  fulfillmentStatus String   @default("Pending")
+  preferredContact  String   @default("WhatsApp")
+  subtotalCents     Int      @default(0)
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
-model Order {
-  id               String   @id @default(cuid())
-  orderNumber      String   @unique
-  customerId       String
-  status           String   @default("PendingContact")
-  paymentStatus    String   @default("Unpaid")
-  preferredContact String   @default("WhatsApp")
-  subtotalCents    Int      @default(0)
-  notes            String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  customer      Customer       @relation(fields: [customerId], references: [id])
-  items         OrderItem[]
-  payments      PaymentRecord[]
-  receipts      Receipt[]
-  followUps     FollowUp[]
+  customer  Customer        @relation(fields: [customerId], references: [id])
+  items     OrderItem[]
+  payments  PaymentRecord[]
+  receipts  Receipt[]
+  followUps FollowUp[]
 }
 
 model OrderItem {

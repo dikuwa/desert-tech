@@ -1,3 +1,7 @@
+export type OrderContactStatus = "NotContacted" | "Contacted";
+export type OrderPaymentStatus = "Unpaid" | "DepositPaid" | "PaidInFull";
+export type OrderFulfillmentStatus = "Pending" | "ReadyForCollection" | "Completed" | "Cancelled";
+
 export interface DashboardOrder {
   id: string;
   orderNumber: string;
@@ -5,8 +9,9 @@ export interface DashboardOrder {
   customerPhone: string;
   itemCount: number;
   subtotalCents: number;
-  status: string;
-  paymentStatus: string;
+  contactStatus: OrderContactStatus;
+  paymentStatus: OrderPaymentStatus;
+  fulfillmentStatus: OrderFulfillmentStatus;
   preferredContact: string;
   createdAt: string;
   updatedAt: string;
@@ -177,16 +182,16 @@ export interface DashboardPayment {
 }
 
 export const mockOrders: DashboardOrder[] = [
-  { id: "o1", orderNumber: "DT-A1B2C3", customerName: "John Mwale", customerPhone: "+264 81 123 4567", itemCount: 2, subtotalCents: 2499900, status: "PendingContact", paymentStatus: "Unpaid", preferredContact: "WhatsApp", createdAt: "2026-06-01T10:30:00Z", updatedAt: "2026-06-01T10:30:00Z" },
-  { id: "o2", orderNumber: "DT-D4E5F6", customerName: "Maria Shikongo", customerPhone: "+264 85 234 5678", itemCount: 1, subtotalCents: 1859900, status: "Contacted", paymentStatus: "Unpaid", preferredContact: "Phone", createdAt: "2026-05-30T14:15:00Z", updatedAt: "2026-05-31T09:00:00Z" },
-  { id: "o3", orderNumber: "DT-G7H8I9", customerName: "Petrus Nangolo", customerPhone: "+264 81 345 6789", itemCount: 3, subtotalCents: 3249900, status: "AwaitingPayment", paymentStatus: "DepositPaid", preferredContact: "WhatsApp", createdAt: "2026-05-28T08:45:00Z", updatedAt: "2026-05-29T11:30:00Z" },
-  { id: "o4", orderNumber: "DT-J0K1L2", customerName: "Selma Amadhila", customerPhone: "+264 85 456 7890", itemCount: 1, subtotalCents: 599900, status: "Paid", paymentStatus: "Paid", preferredContact: "Email", createdAt: "2026-05-25T16:20:00Z", updatedAt: "2026-05-26T10:00:00Z" },
-  { id: "o5", orderNumber: "DT-M3N4O5", customerName: "Tomas Haingura", customerPhone: "+264 81 567 8901", itemCount: 2, subtotalCents: 1599900, status: "ReadyForCollection", paymentStatus: "Paid", preferredContact: "WhatsApp", createdAt: "2026-05-22T09:00:00Z", updatedAt: "2026-05-24T14:00:00Z" },
-  { id: "o6", orderNumber: "DT-P6Q7R8", customerName: "Lukas Indongo", customerPhone: "+264 85 678 9012", itemCount: 1, subtotalCents: 449900, status: "Completed", paymentStatus: "Paid", preferredContact: "Phone", createdAt: "2026-05-18T11:30:00Z", updatedAt: "2026-05-20T15:00:00Z" },
-  { id: "o7", orderNumber: "DT-S9T0U1", customerName: "Grace Kambonde", customerPhone: "+264 81 789 0123", itemCount: 4, subtotalCents: 4599900, status: "PendingContact", paymentStatus: "Unpaid", preferredContact: "WhatsApp", createdAt: "2026-06-02T08:00:00Z", updatedAt: "2026-06-02T08:00:00Z" },
-  { id: "o8", orderNumber: "DT-V2W3X4", customerName: "David Nghifikwa", customerPhone: "+264 85 890 1234", itemCount: 2, subtotalCents: 2199900, status: "Cancelled", paymentStatus: "Cancelled", preferredContact: "WhatsApp", createdAt: "2026-05-15T13:00:00Z", updatedAt: "2026-05-16T10:00:00Z" },
-  { id: "o9", orderNumber: "DT-Y5Z6A7", customerName: "Rachel Shovaleka", customerPhone: "+264 81 901 2345", itemCount: 1, subtotalCents: 289900, status: "AwaitingPayment", paymentStatus: "Unpaid", preferredContact: "Email", createdAt: "2026-06-01T15:30:00Z", updatedAt: "2026-06-01T15:30:00Z" },
-  { id: "o10", orderNumber: "DT-B8C9D0", customerName: "Erastus Hamutenya", customerPhone: "+264 85 012 3456", itemCount: 1, subtotalCents: 1299900, status: "Contacted", paymentStatus: "DepositPaid", preferredContact: "Phone", createdAt: "2026-05-29T10:00:00Z", updatedAt: "2026-05-30T09:30:00Z" },
+  { id: "o1", orderNumber: "DT-A1B2C3", customerName: "John Mwale", customerPhone: "+264 81 123 4567", itemCount: 2, subtotalCents: 2499900, contactStatus: "NotContacted", paymentStatus: "Unpaid", fulfillmentStatus: "Pending", preferredContact: "WhatsApp", createdAt: "2026-06-01T10:30:00Z", updatedAt: "2026-06-01T10:30:00Z" },
+  { id: "o2", orderNumber: "DT-D4E5F6", customerName: "Maria Shikongo", customerPhone: "+264 85 234 5678", itemCount: 1, subtotalCents: 1859900, contactStatus: "Contacted", paymentStatus: "Unpaid", fulfillmentStatus: "Pending", preferredContact: "Phone", createdAt: "2026-05-30T14:15:00Z", updatedAt: "2026-05-31T09:00:00Z" },
+  { id: "o3", orderNumber: "DT-G7H8I9", customerName: "Petrus Nangolo", customerPhone: "+264 81 345 6789", itemCount: 3, subtotalCents: 3249900, contactStatus: "Contacted", paymentStatus: "DepositPaid", fulfillmentStatus: "Pending", preferredContact: "WhatsApp", createdAt: "2026-05-28T08:45:00Z", updatedAt: "2026-05-29T11:30:00Z" },
+  { id: "o4", orderNumber: "DT-J0K1L2", customerName: "Selma Amadhila", customerPhone: "+264 85 456 7890", itemCount: 1, subtotalCents: 599900, contactStatus: "Contacted", paymentStatus: "PaidInFull", fulfillmentStatus: "Completed", preferredContact: "Email", createdAt: "2026-05-25T16:20:00Z", updatedAt: "2026-05-26T10:00:00Z" },
+  { id: "o5", orderNumber: "DT-M3N4O5", customerName: "Tomas Haingura", customerPhone: "+264 81 567 8901", itemCount: 2, subtotalCents: 1599900, contactStatus: "Contacted", paymentStatus: "PaidInFull", fulfillmentStatus: "ReadyForCollection", preferredContact: "WhatsApp", createdAt: "2026-05-22T09:00:00Z", updatedAt: "2026-05-24T14:00:00Z" },
+  { id: "o6", orderNumber: "DT-P6Q7R8", customerName: "Lukas Indongo", customerPhone: "+264 85 678 9012", itemCount: 1, subtotalCents: 449900, contactStatus: "Contacted", paymentStatus: "PaidInFull", fulfillmentStatus: "Completed", preferredContact: "Phone", createdAt: "2026-05-18T11:30:00Z", updatedAt: "2026-05-20T15:00:00Z" },
+  { id: "o7", orderNumber: "DT-S9T0U1", customerName: "Grace Kambonde", customerPhone: "+264 81 789 0123", itemCount: 4, subtotalCents: 4599900, contactStatus: "NotContacted", paymentStatus: "Unpaid", fulfillmentStatus: "Pending", preferredContact: "WhatsApp", createdAt: "2026-06-02T08:00:00Z", updatedAt: "2026-06-02T08:00:00Z" },
+  { id: "o8", orderNumber: "DT-V2W3X4", customerName: "David Nghifikwa", customerPhone: "+264 85 890 1234", itemCount: 2, subtotalCents: 2199900, contactStatus: "Contacted", paymentStatus: "Unpaid", fulfillmentStatus: "Cancelled", preferredContact: "WhatsApp", createdAt: "2026-05-15T13:00:00Z", updatedAt: "2026-05-16T10:00:00Z" },
+  { id: "o9", orderNumber: "DT-Y5Z6A7", customerName: "Rachel Shovaleka", customerPhone: "+264 81 901 2345", itemCount: 1, subtotalCents: 289900, contactStatus: "Contacted", paymentStatus: "Unpaid", fulfillmentStatus: "Pending", preferredContact: "Email", createdAt: "2026-06-01T15:30:00Z", updatedAt: "2026-06-01T15:30:00Z" },
+  { id: "o10", orderNumber: "DT-B8C9D0", customerName: "Erastus Hamutenya", customerPhone: "+264 85 012 3456", itemCount: 1, subtotalCents: 1299900, contactStatus: "Contacted", paymentStatus: "DepositPaid", fulfillmentStatus: "Pending", preferredContact: "Phone", createdAt: "2026-05-29T10:00:00Z", updatedAt: "2026-05-30T09:30:00Z" },
 ];
 
 export const mockProducts: DashboardProduct[] = [
@@ -366,17 +371,16 @@ export function formatCents(cents: number): string {
 
 export function getStatusBadgeClass(status: string): string {
   const map: Record<string, string> = {
-    PendingContact: "bg-warning-soft text-warning border-warning/20",
+    NotContacted: "bg-warning-soft text-warning border-warning/20",
     Contacted: "bg-info-soft text-info border-info/20",
-    AwaitingPayment: "bg-warning-soft text-warning border-warning/20",
+    Unpaid: "bg-warning-soft text-warning border-warning/20",
     DepositPaid: "bg-info-soft text-info border-info/20",
-    Paid: "bg-success-soft text-success border-success/20",
+    PaidInFull: "bg-success-soft text-success border-success/20",
+    Pending: "bg-warning-soft text-warning border-warning/20",
     ReadyForCollection: "bg-success-soft text-success border-success/20",
     Completed: "bg-success-soft text-success border-success/20",
     Cancelled: "bg-gray-100 text-gray-500 border-gray-200",
-    Unpaid: "bg-warning-soft text-warning border-warning/20",
     Refunded: "bg-gray-100 text-gray-500 border-gray-200",
-    Pending: "bg-warning-soft text-warning border-warning/20",
     Confirmed: "bg-success-soft text-success border-success/20",
     Failed: "bg-destructive/10 text-destructive border-destructive/20",
     InStock: "bg-success-soft text-success border-success/20",
@@ -390,10 +394,15 @@ export function getStatusBadgeClass(status: string): string {
 
 export function getStatusLabel(status: string): string {
   const map: Record<string, string> = {
-    PendingContact: "Pending Contact",
-    AwaitingPayment: "Awaiting Payment",
+    NotContacted: "Not Contacted",
+    Contacted: "Contacted",
+    Unpaid: "Unpaid",
     DepositPaid: "Deposit Paid",
+    PaidInFull: "Paid in Full",
+    Pending: "Pending",
     ReadyForCollection: "Ready for Collection",
+    Completed: "Completed",
+    Cancelled: "Cancelled",
     OutOfStock: "Out of Stock",
     InStock: "In Stock",
     LowStock: "Low Stock",

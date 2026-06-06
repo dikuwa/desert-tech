@@ -10,8 +10,9 @@ const mockOrders: DashboardOrder[] = [
     customerPhone: "+264 81 123 4567",
     itemCount: 2,
     subtotalCents: 2499900,
-    status: "PendingContact",
+    contactStatus: "NotContacted",
     paymentStatus: "Unpaid",
+    fulfillmentStatus: "Pending",
     preferredContact: "WhatsApp",
     createdAt: "2026-06-01T10:30:00Z",
     updatedAt: "2026-06-01T10:30:00Z",
@@ -23,8 +24,9 @@ const mockOrders: DashboardOrder[] = [
     customerPhone: "+264 85 456 7890",
     itemCount: 1,
     subtotalCents: 599900,
-    status: "Paid",
-    paymentStatus: "Paid",
+    contactStatus: "Contacted",
+    paymentStatus: "PaidInFull",
+    fulfillmentStatus: "Completed",
     preferredContact: "Email",
     createdAt: "2026-05-25T16:20:00Z",
     updatedAt: "2026-05-26T10:00:00Z",
@@ -34,7 +36,7 @@ const mockOrders: DashboardOrder[] = [
 describe("generateOrdersCSV", () => {
   it("should generate CSV with headers", () => {
     const csv = generateOrdersCSV(mockOrders);
-    expect(csv).toContain("Order,Customer,Phone,Items,Total,Status,Payment,Date");
+    expect(csv).toContain("Order,Customer,Phone,Items,Total,Contact,Payment,Fulfillment,Date");
   });
 
   it("should include order data rows", () => {
@@ -60,15 +62,15 @@ describe("generateOrdersCSV", () => {
   it("should wrap values in quotes", () => {
     const csv = generateOrdersCSV(mockOrders);
     const lines = csv.split("\n");
-    // Data rows should have quoted values
-    expect(lines[1]).toMatch(/^".*",".*",".*",".*",".*",".*",".*",".*"$/);
+    // Data rows should have quoted values (9 columns now)
+    expect(lines[1]).toMatch(/^".*",".*",".*",".*",".*",".*",".*",".*",".*"$/);
   });
 
   it("should return empty headers-only CSV for empty orders", () => {
     const csv = generateOrdersCSV([]);
     const lines = csv.split("\n");
     expect(lines.length).toBe(1);
-    expect(lines[0]).toBe("Order,Customer,Phone,Items,Total,Status,Payment,Date");
+    expect(lines[0]).toBe("Order,Customer,Phone,Items,Total,Contact,Payment,Fulfillment,Date");
   });
 });
 

@@ -13,12 +13,12 @@ export default function DashboardPage() {
   const notifications = useDashboardStore((s) => s.notifications);
   const followUps = useDashboardStore((s) => s.followUps);
 
-  const pendingOrders = orders.filter((o) => o.status === "PendingContact");
+  const pendingOrders = orders.filter((o) => o.contactStatus === "NotContacted");
   const lowStockProducts = products.filter((p) => p.availability === "LowStock" || p.stockQuantity <= p.lowStockThreshold);
   const pendingFollowUps = followUps.filter((f) => f.status === "Pending");
   const unreadNotifications = notifications.filter((n) => !n.isRead);
   const recentOrders = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
-  const totalRevenue = orders.filter((o) => o.paymentStatus === "Paid").reduce((sum, o) => sum + o.subtotalCents, 0);
+  const totalRevenue = orders.filter((o) => o.paymentStatus === "PaidInFull").reduce((sum, o) => sum + o.subtotalCents, 0);
 
   const stats = [
     { label: "New Orders", value: pendingOrders.length, icon: ShoppingBag, color: "text-primary", bg: "bg-accent", href: "/dashboard/orders" },
@@ -82,7 +82,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-bold text-foreground">{formatCents(order.subtotalCents)}</p>
-                  <span className={`inline-block rounded-md border px-2 py-0.5 text-[10px] font-semibold ${order.paymentStatus === "Paid" ? "bg-success-soft text-success border-success/20" : "bg-warning-soft text-warning border-warning/20"}`}>
+                  <span className={`inline-block rounded-md border px-2 py-0.5 text-[10px] font-semibold ${order.paymentStatus === "PaidInFull" ? "bg-success-soft text-success border-success/20" : "bg-warning-soft text-warning border-warning/20"}`}>
                     {order.paymentStatus}
                   </span>
                 </div>

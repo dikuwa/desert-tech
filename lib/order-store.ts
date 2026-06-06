@@ -11,8 +11,9 @@ export interface StoredOrder {
   customerPhone: string;
   itemCount: number;
   subtotalCents: number;
-  status: string;
+  contactStatus: string;
   paymentStatus: string;
+  fulfillmentStatus: string;
   preferredContact: string;
   notes?: string;
   items: { name: string; quantity: number; priceCents: number }[];

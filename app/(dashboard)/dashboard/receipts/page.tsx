@@ -19,7 +19,7 @@ export default function ReceiptsPage() {
   const addNotification = useDashboardStore((s) => s.addNotification);
   const storeOrders = useDashboardStore((s) => s.orders);
   const allOrders = [...storeOrders, ...mockOrders.filter(mo => !storeOrders.find(so => so.orderNumber === mo.orderNumber))];
-  const paidOrders = allOrders.filter(o => o.paymentStatus === "Paid" || o.paymentStatus === "DepositPaid");
+  const paidOrders = allOrders.filter(o => o.paymentStatus === "PaidInFull" || o.paymentStatus === "DepositPaid");
 
   const handleDownloadPDF = async (orderId: string) => {
     setDownloading(orderId);

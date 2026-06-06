@@ -6,15 +6,16 @@ import type { DashboardOrder } from "./dashboard-data";
  * Returns the CSV string ready to be saved as a Blob.
  */
 export function generateOrdersCSV(orders: DashboardOrder[]): string {
-  const headers = ["Order", "Customer", "Phone", "Items", "Total", "Status", "Payment", "Date"];
+  const headers = ["Order", "Customer", "Phone", "Items", "Total", "Contact", "Payment", "Fulfillment", "Date"];
   const rows = orders.map((o) => [
     o.orderNumber,
     o.customerName,
     o.customerPhone,
     o.itemCount.toString(),
     formatCents(o.subtotalCents),
-    getStatusLabel(o.status),
+    getStatusLabel(o.contactStatus),
     getStatusLabel(o.paymentStatus),
+    getStatusLabel(o.fulfillmentStatus),
     new Date(o.createdAt).toLocaleDateString("en-US"),
   ]);
   return [headers.join(","), ...rows.map((r) => r.map((c) => `"${c}"`).join(","))].join("\n");
@@ -34,8 +35,9 @@ export function generateOrdersExportHTML(orders: DashboardOrder[]): string {
         <td>${o.customerPhone}</td>
         <td>${o.itemCount}</td>
         <td>${formatCents(o.subtotalCents)}</td>
-        <td>${getStatusLabel(o.status)}</td>
+        <td>${getStatusLabel(o.contactStatus)}</td>
         <td>${getStatusLabel(o.paymentStatus)}</td>
+        <td>${getStatusLabel(o.fulfillmentStatus)}</td>
         <td>${new Date(o.createdAt).toLocaleDateString("en-US")}</td>
       </tr>`,
     )
@@ -59,8 +61,9 @@ export function generateOrdersExportHTML(orders: DashboardOrder[]): string {
         <h1>Orders Export - ${new Date().toLocaleDateString("en-US")}</h1>
         <p>Total: ${orders.length} orders</p>
         <table>
-          <thead>
-            <tr><th>Order</th><th>Customer</th><th>Phone</th><th>Items</th><th>Total</th><th>Status</th><th>Payment</th><th>Date</th></tr>
+          <thead>        <tr>
+          <th>Order</th><th>Customer</th><th>Phone</th><th>Items</th><th>Total</th><th>Contact</th><th>Payment</th><th>Fulfillment</th><th>Date</th>
+        </tr>
           </thead>
           <tbody>
             ${tableRows}

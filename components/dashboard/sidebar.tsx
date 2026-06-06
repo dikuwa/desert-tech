@@ -21,7 +21,7 @@ import {
   ChevronLeft,
   Megaphone,
   ExternalLink,
-  BellDot,
+  PackageSearch,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -37,7 +37,7 @@ const adminNavItems = [
   { href: "/dashboard/follow-ups", label: "Follow-ups", icon: CalendarClock },
   { href: "/dashboard/receipts", label: "Receipts", icon: FileText },
   { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
-  { href: "/dashboard/back-in-stock", label: "Stock Requests", icon: BellDot },
+  { href: "/dashboard/back-in-stock", label: "Stock Requests", icon: PackageSearch },
 ];
 
 const financialNavItems = [

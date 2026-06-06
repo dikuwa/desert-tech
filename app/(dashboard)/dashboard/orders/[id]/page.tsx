@@ -11,16 +11,17 @@ import { cn } from "@/lib/utils";
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
 
-const STATUS_OPTIONS = ["PendingContact", "Contacted", "AwaitingPayment", "DepositPaid", "Paid", "ReadyForCollection", "Completed", "Cancelled"];
-const PAYMENT_OPTIONS = ["Unpaid", "DepositPaid", "Paid", "Cancelled"];
+const STATUS_OPTIONS = ["NotContacted", "Contacted"];
+const PAYMENT_OPTIONS = ["Unpaid", "DepositPaid", "PaidInFull"];
 
 export default function OrderDetailPage() {
   const params = useParams();
   const orders = useDashboardStore((s) => s.orders);
   const customers = useDashboardStore((s) => s.customers);
   const followUps = useDashboardStore((s) => s.followUps);
-  const updateOrderStatus = useDashboardStore((s) => s.updateOrderStatus);
-  const updatePaymentStatus = useDashboardStore((s) => s.updatePaymentStatus);
+  const updateOrderContactStatus = useDashboardStore((s) => s.updateOrderContactStatus);
+  const updatePaymentStatus = useDashboardStore((s) => s.updateOrderPaymentStatus);
+  const updateFulfillmentStatus = useDashboardStore((s) => s.updateOrderFulfillmentStatus);
   const addPayment = useDashboardStore((s) => s.addPayment);
   const markFollowUpDone = useDashboardStore((s) => s.markFollowUpDone);
   const addNotification = useDashboardStore((s) => s.addNotification);
@@ -95,9 +96,9 @@ export default function OrderDetailPage() {
 
   const timeline = [
     { label: "Order Created", time: order.createdAt, icon: Clock, done: true },
-    { label: order.status === "PendingContact" ? "Awaiting Contact" : "Customer Contacted", time: order.updatedAt, icon: User, done: order.status !== "PendingContact" },
-    { label: order.paymentStatus === "Unpaid" ? "Awaiting Payment" : "Payment Received", time: order.updatedAt, icon: Wallet, done: order.paymentStatus !== "Unpaid" && order.paymentStatus !== "Cancelled" },
-    { label: order.status === "Completed" ? "Completed" : "Ready for Collection", time: order.updatedAt, icon: Package, done: order.status === "Completed" || order.status === "ReadyForCollection" || order.status === "Paid" },
+    { label: order.contactStatus === "NotContacted" ? "Awaiting Contact" : "Customer Contacted", time: order.updatedAt, icon: User, done: order.contactStatus !== "NotContacted" },
+    { label: order.paymentStatus === "Unpaid" ? "Awaiting Payment" : "Payment Received", time: order.updatedAt, icon: Wallet, done: order.paymentStatus !== "Unpaid" },
+    { label: order.fulfillmentStatus === "Completed" ? "Completed" : order.fulfillmentStatus === "ReadyForCollection" ? "Ready for Collection" : "Awaiting Fulfillment", time: order.updatedAt, icon: Package, done: order.fulfillmentStatus === "Completed" || order.fulfillmentStatus === "ReadyForCollection" },
   ];
 
   return (
@@ -117,13 +118,14 @@ export default function OrderDetailPage() {
               <div>
                 <h1 className="text-xl font-bold tracking-tight text-foreground font-mono">{order.orderNumber}</h1>
                 <div className="flex items-center gap-3 mt-2">
-                  <span className={cn("inline-block rounded-md border px-2.5 py-0.5 text-xs font-semibold", getStatusBadgeClass(order.status))}>{getStatusLabel(order.status)}</span>
+                  <span className={cn("inline-block rounded-md border px-2.5 py-0.5 text-xs font-semibold", getStatusBadgeClass(order.contactStatus))}>{getStatusLabel(order.contactStatus)}</span>
                   <span className={cn("inline-block rounded-md border px-2.5 py-0.5 text-xs font-semibold", getStatusBadgeClass(order.paymentStatus))}>{getStatusLabel(order.paymentStatus)}</span>
+                  <span className={cn("inline-block rounded-md border px-2.5 py-0.5 text-xs font-semibold", getStatusBadgeClass(order.fulfillmentStatus))}>{getStatusLabel(order.fulfillmentStatus)}</span>
                   <span className="text-xs text-muted-foreground">{new Date(order.createdAt).toLocaleDateString()}</span>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <Select value={order.status} onValueChange={v => updateOrderStatus(order.id, v)}>
+                <Select value={order.contactStatus} onValueChange={v => updateOrderContactStatus(order.id, v as any)}>
                   <SelectTrigger className="h-8 rounded-lg border border-border bg-background px-2 text-xs font-semibold focus:border-primary focus:ring-1 focus:ring-primary/30 gap-1 min-w-[130px]">
                     <SelectValue />
                   </SelectTrigger>
@@ -236,8 +238,8 @@ export default function OrderDetailPage() {
               </button>
             </div>
             <p className="text-2xl font-bold text-foreground">{formatCents(order.subtotalCents)}</p>
-            <p className={cn("text-xs mt-1", order.paymentStatus === "Paid" ? "text-success" : "text-warning")}>
-              {order.paymentStatus === "Paid" ? "Fully Paid" : order.paymentStatus === "DepositPaid" ? "Deposit Paid" : "Unpaid"}
+            <p className={cn("text-xs mt-1", order.paymentStatus === "PaidInFull" ? "text-success" : "text-warning")}>
+              {order.paymentStatus === "PaidInFull" ? "Fully Paid" : order.paymentStatus === "DepositPaid" ? "Deposit Paid" : "Unpaid"}
             </p>
             {showAddPayment && (
               <div className="mt-3 space-y-2 border-t border-border pt-3">
