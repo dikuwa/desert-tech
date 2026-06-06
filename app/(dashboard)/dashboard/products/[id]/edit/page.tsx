@@ -91,6 +91,8 @@ export default function EditProductPage() {
     if (!form.name.trim()) return;
     setSubmitting(true);
     await new Promise(r => setTimeout(r, 300));
+    const stockWasUnavailable = product.availability === "OutOfStock" || product.stockQuantity <= 0;
+    const stockIsAvailable = form.stockQuantity > 0;
     updateProduct(product.id, {
       name: form.name.trim(),
       brand: form.brand.trim(),
@@ -109,6 +111,17 @@ export default function EditProductPage() {
       imageUrl: images[0] || product.imageUrl,
       images: images.length > 0 ? [...(product.images || []), ...images] : undefined,
     });
+    if (stockWasUnavailable && stockIsAvailable) {
+      fetch("/api/back-in-stock-requests", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId: product.id,
+          productName: form.name.trim(),
+          status: "ReadyToContact",
+        }),
+      }).catch(() => {});
+    }
     setSubmitting(false);
     router.push("/dashboard/products");
   };

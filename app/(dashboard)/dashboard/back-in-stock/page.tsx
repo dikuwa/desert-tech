@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   Bell,
   CheckCircle,
@@ -9,14 +9,11 @@ import {
   AlertTriangle,
   Search,
   ArrowUpDown,
-  ExternalLink,
   MessageCircle,
   Phone,
   Mail,
   ChevronLeft,
   ChevronRight,
-  Send,
-  Loader2,
 } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
@@ -64,6 +61,7 @@ export default function BackInStockPage() {
   const requests = useDashboardStore((s) => s.backInStockRequests);
   const updateStatus = useDashboardStore((s) => s.updateBackInStockStatus);
   const deleteRequest = useDashboardStore((s) => s.deleteBackInStockRequest);
+  const syncRequests = useDashboardStore((s) => s.syncBackInStockRequests);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<BackInStockStatus | "all">("all");
@@ -173,43 +171,48 @@ export default function BackInStockPage() {
     }
   };
 
-  const [notifying, setNotifying] = useState(false);
+  useEffect(() => {
+    let active = true;
+    fetch("/api/back-in-stock-requests")
+      .then((response) => response.json())
+      .then((data) => {
+        if (active && data.success && Array.isArray(data.requests)) {
+          syncRequests(data.requests);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [syncRequests]);
 
-  // Group ready-to-contact requests by product
-  const readyRequests = requests.filter((r) => r.status === "ReadyToContact");
-  const readyByProduct = useMemo(() => {
-    const map = new Map<string, DashboardBackInStockRequest[]>();
-    for (const r of readyRequests) {
-      const existing = map.get(r.productId) || [];
-      existing.push(r);
-      map.set(r.productId, existing);
-    }
-    return Array.from(map.entries()).map(([productId, reqs]) => ({
-      productId,
-      productName: reqs[0].productName,
-      count: reqs.length,
-      emailCount: reqs.filter((r) => r.preferredContact === "Email").length,
-    }));
-  }, [readyRequests]);
-
-  const handleNotifyProduct = async (productId: string) => {
-    setNotifying(true);
+  const persistStatus = async (id: string, status: BackInStockStatus) => {
+    updateStatus(id, status);
     try {
-      const res = await fetch("/api/back-in-stock-requests/notify", {
-        method: "POST",
+      const response = await fetch("/api/back-in-stock-requests", {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId }),
+        body: JSON.stringify({ id, status }),
       });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        toast.success(data.message || "Notifications sent!");
-      } else {
-        toast.error(data.error || "Failed to send notifications.");
-      }
+      if (!response.ok) throw new Error();
+      toast.success(status === "Contacted" ? "Customer marked as contacted" : "Request updated");
     } catch {
-      toast.error("Something went wrong. Please try again.");
-    } finally {
-      setNotifying(false);
+      toast.error("Saved locally, but the server could not be updated.");
+    }
+  };
+
+  const persistDelete = async (id: string) => {
+    deleteRequest(id);
+    try {
+      const response = await fetch("/api/back-in-stock-requests", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (!response.ok) throw new Error();
+      toast.success("Request deleted");
+    } catch {
+      toast.error("Deleted locally, but the server could not be updated.");
     }
   };
 
@@ -229,41 +232,17 @@ export default function BackInStockPage() {
         </div>
       </div>
 
-      {/* Notify action banner */}
-      {readyByProduct.length > 0 && (
+      {/* Manual outreach banner */}
+      {requests.some((request) => request.status === "ReadyToContact") && (
         <div className="rounded-xl border border-success/20 bg-success-soft/30 px-5 py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                <Bell className="h-4 w-4 text-success" />
-                Stock restored — customers are waiting
-              </h3>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                {readyRequests.length} customer{readyRequests.length !== 1 ? "s" : ""} to contact
-                {readyByProduct.some((g) => g.emailCount > 0) &&
-                  ` (${readyByProduct.reduce((s, g) => s + g.emailCount, 0)} with email)`}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {readyByProduct.map((group) => (
-                <button
-                  key={group.productId}
-                  onClick={() => handleNotifyProduct(group.productId)}
-                  disabled={notifying}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-success px-3 py-2 text-xs font-semibold text-white hover:bg-success/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {notifying ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Send className="h-3.5 w-3.5" />
-                  )}
-                  Notify {group.productName}
-                  <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-[10px]">
-                    {group.count}
-                  </span>
-                </button>
-              ))}
-            </div>
+          <div>
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <Bell className="h-4 w-4 text-success" />
+              Stock restored, customers are ready for follow-up
+            </h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Open each customer&apos;s preferred contact link, then mark the request as contacted.
+            </p>
           </div>
         </div>
       )}
@@ -425,7 +404,7 @@ export default function BackInStockPage() {
                         <div className="flex items-center justify-end gap-1">
                           {req.status === "New" && (
                             <button
-                              onClick={() => updateStatus(req.id, "ReadyToContact")}
+                              onClick={() => persistStatus(req.id, "ReadyToContact")}
                               className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors"
                               title="Mark ready to contact"
                             >
@@ -435,7 +414,7 @@ export default function BackInStockPage() {
                           )}
                           {req.status === "ReadyToContact" && (
                             <button
-                              onClick={() => updateStatus(req.id, "Contacted")}
+                              onClick={() => persistStatus(req.id, "Contacted")}
                               className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors"
                               title="Mark contacted"
                             >
@@ -445,7 +424,7 @@ export default function BackInStockPage() {
                           )}
                           {(req.status === "New" || req.status === "ReadyToContact" || req.status === "Contacted") && (
                             <button
-                              onClick={() => updateStatus(req.id, "Cancelled")}
+                              onClick={() => persistStatus(req.id, "Cancelled")}
                               className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-destructive hover:border-destructive/30 hover:bg-destructive/5 transition-colors"
                               title="Cancel"
                             >
@@ -455,7 +434,7 @@ export default function BackInStockPage() {
                           )}
                           {req.status === "Cancelled" && (
                             <button
-                              onClick={() => deleteRequest(req.id)}
+                              onClick={() => persistDelete(req.id)}
                               className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/5 transition-colors"
                               title="Delete"
                             >

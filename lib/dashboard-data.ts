@@ -4,6 +4,14 @@ export type OrderContactStatus = "NotContacted" | "Contacted";
 export type OrderPaymentStatus = "Unpaid" | "DepositPaid" | "PaidInFull";
 export type OrderFulfillmentStatus = "Pending" | "ReadyForCollection" | "Completed" | "Cancelled";
 
+export interface OrderTimelineEvent {
+  id: string;
+  stage: "Contact" | "Payment" | "Fulfillment" | "Order";
+  label: string;
+  status: string;
+  createdAt: string;
+}
+
 export interface DashboardOrder {
   id: string;
   orderNumber: string;
@@ -20,6 +28,8 @@ export interface DashboardOrder {
   contactStatusAt?: string;
   paymentStatusAt?: string;
   fulfillmentStatusAt?: string;
+  timelineEvents?: OrderTimelineEvent[];
+  items?: { name: string; quantity: number; unitPriceCents: number }[];
 }
 
 export interface DashboardOrderDetail extends DashboardOrder {

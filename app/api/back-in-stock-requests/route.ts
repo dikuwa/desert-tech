@@ -11,8 +11,50 @@ const requestSchema = z.object({
   note: z.string().max(500).optional(),
 });
 
-// Product IDs that are known to be sold out (from lib/data.ts)
-const SOLD_OUT_PRODUCT_IDS = new Set(["p4", "p13"]);
+const statusSchema = z.union([
+  z.object({
+    id: z.string().min(1),
+    status: z.enum(["New", "ReadyToContact", "Contacted", "Cancelled"]),
+  }),
+  z.object({
+    productId: z.string().min(1),
+    productName: z.string().min(1),
+    status: z.literal("ReadyToContact"),
+  }),
+]);
+
+const deleteSchema = z.object({ id: z.string().min(1) });
+
+export async function GET() {
+  const { getBackInStockRequests } = await import("@/lib/back-in-stock-store");
+  const fallbackRequests = getBackInStockRequests();
+
+  try {
+    const { db } = await import("@/lib/db");
+    if (db) {
+      const databaseRequests = await db.backInStockRequest.findMany({
+        orderBy: { createdAt: "desc" },
+      });
+      const byId = new Map(fallbackRequests.map((request) => [request.id, request]));
+      for (const request of databaseRequests) {
+        byId.set(request.id, {
+          ...request,
+          preferredContact: request.preferredContact as "WhatsApp" | "Phone" | "Email",
+          urgency: request.urgency as "ASAP" | "Flexible" | "JustChecking",
+          status: request.status as "New" | "ReadyToContact" | "Contacted" | "Cancelled",
+          note: request.note ?? undefined,
+          createdAt: request.createdAt.toISOString(),
+          updatedAt: request.updatedAt.toISOString(),
+        });
+      }
+      return NextResponse.json({ success: true, requests: Array.from(byId.values()) });
+    }
+  } catch (error) {
+    console.warn("[back-in-stock] Could not load database requests:", error);
+  }
+
+  return NextResponse.json({ success: true, requests: fallbackRequests });
+}
 
 export async function POST(req: Request) {
   try {
@@ -43,7 +85,8 @@ export async function POST(req: Request) {
       }
     }
 
-    // Try database first
+    // Try database first. The in-memory fallback is also kept so local/demo
+    // dashboards can retrieve the request from this API.
     try {
       const { db } = await import("@/lib/db");
       if (db) {
@@ -142,5 +185,77 @@ export async function POST(req: Request) {
       },
       { status: 500 },
     );
+  }
+}
+
+export async function PATCH(req: Request) {
+  try {
+    const action = statusSchema.parse(await req.json());
+    const status = action.status;
+    let updated = false;
+
+    try {
+      const { db } = await import("@/lib/db");
+      if (db) {
+        if ("id" in action) {
+          await db.backInStockRequest.update({ where: { id: action.id }, data: { status } });
+          updated = true;
+        } else {
+          const result = await db.backInStockRequest.updateMany({
+            where: { productId: action.productId, status: "New" },
+            data: { status },
+          });
+          updated = result.count > 0;
+        }
+      }
+    } catch {
+      // The request may belong to the local/demo fallback.
+    }
+
+    if ("id" in action) {
+      const { updateBackInStockRequestStatus } = await import("@/lib/back-in-stock-store");
+      updated = Boolean(updateBackInStockRequestStatus(action.id, status)) || updated;
+    } else {
+      const { markRequestsReadyForProduct } = await import("@/lib/back-in-stock-store");
+      updated = markRequestsReadyForProduct(action.productId, action.productName).length > 0 || updated;
+    }
+
+    return updated
+      ? NextResponse.json({ success: true })
+      : NextResponse.json({ success: false, error: "Request not found" }, { status: 404 });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ success: false, error: "Validation failed" }, { status: 400 });
+    }
+    return NextResponse.json({ success: false, error: "Could not update request" }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const { id } = deleteSchema.parse(await req.json());
+    let deleted = false;
+
+    try {
+      const { db } = await import("@/lib/db");
+      if (db) {
+        await db.backInStockRequest.delete({ where: { id } });
+        deleted = true;
+      }
+    } catch {
+      // The request may belong to the local/demo fallback.
+    }
+
+    const { deleteBackInStockRequest } = await import("@/lib/back-in-stock-store");
+    deleted = deleteBackInStockRequest(id) || deleted;
+
+    return deleted
+      ? NextResponse.json({ success: true })
+      : NextResponse.json({ success: false, error: "Request not found" }, { status: 404 });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ success: false, error: "Validation failed" }, { status: 400 });
+    }
+    return NextResponse.json({ success: false, error: "Could not delete request" }, { status: 500 });
   }
 }

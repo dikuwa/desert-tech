@@ -51,12 +51,29 @@ import {
 import { MoneyInput } from "@/components/ui/money-input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { motionTransition, statusVariants } from "@/lib/motion";
 
 const CONTACT_ORDER: OrderContactStatus[] = ["NotContacted", "Contacted"];
 const PAYMENT_ORDER: OrderPaymentStatus[] = ["Unpaid", "DepositPaid", "PaidInFull"];
 const FULFILLMENT_ORDER: OrderFulfillmentStatus[] = ["Pending", "ReadyForCollection", "Completed"];
 
 const PAYMENT_METHODS = ["BankTransfer", "Cash", "PhoneTransfer", "Card", "Other"] as const;
+
+function stageStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    NotContacted: "Pending Contact",
+    Contacted: "Contacted",
+    Unpaid: "Awaiting Payment",
+    DepositPaid: "Deposit Paid",
+    PaidInFull: "Paid in Full",
+    Pending: "Processing",
+    ReadyForCollection: "Ready for Collection",
+    Completed: "Completed",
+    Cancelled: "Cancelled",
+  };
+  return labels[status] ?? getStatusLabel(status);
+}
 
 interface TimelineEntry {
   stage: string;
@@ -73,7 +90,7 @@ function buildTimeline(order: DashboardOrder): TimelineEntry[] {
     {
       stage: "Contact",
       status: order.contactStatus,
-      label: getStatusLabel(order.contactStatus),
+      label: stageStatusLabel(order.contactStatus),
       timestamp: order.contactStatusAt || order.createdAt,
       icon: order.contactStatus === "Contacted" ? CheckCircle2 : Clock,
       iconClass:
@@ -85,7 +102,7 @@ function buildTimeline(order: DashboardOrder): TimelineEntry[] {
     {
       stage: "Payment",
       status: order.paymentStatus,
-      label: getStatusLabel(order.paymentStatus),
+      label: stageStatusLabel(order.paymentStatus),
       timestamp: order.paymentStatusAt || order.createdAt,
       icon:
         order.paymentStatus === "PaidInFull"
@@ -104,7 +121,7 @@ function buildTimeline(order: DashboardOrder): TimelineEntry[] {
     {
       stage: "Fulfillment",
       status: order.fulfillmentStatus,
-      label: getStatusLabel(order.fulfillmentStatus),
+      label: stageStatusLabel(order.fulfillmentStatus),
       timestamp: order.fulfillmentStatusAt || order.createdAt,
       icon:
         order.fulfillmentStatus === "Completed"
@@ -143,6 +160,7 @@ export default function OrderDetailPage() {
   const customers = useDashboardStore((s) => s.customers);
   const addCustomer = useDashboardStore((s) => s.addCustomer);
   const deleteCustomer = useDashboardStore((s) => s.deleteCustomer);
+  const reducedMotion = useReducedMotion();
 
   if (!order) notFound();
 
@@ -195,14 +213,17 @@ export default function OrderDetailPage() {
 
   const handleContactChange = (value: string) => {
     updateContactStatus(order.id, value as OrderContactStatus);
+    toast.success(`Customer contact: ${stageStatusLabel(value)}`);
   };
 
   const handlePaymentChange = (value: string) => {
     updatePaymentStatus(order.id, value as OrderPaymentStatus);
+    toast.success(`Payment: ${stageStatusLabel(value)}`);
   };
 
   const handleFulfillmentChange = (value: string) => {
     updateFulfillmentStatus(order.id, value as OrderFulfillmentStatus);
+    toast.success(`Fulfillment: ${stageStatusLabel(value)}`);
   };
 
   const handleCancel = () => {
@@ -340,7 +361,7 @@ export default function OrderDetailPage() {
           </p>
         </div>
         <span className={cn("inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium", getStatusBadgeClass(order.fulfillmentStatus))}>
-          {getStatusLabel(order.fulfillmentStatus)}
+          {stageStatusLabel(order.fulfillmentStatus)}
         </span>
       </div>
 
@@ -475,9 +496,9 @@ export default function OrderDetailPage() {
               <div className={cn("flex h-5 w-5 items-center justify-center rounded-full", contactDone ? "bg-success-soft text-success" : "bg-warning-soft text-warning")}>
                 {contactDone ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
               </div>
-              <span className="text-xs font-semibold text-foreground">1. Contact</span>
+              <span className="text-xs font-semibold text-foreground">1. Customer Contact</span>
               <span className={cn("ml-auto inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium", getStatusBadgeClass(order.contactStatus))}>
-                {getStatusLabel(order.contactStatus)}
+                {stageStatusLabel(order.contactStatus)}
               </span>
             </div>
             <div className="p-3">
@@ -487,10 +508,15 @@ export default function OrderDetailPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {CONTACT_ORDER.map((s) => (
-                    <SelectItem key={s} value={s}>{getStatusLabel(s)}</SelectItem>
+                    <SelectItem key={s} value={s} disabled={s === "NotContacted" && paymentStarted}>
+                      {stageStatusLabel(s)}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                Confirm the customer has been reached before taking payment.
+              </p>
             </div>
           </div>
 
@@ -502,7 +528,7 @@ export default function OrderDetailPage() {
               </div>
               <span className="text-xs font-semibold text-foreground">2. Payment</span>
               <span className={cn("ml-auto inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium", getStatusBadgeClass(order.paymentStatus))}>
-                {getStatusLabel(order.paymentStatus)}
+                {stageStatusLabel(order.paymentStatus)}
               </span>
             </div>
             <div className="p-3 space-y-2">
@@ -512,7 +538,9 @@ export default function OrderDetailPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {PAYMENT_ORDER.map((s) => (
-                    <SelectItem key={s} value={s}>{getStatusLabel(s)}</SelectItem>
+                    <SelectItem key={s} value={s} disabled={s === "Unpaid" && order.fulfillmentStatus !== "Pending"}>
+                      {stageStatusLabel(s)}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -535,6 +563,9 @@ export default function OrderDetailPage() {
                   </div>
                 </>
               )}
+              {!contactDone && (
+                <p className="text-[11px] text-muted-foreground">Complete customer contact to unlock payment.</p>
+              )}
             </div>
           </div>
 
@@ -546,7 +577,7 @@ export default function OrderDetailPage() {
               </div>
               <span className="text-xs font-semibold text-foreground">3. Fulfillment</span>
               <span className={cn("ml-auto inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium", getStatusBadgeClass(order.fulfillmentStatus))}>
-                {getStatusLabel(order.fulfillmentStatus)}
+                {stageStatusLabel(order.fulfillmentStatus)}
               </span>
             </div>
             <div className="p-3">
@@ -557,11 +588,14 @@ export default function OrderDetailPage() {
                 <SelectContent>
                   {FULFILLMENT_ORDER.map((s) => (
                     <SelectItem key={s} value={s} disabled={s === "Pending" && isCompleted}>
-                      {getStatusLabel(s)}
+                      {stageStatusLabel(s)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                {!paymentStarted ? "Record a payment or deposit to unlock fulfillment." : "Move the order from processing to collection, then complete it."}
+              </p>
             </div>
           </div>
         </div>
@@ -580,7 +614,14 @@ export default function OrderDetailPage() {
             <div className="absolute left-4 top-2 bottom-2 w-px bg-border" />
             <div className="space-y-5">
               {timeline.map((entry) => (
-                <div key={entry.stage} className="relative flex gap-3">
+                <motion.div
+                  key={`${entry.stage}-${entry.status}`}
+                  variants={statusVariants}
+                  initial="hidden"
+                  animate="visible"
+                  transition={motionTransition(reducedMotion)}
+                  className="relative flex gap-3"
+                >
                   <div className="relative z-10 flex-shrink-0">
                     <div className={cn("flex h-8 w-8 items-center justify-center rounded-full border border-border", entry.iconClass)}>
                       <entry.icon className="h-4 w-4" />
@@ -613,10 +654,35 @@ export default function OrderDetailPage() {
                             : "Not yet reached."}
                     </p>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           </div>
+          {order.timelineEvents && order.timelineEvents.length > 0 && (
+            <div className="mt-5 border-t border-border pt-4">
+              <p className="mb-2 text-[10px] font-semibold uppercase text-muted-foreground">Recent activity</p>
+              <AnimatePresence initial={false}>
+                {order.timelineEvents.slice(0, 5).map((event) => (
+                  <motion.div
+                    key={event.id}
+                    variants={statusVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    transition={motionTransition(reducedMotion, 0.18)}
+                    className="flex items-center justify-between gap-3 border-t border-border/60 py-2 first:border-t-0"
+                  >
+                    <p className="text-xs text-foreground">
+                      <span className="font-semibold">{event.stage}:</span> {event.label}
+                    </p>
+                    <time className="shrink-0 text-[10px] text-muted-foreground">
+                      {new Date(event.createdAt).toLocaleString("en-NA", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                    </time>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          )}
         </div>
       </div>
 

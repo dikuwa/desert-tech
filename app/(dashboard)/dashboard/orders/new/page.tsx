@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -39,13 +39,20 @@ const CONTACT_METHODS = ["WhatsApp", "Phone", "Email"] as const;
 
 export default function NewWalkinOrderPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const addOrder = useDashboardStore((s) => s.addOrder);
   const customers = useDashboardStore((s) => s.customers);
   const products = useDashboardStore((s) => s.products);
+  const quotations = useDashboardStore((s) => s.quotations);
+  const sourceQuotation = quotations.find(
+    (quotation) => quotation.id === searchParams.get("quotationId"),
+  );
 
-  const [customerName, setCustomerName] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
-  const [preferredContact, setPreferredContact] = useState<string[]>(["WhatsApp"]);
+  const [customerName, setCustomerName] = useState(sourceQuotation?.customerName ?? "");
+  const [customerPhone, setCustomerPhone] = useState(sourceQuotation?.customerPhone ?? "");
+  const [preferredContact, setPreferredContact] = useState<string[]>(
+    sourceQuotation?.preferredContact?.length ? sourceQuotation.preferredContact : ["WhatsApp"],
+  );
   const [showCustomerSearch, setShowCustomerSearch] = useState(false);
   const customerInputRef = useRef<HTMLInputElement>(null);
   const customerSearchRef = useRef<HTMLDivElement>(null);
@@ -68,7 +75,9 @@ export default function NewWalkinOrderPage() {
   }, []);
 
   const [items, setItems] = useState<LineItem[]>([
-    { name: "", quantity: 1, unitPriceCents: 0 },
+    ...(sourceQuotation?.items?.length
+      ? sourceQuotation.items.map((item) => ({ ...item }))
+      : [{ name: "", quantity: 1, unitPriceCents: 0 }]),
   ]);
 
   const [recordPayment, setRecordPayment] = useState(false);
@@ -90,6 +99,15 @@ export default function NewWalkinOrderPage() {
 
   const updateItem = (idx: number, field: keyof LineItem, value: string | number) => {
     setItems(items.map((item, i) => (i === idx ? { ...item, [field]: value } : item)));
+  };
+
+  const selectProduct = (idx: number, name: string, unitPriceCents: number) => {
+    setItems((currentItems) =>
+      currentItems.map((item, i) =>
+        i === idx ? { ...item, name, unitPriceCents } : item,
+      ),
+    );
+    setActiveProductSearch(null);
   };
 
   const subtotalCents = items.reduce(
@@ -115,6 +133,7 @@ export default function NewWalkinOrderPage() {
         preferredContact: preferredContact.length > 0 ? preferredContact : ["WhatsApp"],
         itemCount,
         subtotalCents,
+        items: items.filter((item) => item.name.trim() && item.quantity > 0 && item.unitPriceCents > 0),
         payment: recordPayment && paymentAmountCents > 0
           ? {
               amountCents: paymentAmountCents,
@@ -147,10 +166,12 @@ export default function NewWalkinOrderPage() {
       </Link>
 
       <h1 className="text-2xl font-bold tracking-tight text-foreground">
-        New Walk-in Order
+        {sourceQuotation ? `Create Order from ${sourceQuotation.quotationNumber}` : "New Walk-in Order"}
       </h1>
       <p className="text-sm text-muted-foreground -mt-4">
-        Record an in-store or WhatsApp purchase manually.
+        {sourceQuotation
+          ? "Quotation details are prefilled. Review and edit anything needed before creating the order."
+          : "Record an in-store or WhatsApp purchase manually."}
       </p>
 
       <form
@@ -316,9 +337,7 @@ export default function NewWalkinOrderPage() {
                             type="button"
                             onMouseDown={(e) => {
                               e.preventDefault();
-                              updateItem(idx, "name", p.name);
-                              updateItem(idx, "unitPriceCents", p.priceCents);
-                              setActiveProductSearch(null);
+                              selectProduct(idx, p.name, p.priceCents);
                             }}
                             className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-muted transition-colors border-b border-border last:border-0"
                           >

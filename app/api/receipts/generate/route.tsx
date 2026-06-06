@@ -46,7 +46,14 @@ function findOrder(orderIdOrNumber: string) {
       customerName: order.customerName,
       customerPhone: order.customerPhone,
       items: [
-        { name: "Order Items", quantity: order.itemCount, unitPrice: order.subtotalCents / order.itemCount, total: order.subtotalCents },
+        ...(order.items?.length
+          ? order.items.map((item) => ({
+              name: item.name,
+              quantity: item.quantity,
+              unitPrice: item.unitPriceCents,
+              total: item.unitPriceCents * item.quantity,
+            }))
+          : [{ name: "Order Items", quantity: order.itemCount, unitPrice: order.subtotalCents / order.itemCount, total: order.subtotalCents }]),
       ],
       subtotalCents: order.subtotalCents,
       paymentStatus: order.paymentStatus,

@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { Bell, Check, Heart, ImageOff, ShoppingCart, Tag } from "lucide-react";
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/lib/store/cart";
 import { useWishlist } from "@/lib/store/wishlist";
 import { toast } from "sonner";
 import { NotifyMeModal } from "@/components/storefront/notify-me-modal";
+import { fadeUpVariants, motionTransition } from "@/lib/motion";
 
 export interface ProductData {
   id: string;
@@ -54,6 +55,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const [addedToCart, setAddedToCart] = useState(false);
   const { addItem } = useCart();
   const { toggleItem, isWishlisted } = useWishlist();
+  const reducedMotion = useReducedMotion();
   
   const wishlisted = isWishlisted(product.id);
   const isSoldOut = product.availability === "sold_out";
@@ -78,9 +80,11 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      variants={fadeUpVariants}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, amount: 0.12 }}
+      transition={motionTransition(reducedMotion, 0.26)}
       className={cn(
         "group relative flex min-h-full flex-col overflow-hidden rounded-lg border bg-card transition-all hover:shadow-md",
         isSoldOut ? "border-gray-200 opacity-75" : "border-border hover:-translate-y-0.5",

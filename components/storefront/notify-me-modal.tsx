@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { fadeUpVariants, motionTransition } from "@/lib/motion";
 
 interface NotifyMeModalProps {
   productId: string;
@@ -59,6 +61,7 @@ export function NotifyMeModal({
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
+  const reducedMotion = useReducedMotion();
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
@@ -119,11 +122,7 @@ export function NotifyMeModal({
   const handleContactMethodChange = (value: string) => {
     setPreferredContact(value as ContactMethod);
     setErrors((prev) => ({ ...prev, preferredContact: undefined, contactValue: undefined }));
-    if (value === "Email") {
-      setContactValue("");
-    } else {
-      setContactValue("");
-    }
+    setContactValue("");
   };
 
   const resetForm = () => {
@@ -147,8 +146,17 @@ export function NotifyMeModal({
     <Dialog open={open} onOpenChange={(newOpen) => { setOpen(newOpen); if (!newOpen) setTimeout(resetForm, 300); }}>
       <DialogTrigger asChild>{trigger ?? defaultTrigger}</DialogTrigger>
       <DialogContent className="sm:max-w-md">
+        <AnimatePresence mode="wait" initial={false}>
         {submitted ? (
-          <div className="flex flex-col items-center py-8 text-center">
+          <motion.div
+            key="success"
+            variants={fadeUpVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            transition={motionTransition(reducedMotion)}
+            className="flex flex-col items-center py-8 text-center"
+          >
             <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-success-soft">
               <Check className="h-7 w-7 text-success" />
             </div>
@@ -156,9 +164,17 @@ export function NotifyMeModal({
             <DialogDescription className="mt-2 max-w-sm text-base">
               We&apos;ll notify you when <span className="font-semibold text-foreground">{productName}</span> is available.
             </DialogDescription>
-          </div>
+          </motion.div>
         ) : (
-          <>
+          <motion.div
+            key="form"
+            variants={fadeUpVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            transition={motionTransition(reducedMotion)}
+            className="space-y-4"
+          >
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-xl">
                 <Bell className="h-5 w-5 text-primary" />
@@ -293,8 +309,9 @@ export function NotifyMeModal({
                 </>
               )}
             </button>
-          </>
+          </motion.div>
         )}
+        </AnimatePresence>
       </DialogContent>
     </Dialog>
   );

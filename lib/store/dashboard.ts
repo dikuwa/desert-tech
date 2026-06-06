@@ -30,9 +30,8 @@ import type {
   DashboardQuotation,
   DashboardBackInStockRequest,
   BackInStockStatus,
-  BackInStockUrgency,
-  BackInStockContactMethod,
   OrderContactStatus,
+  OrderTimelineEvent,
   BankDetail,
   ContactDetail,
   PaymentMethod,
@@ -98,6 +97,7 @@ interface DashboardState {
     preferredContact: string[];
     itemCount: number;
     subtotalCents: number;
+    items?: { name: string; quantity: number; unitPriceCents: number }[];
     payment?: { amountCents: number; method: string; note?: string };
   }) => DashboardOrder;
   updateOrderContactStatus: (id: string, contactStatus: OrderContactStatus) => void;
@@ -156,6 +156,7 @@ interface DashboardState {
   updateBackInStockStatus: (id: string, status: BackInStockStatus) => void;
   deleteBackInStockRequest: (id: string) => void;
   markBackInStockReadyForProduct: (productId: string, productName: string) => void;
+  syncBackInStockRequests: (requests: DashboardBackInStockRequest[]) => void;
 
   // Quotations
   addQuotation: (q: {
@@ -177,6 +178,21 @@ interface DashboardState {
 
 function slugify(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function createOrderEvent(
+  stage: OrderTimelineEvent["stage"],
+  status: string,
+  label: string,
+  createdAt = new Date().toISOString(),
+): OrderTimelineEvent {
+  return {
+    id: `${stage.toLowerCase()}-${createdAt}-${Math.random().toString(36).slice(2, 7)}`,
+    stage,
+    status,
+    label,
+    createdAt,
+  };
 }
 
 function syncContactSettings(
@@ -505,6 +521,13 @@ export const useDashboardStore = create<DashboardState>()(
           createdAt: now,
           updatedAt: now,
           paymentStatusAt: o.payment ? now : undefined,
+          items: o.items,
+          timelineEvents: [
+            createOrderEvent("Order", "Created", "Order created", now),
+            ...(o.payment
+              ? [createOrderEvent("Payment", paymentStatus, paymentStatus === "PaidInFull" ? "Paid in full" : "Deposit paid", now)]
+              : []),
+          ],
         };
 
         set((s) => ({
@@ -536,7 +559,19 @@ export const useDashboardStore = create<DashboardState>()(
         set((s) => ({
           orders: s.orders.map((o) =>
             o.id === id
-              ? { ...o, contactStatus: contactStatus as DashboardOrder["contactStatus"], contactStatusAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+              ? (() => {
+                  const now = new Date().toISOString();
+                  return {
+                    ...o,
+                    contactStatus: contactStatus as DashboardOrder["contactStatus"],
+                    contactStatusAt: now,
+                    updatedAt: now,
+                    timelineEvents: [
+                      createOrderEvent("Contact", contactStatus, contactStatus === "Contacted" ? "Customer contacted" : "Contact reset", now),
+                      ...(o.timelineEvents ?? []),
+                    ],
+                  };
+                })()
               : o
           ),
         })),
@@ -544,7 +579,17 @@ export const useDashboardStore = create<DashboardState>()(
         set((s) => ({
           orders: s.orders.map((o) =>
             o.id === id
-              ? { ...o, paymentStatus: paymentStatus as DashboardOrder["paymentStatus"], paymentStatusAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+              ? (() => {
+                  const now = new Date().toISOString();
+                  const label = paymentStatus === "PaidInFull" ? "Paid in full" : paymentStatus === "DepositPaid" ? "Deposit paid" : "Awaiting payment";
+                  return {
+                    ...o,
+                    paymentStatus: paymentStatus as DashboardOrder["paymentStatus"],
+                    paymentStatusAt: now,
+                    updatedAt: now,
+                    timelineEvents: [createOrderEvent("Payment", paymentStatus, label, now), ...(o.timelineEvents ?? [])],
+                  };
+                })()
               : o
           ),
         })),
@@ -552,7 +597,20 @@ export const useDashboardStore = create<DashboardState>()(
         set((s) => ({
           orders: s.orders.map((o) =>
             o.id === id
-              ? { ...o, fulfillmentStatus: fulfillmentStatus as DashboardOrder["fulfillmentStatus"], fulfillmentStatusAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+              ? (() => {
+                  const now = new Date().toISOString();
+                  const label =
+                    fulfillmentStatus === "ReadyForCollection" ? "Ready for collection" :
+                    fulfillmentStatus === "Completed" ? "Order completed" :
+                    fulfillmentStatus === "Cancelled" ? "Order cancelled" : "Processing";
+                  return {
+                    ...o,
+                    fulfillmentStatus: fulfillmentStatus as DashboardOrder["fulfillmentStatus"],
+                    fulfillmentStatusAt: now,
+                    updatedAt: now,
+                    timelineEvents: [createOrderEvent("Fulfillment", fulfillmentStatus, label, now), ...(o.timelineEvents ?? [])],
+                  };
+                })()
               : o
           ),
         })),
@@ -569,6 +627,10 @@ export const useDashboardStore = create<DashboardState>()(
                   paymentStatusAt: undefined,
                   fulfillmentStatusAt: undefined,
                   updatedAt: new Date().toISOString(),
+                  timelineEvents: [
+                    createOrderEvent("Order", "Restored", "Order restored"),
+                    ...(o.timelineEvents ?? []),
+                  ],
                 }
               : o
           ),
@@ -716,6 +778,8 @@ export const useDashboardStore = create<DashboardState>()(
 
           return result;
         }),
+      syncBackInStockRequests: (requests) =>
+        set({ backInStockRequests: requests }),
 
       // === Quotations ===
       addQuotation: (q) => {

@@ -136,6 +136,26 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+@media print {
+  .dashboard-sidebar {
+    display: none !important;
+  }
+
+  .dashboard-shell,
+  .dashboard-main,
+  .dashboard-content {
+    display: block !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    overflow: visible !important;
+    background: transparent !important;
+  }
+
+  .dashboard-content {
+    padding: 0 !important;
+  }
+}
+
 /* Mobile menu open: blur entire page behind drawer */
 body.mobile-menu-open header,
 body.mobile-menu-open main,

@@ -85,6 +85,15 @@ export default function NewQuotationPage() {
     setItems(items.map((item, i) => (i === idx ? { ...item, [field]: value } : item)));
   };
 
+  const selectProduct = (idx: number, name: string, unitPriceCents: number) => {
+    setItems((currentItems) =>
+      currentItems.map((item, i) =>
+        i === idx ? { ...item, name, unitPriceCents } : item,
+      ),
+    );
+    setActiveProductSearch(null);
+  };
+
   const subtotalCents = items.reduce(
     (sum, item) => sum + item.unitPriceCents * item.quantity,
     0,
@@ -303,9 +312,7 @@ export default function NewQuotationPage() {
                             type="button"
                             onMouseDown={(e) => {
                               e.preventDefault();
-                              updateItem(idx, "name", p.name);
-                              updateItem(idx, "unitPriceCents", p.priceCents);
-                              setActiveProductSearch(null);
+                              selectProduct(idx, p.name, p.priceCents);
                             }}
                             className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-muted transition-colors border-b border-border last:border-0"
                           >

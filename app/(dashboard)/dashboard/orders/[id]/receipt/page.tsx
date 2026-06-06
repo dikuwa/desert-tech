@@ -246,12 +246,17 @@ export default function OrderReceiptPage() {
               <span className="w-20 text-right">Total</span>
             </div>
             {/* Item rows */}
-            <div className="flex items-center text-sm">
-              <span className="flex-1 text-foreground">{order.itemCount} item{order.itemCount !== 1 ? "s" : ""}</span>
-              <span className="w-12 text-center text-muted-foreground">{order.itemCount}</span>
-              <span className="w-20 text-right text-foreground">{formatCents(order.subtotalCents / order.itemCount)}</span>
-              <span className="w-20 text-right font-semibold text-foreground">{formatCents(order.subtotalCents)}</span>
-            </div>
+            {(order.items?.length
+              ? order.items
+              : [{ name: `${order.itemCount} item${order.itemCount !== 1 ? "s" : ""}`, quantity: order.itemCount, unitPriceCents: order.subtotalCents / order.itemCount }]
+            ).map((item, index) => (
+              <div key={`${item.name}-${index}`} className="flex items-center text-sm">
+                <span className="flex-1 text-foreground">{item.name}</span>
+                <span className="w-12 text-center text-muted-foreground">{item.quantity}</span>
+                <span className="w-20 text-right text-foreground">{formatCents(item.unitPriceCents)}</span>
+                <span className="w-20 text-right font-semibold text-foreground">{formatCents(item.unitPriceCents * item.quantity)}</span>
+              </div>
+            ))}
           </div>
         </div>
 

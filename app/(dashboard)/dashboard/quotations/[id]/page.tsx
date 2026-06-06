@@ -348,7 +348,7 @@ export default function QuotationDetailPage() {
             <p className="text-xs text-success/80 mt-0.5">Create an order from this quotation to proceed.</p>
           </div>
           <Link
-            href={`/dashboard/orders/new`}
+            href={`/dashboard/orders/new?quotationId=${quotation.id}`}
             className="inline-flex items-center gap-2 rounded-lg bg-success px-4 py-2 text-xs font-semibold text-white hover:bg-success/90 transition-colors"
           >
             <ShoppingBag className="h-3.5 w-3.5" />
