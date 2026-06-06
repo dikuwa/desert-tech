@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Search,
   ArrowUpDown,
   ChevronLeft,
   ChevronRight,
   ShoppingBag,
-  ExternalLink,
 } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
@@ -22,6 +22,7 @@ import type { DashboardOrder } from "@/lib/dashboard-data";
 const ITEMS_PER_PAGE = 15;
 
 export default function OrdersPage() {
+  const router = useRouter();
   const orders = useDashboardStore((s) => s.orders);
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -164,15 +165,13 @@ export default function OrdersPage() {
                 paginated.map((order) => (
                   <tr
                     key={order.id}
-                    className="transition-colors hover:bg-muted/30"
+                    onClick={() => router.push(`/dashboard/orders/${order.id}`)}
+                    className="cursor-pointer transition-colors hover:bg-muted/30"
                   >
                     <td className="px-4 py-3">
-                      <Link
-                        href={`/dashboard/orders/${order.id}`}
-                        className="font-mono text-xs font-semibold text-primary hover:underline"
-                      >
+                      <span className="font-mono text-sm font-bold text-primary">
                         {order.orderNumber}
-                      </Link>
+                      </span>
                     </td>
                     <td className="px-4 py-3">
                       <div className="font-medium text-foreground">

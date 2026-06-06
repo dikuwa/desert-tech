@@ -91,6 +91,7 @@ interface DashboardState {
   updateOrderPaymentStatus: (id: string, paymentStatus: string) => void;
   updateOrderFulfillmentStatus: (id: string, fulfillmentStatus: string) => void;
   resetOrderStatuses: (id: string) => void;
+  deleteOrder: (id: string) => void;
   addPayment: (p: Omit<DashboardPayment, "id" | "recordedAt">) => void;
   addNotification: (n: Omit<DashboardNotification, "id" | "createdAt" | "isRead">) => void;
 
@@ -495,6 +496,16 @@ export const useDashboardStore = create<DashboardState>()(
               : o
           ),
         })),
+      deleteOrder: (id) =>
+        set((s) => {
+          const order = s.orders.find((o) => o.id === id);
+          return {
+            orders: s.orders.filter((o) => o.id !== id),
+            payments: order
+              ? s.payments.filter((p) => p.orderNumber !== order.orderNumber)
+              : s.payments,
+          };
+        }),
       addPayment: (p) => {
         const id = `pay${nextPaymentId++}`;
         const newPayment: DashboardPayment = {

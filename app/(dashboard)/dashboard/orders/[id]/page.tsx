@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { useParams, notFound } from "next/navigation";
+import { useParams, useRouter, notFound } from "next/navigation";
 import {
   ArrowLeft,
   Phone,
@@ -14,7 +14,11 @@ import {
   CheckCircle2,
   Clock,
   XCircle,
-  ChevronRight,
+  DollarSign,
+  Trash2,
+  AlertTriangle,
+  Plus,
+  Banknote,
 } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
@@ -36,10 +40,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 const CONTACT_ORDER: OrderContactStatus[] = ["NotContacted", "Contacted"];
 const PAYMENT_ORDER: OrderPaymentStatus[] = ["Unpaid", "DepositPaid", "PaidInFull"];
 const FULFILLMENT_ORDER: OrderFulfillmentStatus[] = ["Pending", "ReadyForCollection", "Completed"];
+
+const PAYMENT_METHODS = ["BankTransfer", "Cash", "PhoneTransfer", "Card", "Other"] as const;
 
 interface TimelineEntry {
   stage: string;
@@ -52,7 +68,7 @@ interface TimelineEntry {
 }
 
 function buildTimeline(order: DashboardOrder): TimelineEntry[] {
-  const entries: TimelineEntry[] = [
+  return [
     {
       stage: "Contact",
       status: order.contactStatus,
@@ -94,9 +110,7 @@ function buildTimeline(order: DashboardOrder): TimelineEntry[] {
           ? CheckCircle2
           : order.fulfillmentStatus === "Cancelled"
             ? XCircle
-            : order.fulfillmentStatus === "ReadyForCollection"
-              ? Clock
-              : Clock,
+            : Clock,
       iconClass:
         order.fulfillmentStatus === "Completed"
           ? "text-success bg-success-soft"
@@ -109,45 +123,51 @@ function buildTimeline(order: DashboardOrder): TimelineEntry[] {
         order.fulfillmentStatus !== "Pending" && order.fulfillmentStatus !== "Cancelled",
     },
   ];
-  return entries;
 }
 
 export default function OrderDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const orderId = params.id as string;
-  const order = useDashboardStore((s) =>
-    s.orders.find((o) => o.id === orderId),
-  );
-  const updateContactStatus = useDashboardStore(
-    (s) => s.updateOrderContactStatus,
-  );
-  const updatePaymentStatus = useDashboardStore(
-    (s) => s.updateOrderPaymentStatus,
-  );
-  const updateFulfillmentStatus = useDashboardStore(
-    (s) => s.updateOrderFulfillmentStatus,
-  );
-  const resetOrderStatuses = useDashboardStore(
-    (s) => s.resetOrderStatuses,
-  );
+
+  const order = useDashboardStore((s) => s.orders.find((o) => o.id === orderId));
+  const payments = useDashboardStore((s) => s.payments);
+  const updateContactStatus = useDashboardStore((s) => s.updateOrderContactStatus);
+  const updatePaymentStatus = useDashboardStore((s) => s.updateOrderPaymentStatus);
+  const updateFulfillmentStatus = useDashboardStore((s) => s.updateOrderFulfillmentStatus);
+  const resetOrderStatuses = useDashboardStore((s) => s.resetOrderStatuses);
+  const deleteOrderFromStore = useDashboardStore((s) => s.deleteOrder);
+  const addPayment = useDashboardStore((s) => s.addPayment);
+  const addNotification = useDashboardStore((s) => s.addNotification);
 
   if (!order) notFound();
 
+  const orderPayments = payments.filter((p) => p.orderNumber === order.orderNumber);
+  const totalPaidCents = orderPayments.reduce((sum, p) => sum + p.amountCents, 0);
+  const balanceCents = order.subtotalCents - totalPaidCents;
+
   const timeline = buildTimeline(order);
 
-  // Determine which stages are enabled based on progression
   const contactDone = order.contactStatus === "Contacted";
   const paymentStarted = order.paymentStatus !== "Unpaid";
   const paymentDone = order.paymentStatus === "PaidInFull";
   const isCancelled = order.fulfillmentStatus === "Cancelled";
   const isCompleted = order.fulfillmentStatus === "Completed";
 
-  const canChangePayment =
-    contactDone && !isCancelled && !isCompleted;
-  const canChangeFulfillment =
-    paymentStarted && !isCancelled && !isCompleted;
+  const canChangePayment = contactDone && !isCancelled && !isCompleted;
+  const canChangeFulfillment = paymentStarted && !isCancelled && !isCompleted;
   const canCancel = !isCancelled && !isCompleted;
   const canRestore = isCancelled;
+
+  // Confirmation state
+  const [confirmAction, setConfirmAction] = useState<"cancel" | "delete" | "restore" | null>(null);
+
+  // Record Payment dialog
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<string>("BankTransfer");
+  const [paymentNote, setPaymentNote] = useState("");
+  const [submittingPayment, setSubmittingPayment] = useState(false);
 
   const handleContactChange = (value: string) => {
     updateContactStatus(order.id, value as OrderContactStatus);
@@ -163,422 +183,394 @@ export default function OrderDetailPage() {
 
   const handleCancel = () => {
     updateFulfillmentStatus(order.id, "Cancelled");
+    setConfirmAction(null);
+    addNotification({
+      type: "order",
+      title: "Order Cancelled",
+      message: `Order ${order.orderNumber} was cancelled.`,
+    });
+    toast.success(`Order ${order.orderNumber} cancelled`);
+  };
+
+  const handleDelete = () => {
+    deleteOrderFromStore(order.id);
+    setConfirmAction(null);
+    toast.success(`Order ${order.orderNumber} deleted`);
+    router.push("/dashboard/orders");
   };
 
   const handleRestore = () => {
     resetOrderStatuses(order.id);
+    setConfirmAction(null);
+    addNotification({
+      type: "order",
+      title: "Order Restored",
+      message: `Order ${order.orderNumber} has been restored.`,
+    });
+    toast.success(`Order ${order.orderNumber} restored`);
   };
 
-  const contactMethodIcon = () => {
+  const handleRecordPayment = () => {
+    const amount = parseInt(paymentAmount);
+    if (!amount || amount <= 0) {
+      toast.error("Enter a valid payment amount");
+      return;
+    }
+    if (amount > balanceCents && !paymentDone) {
+      // Overpayment — still allowed but cap at the order total
+    }
+    if (amount > balanceCents && !paymentDone) {
+      toast.warning("Amount exceeds the balance — order will be marked as paid in full.");
+    }
+    setSubmittingPayment(true);
+
+    const isFullPayment = amount >= balanceCents;
+    const newStatus: OrderPaymentStatus = isFullPayment ? "PaidInFull" : "DepositPaid";
+
+    addPayment({
+      orderNumber: order.orderNumber,
+      customerName: order.customerName,
+      amountCents: amount,
+      method: paymentMethod,
+      status: "Confirmed",
+      note: paymentNote || undefined,
+    });
+
+    updatePaymentStatus(order.id, newStatus);
+    addNotification({
+      type: "payment",
+      title: isFullPayment ? "Payment Received" : "Deposit Received",
+      message: `${formatCents(amount)} received for ${order.orderNumber}${paymentNote ? ` — ${paymentNote}` : ""}`,
+    });
+
+    setSubmittingPayment(false);
+    setShowPaymentDialog(false);
+    setPaymentAmount("");
+    setPaymentMethod("BankTransfer");
+    setPaymentNote("");
+    toast.success(`Payment of ${formatCents(amount)} recorded`);
+  };
+
+  const contactIcon = () => {
     switch (order.preferredContact) {
-      case "WhatsApp":
-        return <MessageCircle className="h-4 w-4 text-whatsapp" />;
-      case "Phone":
-        return <Phone className="h-4 w-4 text-blue-600" />;
-      case "Email":
-        return <Mail className="h-4 w-4 text-blue-600" />;
-      default:
-        return <Phone className="h-4 w-4" />;
+      case "WhatsApp": return <MessageCircle className="h-4 w-4 text-whatsapp" />;
+      case "Phone": return <Phone className="h-4 w-4 text-blue-600" />;
+      case "Email": return <Mail className="h-4 w-4 text-blue-600" />;
+      default: return <Phone className="h-4 w-4" />;
     }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Back button */}
-      <Link
-        href="/dashboard/orders"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to Orders
-      </Link>
-
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            {order.orderNumber}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Created {new Date(order.createdAt).toLocaleDateString("en-US", {
-              month: "long",
-              day: "numeric",
-              year: "numeric",
-            })}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+    <div className="space-y-5">
+      {/* Back + header */}
+      <div className="flex items-center justify-between">
+        <Link
+          href="/dashboard/orders"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Orders
+        </Link>
+        <div className="flex items-center gap-1.5">
           {canCancel && (
             <button
-              onClick={handleCancel}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
+              onClick={() => setConfirmAction("cancel")}
+              className="inline-flex items-center gap-1 rounded-lg border border-destructive/20 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/5 transition-colors"
             >
-              <XCircle className="h-4 w-4" />
-              Cancel Order
+              <XCircle className="h-3.5 w-3.5" />
+              Cancel
             </button>
           )}
           {canRestore && (
             <button
-              onClick={handleRestore}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+              onClick={() => setConfirmAction("restore")}
+              className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors"
             >
-              <Clock className="h-4 w-4" />
-              Restore Order
+              <Clock className="h-3.5 w-3.5" />
+              Restore
             </button>
           )}
+          <button
+            onClick={() => setConfirmAction("delete")}
+            className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-destructive hover:border-destructive/30 hover:bg-destructive/5 transition-colors"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Delete
+          </button>
         </div>
       </div>
 
+      {/* Order header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">
+            {order.orderNumber}
+          </h1>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {new Date(order.createdAt).toLocaleDateString("en-US", {
+              month: "short", day: "numeric", year: "numeric",
+            })}
+          </p>
+        </div>
+        <span className={cn("inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium", getStatusBadgeClass(order.fulfillmentStatus))}>
+          {getStatusLabel(order.fulfillmentStatus)}
+        </span>
+      </div>
+
+      {/* Cancelled banner */}
       {isCancelled && (
-        <div className="rounded-xl border border-destructive/20 bg-destructive/5 px-5 py-4">
+        <div className="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3">
           <div className="flex items-center gap-2 text-sm font-medium text-destructive">
-            <XCircle className="h-5 w-5" />
+            <XCircle className="h-4 w-4" />
             This order has been cancelled
           </div>
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Left: Order Details */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Customer Card */}
+      <div className="grid gap-5 lg:grid-cols-5">
+        {/* Left column: Customer + Order Summary (3/5 width) */}
+        <div className="lg:col-span-3 space-y-5">
+          {/* Combined Customer + Order card */}
           <div className="rounded-xl border border-border bg-card">
-            <div className="border-b border-border px-5 py-4">
+            <div className="px-5 py-3.5 border-b border-border flex items-center justify-between">
               <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
                 <User className="h-4 w-4 text-muted-foreground" />
-                Customer Information
+                Customer
               </h2>
-            </div>
-            <div className="p-5 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Name</span>
-                <span className="text-sm font-medium text-foreground">
-                  {order.customerName}
-                </span>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                {contactIcon()}
+                <span>{order.preferredContact}</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Phone</span>
-                <a
-                  href={`tel:${order.customerPhone}`}
-                  className="text-sm font-medium text-blue-600 hover:underline"
-                >
-                  {order.customerPhone}
-                </a>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  Preferred Contact
-                </span>
-                <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-                  {contactMethodIcon()}
-                  {order.preferredContact}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Order Items Card */}
-          <div className="rounded-xl border border-border bg-card">
-            <div className="border-b border-border px-5 py-4">
-              <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                <Package className="h-4 w-4 text-muted-foreground" />
-                Order Items ({order.itemCount} item{order.itemCount !== 1 ? "s" : ""})
-              </h2>
             </div>
             <div className="p-5">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  Subtotal
-                </span>
-                <span className="text-lg font-bold text-foreground">
-                  {formatCents(order.subtotalCents)}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-0.5">Name</p>
+                  <p className="text-sm font-medium text-foreground">{order.customerName}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-0.5">Phone</p>
+                  <a href={`tel:${order.customerPhone}`} className="text-sm font-medium text-blue-600 hover:underline">
+                    {order.customerPhone}
+                  </a>
+                </div>
+              </div>
+              {/* Quick contact buttons */}
+              <div className="flex gap-2 mt-4">
+                <a
+                  href={`https://wa.me/${order.customerPhone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hi ${order.customerName}, regarding your order ${order.orderNumber}...`)}`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 rounded-lg border border-whatsapp/20 bg-whatsapp-soft px-3 py-1.5 text-xs font-semibold text-whatsapp hover:bg-whatsapp hover:text-white transition-colors"
+                >
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  WhatsApp
+                </a>
+                <a
+                  href={`tel:${order.customerPhone}`}
+                  className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
+                >
+                  <Phone className="h-3.5 w-3.5" />
+                  Call
+                </a>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-border" />
+
+            {/* Order Summary */}
+            <div className="p-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <Package className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-semibold text-foreground">
+                  {order.itemCount} item{order.itemCount !== 1 ? "s" : ""}
                 </span>
               </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span className="font-bold text-foreground">{formatCents(order.subtotalCents)}</span>
+              </div>
+
+              {/* Payment progress */}
+              {paymentStarted && (
+                <div className="rounded-lg bg-muted/50 p-3 space-y-2">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Paid</span>
+                    <span className="font-semibold text-success">{formatCents(totalPaidCents)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Balance</span>
+                    <span className={cn("font-semibold", balanceCents <= 0 ? "text-success" : "text-destructive")}>
+                      {balanceCents <= 0 ? "Paid in Full" : formatCents(balanceCents)}
+                    </span>
+                  </div>
+                  {/* Payment records */}
+                  {orderPayments.length > 0 && (
+                    <div className="border-t border-border pt-2 mt-2 space-y-1.5">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Payments</p>
+                      {orderPayments.map((p) => (
+                        <div key={p.id} className="flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-1.5">
+                            <Banknote className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-muted-foreground">{p.method}</span>
+                          </div>
+                          <span className="font-medium text-foreground">{formatCents(p.amountCents)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Right: Status Controls */}
-        <div className="space-y-4">
-          {/* Contact Stage */}
-          <div
-            className={cn(
-              "rounded-xl border bg-card transition-all",
-              !contactDone
-                ? "border-primary/30 ring-1 ring-primary/10"
-                : "border-border",
-            )}
-          >
-            <div className="border-b border-border px-4 py-3">
-              <div className="flex items-center gap-2">
-                <div
-                  className={cn(
-                    "flex h-6 w-6 items-center justify-center rounded-full",
-                    contactDone
-                      ? "bg-success-soft text-success"
-                      : "bg-warning-soft text-warning",
-                  )}
-                >
-                  {contactDone ? (
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                  ) : (
-                    <Clock className="h-3.5 w-3.5" />
-                  )}
-                </div>
-                <h3 className="text-sm font-semibold text-foreground">
-                  Step 1: Contact
-                </h3>
+        {/* Right column: Stage controls (2/5 width) */}
+        <div className="lg:col-span-2 space-y-3">
+          {/* Step 1: Contact */}
+          <div className={cn("rounded-lg border bg-card", !contactDone ? "border-primary/30" : "border-border")}>
+            <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border">
+              <div className={cn("flex h-5 w-5 items-center justify-center rounded-full", contactDone ? "bg-success-soft text-success" : "bg-warning-soft text-warning")}>
+                {contactDone ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
               </div>
+              <span className="text-xs font-semibold text-foreground">1. Contact</span>
+              <span className={cn("ml-auto inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium", getStatusBadgeClass(order.contactStatus))}>
+                {getStatusLabel(order.contactStatus)}
+              </span>
             </div>
-            <div className="p-4 space-y-3">
-              <Select
-                value={order.contactStatus}
-                onValueChange={handleContactChange}
-                disabled={isCancelled || isCompleted}
-              >
-                <SelectTrigger>
+            <div className="p-3">
+              <Select value={order.contactStatus} onValueChange={handleContactChange} disabled={isCancelled || isCompleted}>
+                <SelectTrigger className="h-8 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {CONTACT_ORDER.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {getStatusLabel(s)}
-                    </SelectItem>
+                    <SelectItem key={s} value={s}>{getStatusLabel(s)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">
-                {contactDone
-                  ? "Customer has been contacted."
-                  : "Reach out to the customer to discuss the order."}
-              </p>
             </div>
           </div>
 
-          {/* Payment Stage */}
-          <div
-            className={cn(
-              "rounded-xl border bg-card transition-all",
-              !contactDone
-                ? "border-border opacity-50"
-                : !paymentDone
-                  ? "border-primary/30 ring-1 ring-primary/10"
-                  : "border-border",
-            )}
-          >
-            <div className="border-b border-border px-4 py-3">
-              <div className="flex items-center gap-2">
-                <div
-                  className={cn(
-                    "flex h-6 w-6 items-center justify-center rounded-full",
-                    paymentDone
-                      ? "bg-success-soft text-success"
-                      : paymentStarted
-                        ? "bg-warning-soft text-warning"
-                        : "bg-gray-100 text-muted-foreground",
-                  )}
-                >
-                  {paymentDone ? (
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                  ) : (
-                    <Clock className="h-3.5 w-3.5" />
-                  )}
-                </div>
-                <h3 className="text-sm font-semibold text-foreground">
-                  Step 2: Payment
-                </h3>
+          {/* Step 2: Payment */}
+          <div className={cn("rounded-lg border bg-card", !contactDone ? "opacity-50" : !paymentDone ? "border-primary/30" : "border-border")}>
+            <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border">
+              <div className={cn("flex h-5 w-5 items-center justify-center rounded-full", paymentDone ? "bg-success-soft text-success" : paymentStarted ? "bg-warning-soft text-warning" : "bg-gray-100 text-muted-foreground")}>
+                {paymentDone ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
               </div>
+              <span className="text-xs font-semibold text-foreground">2. Payment</span>
+              <span className={cn("ml-auto inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium", getStatusBadgeClass(order.paymentStatus))}>
+                {getStatusLabel(order.paymentStatus)}
+              </span>
             </div>
-            <div className="p-4 space-y-3">
-              <Select
-                value={order.paymentStatus}
-                onValueChange={handlePaymentChange}
-                disabled={!canChangePayment}
-              >
-                <SelectTrigger>
+            <div className="p-3 space-y-2">
+              <Select value={order.paymentStatus} onValueChange={handlePaymentChange} disabled={!canChangePayment}>
+                <SelectTrigger className="h-8 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {PAYMENT_ORDER.map((s) => (
-                    <SelectItem key={s} value={s}>
+                    <SelectItem key={s} value={s}>{getStatusLabel(s)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Record Payment button */}
+              {canChangePayment && !paymentDone && (
+                <>
+                  <button
+                    onClick={() => setShowPaymentDialog(true)}
+                    className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Record Payment
+                  </button>
+
+                  {/* Show balance due */}
+                  {paymentStarted && (
+                    <div className="flex items-center justify-between text-xs bg-muted/40 rounded-md px-3 py-2">
+                      <span className="text-muted-foreground">Balance due</span>
+                      <span className="font-semibold text-destructive">{formatCents(balanceCents)}</span>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Step 3: Fulfillment */}
+          <div className={cn("rounded-lg border bg-card", !paymentStarted ? "opacity-50" : order.fulfillmentStatus === "Completed" ? "border-success/30" : order.fulfillmentStatus === "Cancelled" ? "border-destructive/30" : "border-primary/30")}>
+            <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border">
+              <div className={cn("flex h-5 w-5 items-center justify-center rounded-full", order.fulfillmentStatus === "Completed" ? "bg-success-soft text-success" : order.fulfillmentStatus === "Cancelled" ? "bg-destructive/10 text-destructive" : order.fulfillmentStatus === "ReadyForCollection" ? "bg-info-soft text-info" : "bg-gray-100 text-muted-foreground")}>
+                {order.fulfillmentStatus === "Completed" ? <CheckCircle2 className="h-3 w-3" /> : order.fulfillmentStatus === "Cancelled" ? <XCircle className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+              </div>
+              <span className="text-xs font-semibold text-foreground">3. Fulfillment</span>
+              <span className={cn("ml-auto inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium", getStatusBadgeClass(order.fulfillmentStatus))}>
+                {getStatusLabel(order.fulfillmentStatus)}
+              </span>
+            </div>
+            <div className="p-3">
+              <Select value={order.fulfillmentStatus} onValueChange={handleFulfillmentChange} disabled={!canChangeFulfillment || isCancelled}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {FULFILLMENT_ORDER.map((s) => (
+                    <SelectItem key={s} value={s} disabled={s === "Pending" && isCompleted}>
                       {getStatusLabel(s)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">
-                {!contactDone
-                  ? "Contact the customer first to enable payment tracking."
-                  : paymentDone
-                    ? "Payment received in full."
-                    : paymentStarted
-                      ? "Deposit received — awaiting full payment."
-                      : "Awaiting payment from the customer."}
-              </p>
             </div>
           </div>
-
-          {/* Fulfillment Stage */}
-          <div
-            className={cn(
-              "rounded-xl border bg-card transition-all",
-              !paymentStarted
-                ? "border-border opacity-50"
-                : order.fulfillmentStatus === "Completed"
-                  ? "border-success/30 ring-1 ring-success/10"
-                  : order.fulfillmentStatus === "Cancelled"
-                    ? "border-destructive/30 ring-1 ring-destructive/10"
-                    : "border-primary/30 ring-1 ring-primary/10",
-            )}
-          >
-            <div className="border-b border-border px-4 py-3">
-              <div className="flex items-center gap-2">
-                <div
-                  className={cn(
-                    "flex h-6 w-6 items-center justify-center rounded-full",
-                    order.fulfillmentStatus === "Completed"
-                      ? "bg-success-soft text-success"
-                      : order.fulfillmentStatus === "Cancelled"
-                        ? "bg-destructive/10 text-destructive"
-                        : order.fulfillmentStatus === "ReadyForCollection"
-                          ? "bg-info-soft text-info"
-                          : "bg-gray-100 text-muted-foreground",
-                  )}
-                >
-                  {order.fulfillmentStatus === "Completed" ? (
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                  ) : order.fulfillmentStatus === "Cancelled" ? (
-                    <XCircle className="h-3.5 w-3.5" />
-                  ) : (
-                    <Clock className="h-3.5 w-3.5" />
-                  )}
-                </div>
-                <h3 className="text-sm font-semibold text-foreground">
-                  Step 3: Fulfillment
-                </h3>
-              </div>
-            </div>
-            <div className="p-4 space-y-3">
-              <Select
-                value={order.fulfillmentStatus}
-                onValueChange={handleFulfillmentChange}
-                disabled={!canChangeFulfillment || isCancelled}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Pending" disabled={isCompleted}>
-                    Pending
-                  </SelectItem>
-                  <SelectItem
-                    value="ReadyForCollection"
-                    disabled={isCompleted}
-                  >
-                    Ready for Collection
-                  </SelectItem>
-                  <SelectItem value="Completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                {isCancelled
-                  ? "This order has been cancelled."
-                  : isCompleted
-                    ? "Order completed successfully."
-                    : !paymentStarted
-                      ? "Awaiting payment to proceed with fulfillment."
-                      : order.fulfillmentStatus === "ReadyForCollection"
-                        ? "Items are ready for the customer to collect."
-                        : "Process the order for collection or completion."}
-              </p>
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          {!isCancelled && !isCompleted && (
-            <div className="flex gap-2">
-              <a
-                href={`https://wa.me/${order.customerPhone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hi ${order.customerName}, regarding your order ${order.orderNumber}...`)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-whatsapp/20 bg-whatsapp-soft px-3 py-2.5 text-xs font-semibold text-whatsapp hover:bg-whatsapp hover:text-white transition-colors"
-              >
-                <MessageCircle className="h-4 w-4" />
-                WhatsApp
-              </a>
-              <a
-                href={`tel:${order.customerPhone}`}
-                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
-              >
-                <Phone className="h-4 w-4" />
-                Call
-              </a>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Timeline Card */}
+      {/* Timeline */}
       <div className="rounded-xl border border-border bg-card">
-        <div className="border-b border-border px-5 py-4">
-          <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            Order Timeline
+        <div className="px-5 py-3 border-b border-border">
+          <h2 className="text-xs font-semibold text-foreground flex items-center gap-2">
+            <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+            Timeline
           </h2>
         </div>
         <div className="p-5">
           <div className="relative">
-            {/* Vertical line */}
-            <div className="absolute left-5 top-2 bottom-2 w-px bg-border" />
-
-            <div className="space-y-6">
-              {timeline.map((entry, idx) => (
-                <div key={entry.stage} className="relative flex gap-4">
-                  {/* Icon */}
+            <div className="absolute left-4 top-2 bottom-2 w-px bg-border" />
+            <div className="space-y-5">
+              {timeline.map((entry) => (
+                <div key={entry.stage} className="relative flex gap-3">
                   <div className="relative z-10 flex-shrink-0">
-                    <div
-                      className={cn(
-                        "flex h-10 w-10 items-center justify-center rounded-full border border-border",
-                        entry.iconClass,
-                      )}
-                    >
-                      <entry.icon className="h-5 w-5" />
+                    <div className={cn("flex h-8 w-8 items-center justify-center rounded-full border border-border", entry.iconClass)}>
+                      <entry.icon className="h-4 w-4" />
                     </div>
                   </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0 pt-1">
+                  <div className="flex-1 min-w-0 pt-0.5">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-semibold text-foreground">
-                        {entry.stage}
-                      </h3>
-                      <span
-                        className={cn(
-                          "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium",
-                          getStatusBadgeClass(entry.status),
-                        )}
-                      >
+                      <span className="text-xs font-semibold text-foreground">{entry.stage}</span>
+                      <span className={cn("inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium", getStatusBadgeClass(entry.status))}>
                         {entry.label}
                       </span>
                     </div>
-                    <p className="mt-1 text-xs text-muted-foreground">
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">
                       {entry.active
                         ? entry.stage === "Contact"
-                          ? "Customer has been contacted about their order."
+                          ? "Customer contacted."
                           : entry.stage === "Payment"
                             ? entry.status === "PaidInFull"
-                              ? "Payment has been received in full."
-                              : "A deposit has been received."
+                              ? "Paid in full."
+                              : "Deposit received."
                             : entry.status === "Completed"
-                              ? "Order has been completed."
+                              ? "Order completed."
                               : entry.status === "ReadyForCollection"
-                                ? "Items are ready for collection."
-                                : "Order is pending."
+                                ? "Ready for collection."
+                                : "Pending."
                         : entry.stage === "Contact"
-                          ? "Awaiting initial customer contact."
+                          ? "Not yet contacted."
                           : entry.stage === "Payment"
-                            ? "Not yet reached payment stage."
-                            : "Not yet reached fulfillment stage."}
+                            ? "Not yet reached."
+                            : "Not yet reached."}
                     </p>
                   </div>
                 </div>
@@ -587,6 +579,111 @@ export default function OrderDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Record Payment Dialog */}
+      <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <DollarSign className="h-4 w-4 text-primary" />
+              Record Payment
+            </DialogTitle>
+            <DialogDescription className="text-sm">
+              {order.orderNumber} &mdash; {formatCents(order.subtotalCents)} total
+              {paymentStarted && <span className="ml-1">(&minus;{formatCents(totalPaidCents)} paid = <strong className="text-destructive">{formatCents(balanceCents)} due</strong>)</span>}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2">
+            <div className="space-y-1">
+              <Label htmlFor="pay-amount" className="text-xs">Amount</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">N$</span>
+                <Input
+                  id="pay-amount"
+                  type="number"
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(e.target.value)}
+                  placeholder="0"
+                  className="pl-9 h-9 text-sm"
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="pay-method" className="text-xs">Payment Method</Label>
+              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                <SelectTrigger id="pay-method" className="h-9 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PAYMENT_METHODS.map((m) => (
+                    <SelectItem key={m} value={m}>{m === "BankTransfer" ? "Bank Transfer" : m === "PhoneTransfer" ? "Phone Transfer" : m}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="pay-note" className="text-xs">Note (optional)</Label>
+              <Input
+                id="pay-note"
+                value={paymentNote}
+                onChange={(e) => setPaymentNote(e.target.value)}
+                placeholder="e.g. Deposit via Standard Bank"
+                className="h-9 text-xs"
+              />
+            </div>
+
+            <button
+              onClick={handleRecordPayment}
+              disabled={submittingPayment || !paymentAmount || parseInt(paymentAmount) <= 0}
+              className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {submittingPayment ? "Recording..." : `Record ${formatCents(parseInt(paymentAmount) || 0)}`}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation Dialogs */}
+      <Dialog open={confirmAction !== null} onOpenChange={() => setConfirmAction(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <AlertTriangle className="h-4 w-4 text-warning" />
+              {confirmAction === "cancel" ? "Cancel Order" : confirmAction === "delete" ? "Delete Order" : "Restore Order"}
+            </DialogTitle>
+            <DialogDescription className="text-sm">
+              {confirmAction === "cancel" && `Are you sure you want to cancel ${order.orderNumber}? This can be undone by restoring the order.`}
+              {confirmAction === "delete" && `Are you sure you want to permanently delete ${order.orderNumber}? This action cannot be undone.`}
+              {confirmAction === "restore" && `Restore ${order.orderNumber}? The status will be reset to Not Contacted / Unpaid / Pending.`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2 justify-end">
+            <button
+              onClick={() => setConfirmAction(null)}
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmAction === "cancel" ? handleCancel : confirmAction === "delete" ? handleDelete : handleRestore}
+              className={cn(
+                "rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors",
+                confirmAction === "delete"
+                  ? "bg-destructive hover:bg-destructive/90"
+                  : confirmAction === "cancel"
+                    ? "bg-destructive hover:bg-destructive/90"
+                    : "bg-primary hover:bg-primary/90",
+              )}
+            >
+              {confirmAction === "cancel" ? "Cancel Order" : confirmAction === "delete" ? "Delete Order" : "Restore Order"}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
