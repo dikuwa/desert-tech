@@ -3,15 +3,25 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 // Register Space Grotesk — the same font used by the website, for consistent branding
-const fontRegular = path.join(process.cwd(), "public", "fonts", "SpaceGrotesk-Regular.ttf");
-const fontBold = path.join(process.cwd(), "public", "fonts", "SpaceGrotesk-Bold.ttf");
-Font.register({
-  family: "SpaceGrotesk",
-  fonts: [
-    { src: fontRegular, fontWeight: "normal" },
-    { src: fontBold, fontWeight: "bold" },
-  ],
-});
+// Font files downloaded from Google Fonts into public/fonts/
+const FONT_FAMILY: string = (() => {
+  try {
+    const fontRegular = path.join(process.cwd(), "public", "fonts", "SpaceGrotesk-Regular.ttf");
+    const fontBold = path.join(process.cwd(), "public", "fonts", "SpaceGrotesk-Bold.ttf");
+    Font.register({
+      family: "SpaceGrotesk",
+      fonts: [
+        { src: fontRegular, fontWeight: "normal" },
+        { src: fontBold, fontWeight: "bold" },
+      ],
+    });
+    return "SpaceGrotesk";
+  } catch {
+    // Fall back to Helvetica if Space Grotesk can't be loaded
+    console.warn("[PDF] Space Grotesk not available, using Helvetica");
+    return "Helvetica";
+  }
+})();
 
 const colors = {
   primary: "#f68923",
@@ -38,7 +48,7 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 16,
     paddingBottom: 14,
-    fontFamily: "SpaceGrotesk",
+    fontFamily: FONT_FAMILY,
     fontSize: 8.5,
     color: colors.text,
     backgroundColor: "#ffffff",
