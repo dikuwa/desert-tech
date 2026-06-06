@@ -17,8 +17,19 @@ export default function DashboardPage() {
   const lowStockProducts = products.filter((p) => p.availability === "LowStock" || p.stockQuantity <= p.lowStockThreshold);
   const pendingFollowUps = followUps.filter((f) => f.status === "Pending");
   const unreadNotifications = notifications.filter((n) => !n.isRead);
+  const payments = useDashboardStore((s) => s.payments);
   const recentOrders = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
   const totalRevenue = orders.filter((o) => o.paymentStatus === "PaidInFull").reduce((sum, o) => sum + o.subtotalCents, 0);
+
+  // Compute outstanding balance: sum of (subtotal - paid) for orders not fully paid or cancelled
+  const outstandingBalance = orders
+    .filter((o) => o.fulfillmentStatus !== "Cancelled" && o.paymentStatus !== "PaidInFull")
+    .reduce((sum, o) => {
+      const totalPaid = payments
+        .filter((p) => p.orderNumber === o.orderNumber)
+        .reduce((s, p) => s + p.amountCents, 0);
+      return sum + Math.max(0, o.subtotalCents - totalPaid);
+    }, 0);
 
   const stats = [
     { label: "New Orders", value: pendingOrders.length, icon: ShoppingBag, color: "text-primary", bg: "bg-accent", href: "/dashboard/orders" },
@@ -26,6 +37,7 @@ export default function DashboardPage() {
     { label: "Pending Follow-ups", value: pendingFollowUps.length, icon: CalendarClock, color: "text-info", bg: "bg-info-soft", href: "/dashboard/follow-ups" },
     { label: "Unread Notifications", value: unreadNotifications.length, icon: Bell, color: "text-destructive", bg: "bg-destructive/10", href: "/dashboard/notifications" },
     { label: "Total Customers", value: customers.length, icon: Users, color: "text-success", bg: "bg-success-soft", href: "/dashboard/customers" },
+    { label: "Outstanding Balance", value: formatCents(outstandingBalance), icon: TrendingUp, color: "text-destructive", bg: "bg-destructive/10", href: "/dashboard/orders" },
     { label: "Revenue (Paid)", value: formatCents(totalRevenue), icon: TrendingUp, color: "text-success", bg: "bg-success-soft", href: "/dashboard/orders" },
   ];
 

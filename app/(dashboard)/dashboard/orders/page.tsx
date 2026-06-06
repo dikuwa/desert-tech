@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
-import Link from "next/link";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   Search,
@@ -24,14 +23,33 @@ const ITEMS_PER_PAGE = 15;
 export default function OrdersPage() {
   const router = useRouter();
   const orders = useDashboardStore((s) => s.orders);
+  const payments = useDashboardStore((s) => s.payments);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<keyof DashboardOrder>("createdAt");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [currentPage, setCurrentPage] = useState(1);
+  const [paymentFilter, setPaymentFilter] = useState<string>("All");
+
+  // Compute balance per order
+  const orderBalances = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const o of orders) {
+      const totalPaid = payments
+        .filter((p) => p.orderNumber === o.orderNumber)
+        .reduce((sum, p) => sum + p.amountCents, 0);
+      map[o.id] = o.subtotalCents - totalPaid;
+    }
+    return map;
+  }, [orders, payments]);
 
   const filtered = useMemo(() => {
     let result = [...orders];
+
+    // Payment status filter
+    if (paymentFilter !== "All") {
+      result = result.filter((o) => o.paymentStatus === paymentFilter);
+    }
 
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
@@ -59,7 +77,7 @@ export default function OrdersPage() {
     });
 
     return result;
-  }, [orders, searchQuery, sortField, sortDir]);
+  }, [orders, searchQuery, sortField, sortDir, paymentFilter]);
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginated = filtered.slice(
@@ -91,19 +109,34 @@ export default function OrdersPage() {
         </div>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <input
-          type="text"
-          value={searchQuery}
+      {/* Search + Filter */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
+            placeholder="Search by order number, customer, or phone..."
+            className="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-4 text-sm placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"
+          />
+        </div>
+        <select
+          value={paymentFilter}
           onChange={(e) => {
-            setSearchQuery(e.target.value);
+            setPaymentFilter(e.target.value);
             setCurrentPage(1);
           }}
-          placeholder="Search by order number, customer, or phone..."
-          className="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-4 text-sm placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"
-        />
+          className="h-10 rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"
+        >
+          <option value="All">All Payments</option>
+          <option value="Unpaid">Unpaid</option>
+          <option value="DepositPaid">Deposit Paid</option>
+          <option value="PaidInFull">Paid in Full</option>
+        </select>
       </div>
 
       {/* Table */}
@@ -143,6 +176,9 @@ export default function OrdersPage() {
                   </button>
                 </th>
                 <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Due
+                </th>
+                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   <button
                     onClick={() => toggleSort("createdAt")}
                     className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
@@ -156,7 +192,7 @@ export default function OrdersPage() {
             <tbody className="divide-y divide-border">
               {paginated.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">
+                  <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
                     <ShoppingBag className="mx-auto h-8 w-8 mb-2 opacity-40" />
                     <p>No orders found</p>
                   </td>
@@ -213,6 +249,13 @@ export default function OrdersPage() {
                     </td>
                     <td className="px-4 py-3 text-right font-medium text-foreground whitespace-nowrap">
                       {formatCents(order.subtotalCents)}
+                    </td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      {(() => {
+                        const balance = orderBalances[order.id] ?? order.subtotalCents;
+                        if (balance <= 0) return <span className="text-xs text-muted-foreground">—</span>;
+                        return <span className="text-xs font-semibold text-destructive">{formatCents(balance)}</span>;
+                      })()}
                     </td>
                     <td className="px-4 py-3 text-right text-xs text-muted-foreground whitespace-nowrap">
                       {new Date(order.createdAt).toLocaleDateString("en-US", {
