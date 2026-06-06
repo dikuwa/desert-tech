@@ -856,17 +856,26 @@ export const useDashboardStore = create<DashboardState>()(
           title: "New Stock Request",
           message: `${r.customerName} requested ${r.productName}`,
         });
+        get().addAuditLog({ action: "Back-in-stock request created", entityType: "backinstock", entityId: id, entityLabel: `${r.customerName} — ${r.productName}` });
       },
-      updateBackInStockStatus: (id, status) =>
+      updateBackInStockStatus: (id, status) => {
+        const { backInStockRequests } = get();
+        const req = backInStockRequests.find((r) => r.id === id);
         set((s) => ({
           backInStockRequests: s.backInStockRequests.map((r) =>
             r.id === id ? { ...r, status, updatedAt: new Date().toISOString() } : r
           ),
-        })),
-      deleteBackInStockRequest: (id) =>
+        }));
+        if (req) get().addAuditLog({ action: `Back-in-stock status: ${status}`, entityType: "backinstock", entityId: id, entityLabel: `${req.customerName} — ${req.productName}` });
+      },
+      deleteBackInStockRequest: (id) => {
+        const { backInStockRequests } = get();
+        const req = backInStockRequests.find((r) => r.id === id);
         set((s) => ({
           backInStockRequests: s.backInStockRequests.filter((r) => r.id !== id),
-        })),
+        }));
+        if (req) get().addAuditLog({ action: "Back-in-stock request deleted", entityType: "backinstock", entityId: id, entityLabel: `${req.customerName} — ${req.productName}` });
+      },
       markBackInStockReadyForProduct: (productId, productName) =>
         set((s) => {
           const now = new Date().toISOString();

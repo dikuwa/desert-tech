@@ -13,13 +13,13 @@ import { cn } from "@/lib/utils";
 const ITEMS_PER_PAGE = 10;
 
 export default function ProductsPage() {
+  const searchParams = useSearchParams();
   const [search, setSearch] = useState(() => searchParams.get("sku") || "");
   const [availFilter, setAvailFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [deleteDialogName, setDeleteDialogName] = useState("");
 
-  const searchParams = useSearchParams();
   const products = useDashboardStore((s) => s.products);
   const deleteProduct = useDashboardStore((s) => s.deleteProduct);
   const updateProduct = useDashboardStore((s) => s.updateProduct);

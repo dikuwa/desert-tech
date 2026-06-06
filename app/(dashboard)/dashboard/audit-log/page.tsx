@@ -17,6 +17,7 @@ const ENTITY_COLORS: Record<string, string> = {
   staff: "bg-rose-100 text-rose-700 border-rose-200",
   category: "bg-orange-100 text-orange-700 border-orange-200",
   promotion: "bg-pink-100 text-pink-700 border-pink-200",
+  backinstock: "bg-cyan-100 text-cyan-700 border-cyan-200",
   settings: "bg-gray-100 text-gray-700 border-gray-200",
 };
 
@@ -31,6 +32,7 @@ const ENTITY_ROUTES: Record<string, (entityId: string) => string> = {
   category: () => `/dashboard/categories`,
   promotion: () => `/dashboard/promotions`,
   settings: () => `/dashboard/settings`,
+  backinstock: () => `/dashboard/back-in-stock`,
 };
 
 function CopyButton({ text, label }: { text: string; label: string }) {
@@ -106,7 +108,7 @@ export default function AuditLogPage() {
   const [entityFilter, setEntityFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
 
-  const entityTypes = ["all", "order", "quotation", "product", "payment", "customer", "staff", "category", "promotion", "settings"];
+  const entityTypes = ["all", "order", "quotation", "product", "payment", "customer", "staff", "category", "promotion", "backinstock", "settings"];
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();

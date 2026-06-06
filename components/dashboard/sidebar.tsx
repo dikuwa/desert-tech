@@ -23,6 +23,7 @@ import {
   ExternalLink,
   PackageSearch,
   History,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -112,8 +113,30 @@ export function DashboardSidebar() {
         </Button>
       </div>
 
+      {/* Quick SKU Lookup */}
+      {!collapsed && (
+        <div className="px-3 pt-4 pb-2">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search SKU..."
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  const val = (e.target as HTMLInputElement).value.trim();
+                  if (val) {
+                    router.push(`/dashboard/products?sku=${encodeURIComponent(val)}`);
+                  }
+                }
+              }}
+              className="h-8 w-full rounded-md border border-border bg-muted/50 pl-7 pr-2 text-xs placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+            />
+          </div>
+        </div>
+      )}
+
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+      <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-1">
         {adminNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
