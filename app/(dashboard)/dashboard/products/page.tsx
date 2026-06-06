@@ -26,7 +26,7 @@ export default function ProductsPage() {
     let result = [...products];
     if (search) {
       const q = search.toLowerCase();
-      result = result.filter(p => p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
+      result = result.filter(p => p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q) || p.category.toLowerCase().includes(q) || (p.sku && p.sku.toLowerCase().includes(q)));
     }
     if (availFilter !== "All") result = result.filter(p => p.availability === availFilter);
     return result;
@@ -105,11 +105,11 @@ export default function ProductsPage() {
           <thead>
             <tr className="border-b border-border bg-muted/50">
               <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Product</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">SKU</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Category</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Price</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Stock</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Status</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Condition</th>
               <th className="px-4 py-3" />
             </tr>
           </thead>
@@ -124,8 +124,10 @@ export default function ProductsPage() {
                     <div>
                       <Link href={`/dashboard/products/${product.id}/edit`} className="text-sm font-medium text-foreground hover:text-primary transition-colors">{product.name}</Link>
                       <p className="text-xs text-muted-foreground">{product.brand}</p>
-                    </div>
-                  </div>
+                    </div>                    </div>
+                  </td>
+                <td className="px-4 py-3">
+                  <span className="text-xs font-mono text-muted-foreground">{product.sku || "—"}</span>
                 </td>
                 <td className="px-4 py-3 text-xs text-muted-foreground">{product.category}</td>
                 <td className="px-4 py-3 text-sm font-semibold text-foreground">{formatCents(product.priceCents)}</td>

@@ -72,13 +72,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { orders, quotations } = useDashboardStore.getState();
+    const { orders, quotations, payments } = useDashboardStore.getState();
     const stored = getOrderByNumber(entry.referenceId);
 
     if (entry.type === "receipt") {
-      // Look up order
-      const order = stored
-        ? {
+      // Look up order in dashboard store first (has payment data)
+      const order = orders.find((o) => o.id === entry.referenceId || o.orderNumber === entry.referenceId)
+        || (stored ? {
             orderNumber: stored.orderNumber,
             customerName: stored.customerName,
             customerPhone: stored.customerPhone,
@@ -92,8 +92,7 @@ export async function GET(request: NextRequest) {
               quantity: i.quantity,
               unitPriceCents: i.priceCents,
             })),
-          }
-        : orders.find((o) => o.id === entry.referenceId || o.orderNumber === entry.referenceId);
+          } : null);
 
       if (!order) {
         return NextResponse.json(
@@ -102,17 +101,24 @@ export async function GET(request: NextRequest) {
         );
       }
 
+      // Calculate payment totals from dashboard store payments
+      const orderPayments = payments.filter((p) => p.orderNumber === (order as any).orderNumber);
+      const totalPaidCents = orderPayments.reduce((sum, p) => sum + p.amountCents, 0);
+      const balanceDueCents = Math.max(0, order.subtotalCents - totalPaidCents);
+
       return NextResponse.json({
         success: true,
         type: "receipt",
         documentNumber: entry.documentNumber,
         data: {
-          orderNumber: order.orderNumber,
+          orderNumber: (order as any).orderNumber || order.orderNumber,
           customerName: order.customerName,
           customerPhone: order.customerPhone,
           items: order.items || [],
           subtotalCents: order.subtotalCents,
           paymentStatus: order.paymentStatus,
+          totalPaidCents,
+          balanceDueCents,
           fulfillmentStatus: (order as any).fulfillmentStatus || "Pending",
           createdAt: order.createdAt,
           fulfillmentMethod: (order as any).fulfillmentMethod,

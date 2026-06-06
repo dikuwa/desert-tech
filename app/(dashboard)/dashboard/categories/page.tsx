@@ -92,12 +92,15 @@ function CategoriesSection() {
 
   return (
     <div className="space-y-4">
-      <button
-        onClick={() => setShowAdd(true)}
-        className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors w-fit"
-      >
-        <Plus className="h-3.5 w-3.5" /> Add Category
-      </button>
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">{categories.filter(c => c.isActive).length} active &middot; {categories.length} total</p>
+        <button
+          onClick={() => setShowAdd(true)}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+        >
+          <Plus className="h-3.5 w-3.5" /> Add Category
+        </button>
+      </div>
 
       {showAdd && (
         <div className="rounded-xl border border-border bg-card p-5 space-y-3">

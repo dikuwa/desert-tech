@@ -11,36 +11,20 @@ import { ReceiptPDF } from "@/components/receipts/receipt-pdf";
 
 // Order data store (same in-memory store used by /api/orders)
 // We import this to look up orders
-import { getOrders, getOrderByNumber } from "@/lib/order-store";
+import { getOrderByNumber } from "@/lib/order-store";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { addReceipt } from "@/lib/receipt-store";
 import { uploadFile } from "@/lib/storage";
 
 // Helper to get a readable order from either the in-memory store or dashboard store
 function findOrder(orderIdOrNumber: string) {
-  // Try in-memory store first (orders from the checkout flow)
-  const stored = getOrderByNumber(orderIdOrNumber);
-  if (stored) {
-    return {
-      orderNumber: stored.orderNumber,
-      customerName: stored.customerName,
-      customerPhone: stored.customerPhone,
-      items: stored.items.map((i) => ({
-        name: i.name,
-        quantity: i.quantity,
-        unitPrice: i.priceCents,
-        total: i.priceCents * i.quantity,
-      })),
-      subtotalCents: stored.subtotalCents,
-      paymentStatus: stored.paymentStatus,
-      createdAt: stored.createdAt,
-    };
-  }
-
-  // Try dashboard store
-  const { orders } = useDashboardStore.getState();
+  // Try dashboard store first (has payments data)
+  const { orders, payments } = useDashboardStore.getState();
   const order = orders.find((o) => o.id === orderIdOrNumber || o.orderNumber === orderIdOrNumber);
   if (order) {
+    const orderPayments = payments.filter((p) => p.orderNumber === order.orderNumber);
+    const totalPaidCents = orderPayments.reduce((sum, p) => sum + p.amountCents, 0);
+    const balanceDueCents = Math.max(0, order.subtotalCents - totalPaidCents);
     return {
       orderNumber: order.orderNumber,
       customerName: order.customerName,
@@ -57,7 +41,33 @@ function findOrder(orderIdOrNumber: string) {
       ],
       subtotalCents: order.subtotalCents,
       paymentStatus: order.paymentStatus,
+      totalPaidCents,
+      balanceDueCents,
       createdAt: order.createdAt,
+      fulfillmentMethod: order.fulfillmentMethod,
+      courierFeeCents: order.courierFeeCents,
+      shipping: order.shipping,
+    };
+  }
+
+  // Try in-memory store (orders from the checkout flow)
+  const stored = getOrderByNumber(orderIdOrNumber);
+  if (stored) {
+    return {
+      orderNumber: stored.orderNumber,
+      customerName: stored.customerName,
+      customerPhone: stored.customerPhone,
+      items: stored.items.map((i) => ({
+        name: i.name,
+        quantity: i.quantity,
+        unitPrice: i.priceCents,
+        total: i.priceCents * i.quantity,
+      })),
+      subtotalCents: stored.subtotalCents,
+      paymentStatus: stored.paymentStatus,
+      totalPaidCents: 0,
+      balanceDueCents: stored.subtotalCents,
+      createdAt: stored.createdAt,
     };
   }
 
@@ -86,7 +96,7 @@ export async function POST(request: NextRequest) {
       day: "numeric",
     });
 
-    // Render PDF to stream
+    // Render PDF to stream with full payment data
     const stream = await renderToStream(
       <ReceiptPDF
         receiptNumber={receiptNumber}
@@ -97,6 +107,11 @@ export async function POST(request: NextRequest) {
         items={order.items}
         subtotal={order.subtotalCents}
         paymentStatus={order.paymentStatus}
+        totalPaidCents={order.totalPaidCents}
+        balanceDueCents={order.balanceDueCents}
+        fulfillmentMethod={order.fulfillmentMethod}
+        courierFeeCents={order.courierFeeCents}
+        shipping={order.shipping}
       />,
     );
 

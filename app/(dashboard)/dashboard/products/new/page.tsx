@@ -1,22 +1,42 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, ImagePlus, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { MoneyInput } from "@/components/ui/money-input";
 import { useDashboardStore } from "@/lib/store/dashboard";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-function generateSKU(name: string, brand: string): string {
-  const prefix = brand ? brand.substring(0, 3).toUpperCase() : "DT";
-  const namePart = name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 4) || "PROD";
-  const timestamp = Date.now().toString(36).slice(-4).toUpperCase();
-  return `${prefix}-${namePart}-${timestamp}`;
+const CATEGORY_SKU_CODES: Record<string, string> = {
+  "Apple": "APP",
+  "Windows": "LAP",
+  "Gaming": "GAME",
+  "CCTV & Security": "CCTV",
+  "POS Systems": "POS",
+  "Accessories": "ACC",
+  "Phones & Tablets": "PHT",
+  "Networking": "NET",
+  "Auto Services": "AUTO",
+};
+
+function generateSKU(category: string, existingProducts: { sku?: string }[]): string {
+  const code = CATEGORY_SKU_CODES[category] || "GEN";
+  // Find the highest sequence number for this category code
+  let maxSeq = 0;
+  for (const p of existingProducts) {
+    if (p.sku) {
+      const match = p.sku.match(new RegExp(`^DT-${code}-(\\d+)$`));
+      if (match) {
+        const seq = parseInt(match[1], 10);
+        if (seq > maxSeq) maxSeq = seq;
+      }
+    }
+  }
+  const nextSeq = String(maxSeq + 1).padStart(4, "0");
+  return `DT-${code}-${nextSeq}`;
 }
 
 export default function NewProductPage() {
@@ -29,44 +49,16 @@ export default function NewProductPage() {
   const [uploading, setUploading] = useState(false);    const [form, setForm] = useState({
     name: "", brand: "", category: "Apple", condition: "New" as const,
     priceCents: 0, stockQuantity: 0, reorderLimit: 5,
-    description: "", sku: "", warranty: "", isFeatured: false,
+    description: "", sku: "", skuWasManuallyEdited: false, warranty: "", isFeatured: false,
     priceWas: 0,
   });
-
-  // Auto-generate SKU when name or brand changes
-  const generateAndSetSKU = useCallback((name: string, brand: string) => {
-    if (!name.trim() || !brand.trim()) return;
-    const existingSKUs = new Set(products.map(p => p.sku).filter(Boolean));
-    let sku = generateSKU(name, brand);
-    let attempts = 0;
-    while (existingSKUs.has(sku) && attempts < 10) {
-      sku = generateSKU(name, brand) + String.fromCharCode(65 + attempts);
-      attempts++;
-    }
-    setForm(prev => ({ ...prev, sku }));
-  }, [products]);
 
   const updateField = (field: string, value: string | boolean | number) => {
     setForm(prev => {
       const updated = { ...prev, [field]: value };
-      // Auto-generate SKU when name or brand changes, but only if SKU wasn't manually edited
-      if ((field === "name" || field === "brand") && typeof value === "string" && !prev.sku && field === "name") {
-        // Don't auto-generate here - do it on manual trigger
-      }
-      return updated;
-    });
-  };
-
-  const handleNameOrBrandChange = (field: string, value: string) => {
-    setForm(prev => {
-      const updated = { ...prev, [field]: value };
-      // Auto-generate SKU if user hasn't manually set it
-      if (!updated.sku) {
-        const nameToUse = field === "name" ? value : updated.name;
-        const brandToUse = field === "brand" ? value : updated.brand;
-        if (nameToUse.trim() && brandToUse.trim()) {
-          updated.sku = generateSKU(nameToUse, brandToUse);
-        }
+      // Auto-generate SKU when category changes and SKU hasn't been manually edited
+      if (field === "category" && typeof value === "string" && !prev.skuWasManuallyEdited) {
+        updated.sku = generateSKU(value, products);
       }
       return updated;
     });
@@ -112,6 +104,11 @@ export default function NewProductPage() {
 
   const onSubmit = async () => {
     if (!form.name.trim() || !form.brand.trim() || !form.priceCents) return;
+    // Validate SKU uniqueness
+    if (form.sku && products.some(p => p.sku === form.sku)) {
+      toast.error(`SKU "${form.sku}" already exists. Please use a unique SKU.`);
+      return;
+    }
     setSubmitting(true);
     await new Promise(r => setTimeout(r, 300));
     addProduct({
@@ -149,11 +146,11 @@ export default function NewProductPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
                   <label className="text-sm font-medium text-foreground">Name <span className="text-destructive">*</span></label>
-                  <input value={form.name} onChange={e => handleNameOrBrandChange("name", e.target.value)} className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" placeholder="Product name" />
+                  <input value={form.name} onChange={e => updateField("name", e.target.value)} className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" placeholder="Product name" />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground">Brand <span className="text-destructive">*</span></label>
-                  <Select value={form.brand} onValueChange={v => handleNameOrBrandChange("brand", v)}>
+                  <Select value={form.brand} onValueChange={v => updateField("brand", v)}>
                     <SelectTrigger className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/30">
                       <SelectValue placeholder="Select a brand" />
                     </SelectTrigger>
@@ -193,7 +190,7 @@ export default function NewProductPage() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground">Stock Quantity</label>
-                  <input value={form.stockQuantity} onChange={e => updateField("stockQuantity", e.target.value)} type="number" className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                  <input value={form.stockQuantity} onChange={e => updateField("stockQuantity", parseInt(e.target.value) || 0)} type="number" className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground">Reorder Limit</label>
@@ -220,7 +217,11 @@ export default function NewProductPage() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground">SKU</label>
-                  <input value={form.sku} onChange={e => updateField("sku", e.target.value)} className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" placeholder="DT-001" />
+                  <input value={form.sku} onChange={e => {
+                    updateField("sku", e.target.value);
+                    setForm(prev => ({ ...prev, skuWasManuallyEdited: true }));
+                  }} className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" placeholder="DT-APP-0001" />
+                  <p className="mt-1 text-[10px] text-muted-foreground">Auto-generated from category. Edit to set manually.</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground">Warranty</label>

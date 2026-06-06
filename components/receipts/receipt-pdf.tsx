@@ -142,6 +142,8 @@ interface ReceiptPDFProps {
   items: ReceiptItem[];
   subtotal: number;
   paymentStatus: string;
+  totalPaidCents?: number;
+  balanceDueCents?: number;
   storeLocation?: string;
   storePhone?: string;
   fulfillmentMethod?: "collection" | "courier";
@@ -176,6 +178,8 @@ export function ReceiptPDF({
   items,
   subtotal,
   paymentStatus,
+  totalPaidCents = 0,
+  balanceDueCents = 0,
   storeLocation = "Windhoek, Namibia",
   storePhone = "+264 85 277 5140",
   fulfillmentMethod,
@@ -185,6 +189,7 @@ export function ReceiptPDF({
   const statusLabel = paymentLabel(paymentStatus);
   const settled = paymentStatus === "PaidInFull" || paymentStatus === "Paid";
   const totalCents = subtotal + (fulfillmentMethod === "courier" && courierFeeCents ? courierFeeCents : 0);
+  const showBalance = !settled && paymentStatus !== "Unpaid" && balanceDueCents > 0;
 
   return (
     <Document>
@@ -286,9 +291,19 @@ export function ReceiptPDF({
                 <Text style={[styles.label, { color: settled ? colors.success : colors.warning }]}>Status</Text>
                 <Text style={[styles.paymentValue, { color: settled ? colors.success : colors.warning }]}>{statusLabel}</Text>
               </View>
-              <View style={[styles.paymentBox, styles.paymentBoxLast]}>
+              <View style={styles.paymentBox}>
                 <Text style={styles.label}>Order Total</Text>
-                <Text style={styles.paymentValue}>{formatCurrency(subtotal)}</Text>
+                <Text style={[styles.paymentValue, { color: colors.primary }]}>{formatCurrency(totalCents)}</Text>
+              </View>
+              <View style={styles.paymentBox}>
+                <Text style={styles.label}>Paid</Text>
+                <Text style={[styles.paymentValue, { color: settled ? colors.success : colors.primary }]}>{formatCurrency(totalPaidCents)}</Text>
+              </View>
+              <View style={[styles.paymentBox, styles.paymentBoxLast]}>
+                <Text style={[styles.label, { color: showBalance ? colors.warning : colors.success }]}>Balance</Text>
+                <Text style={[styles.paymentValue, { color: showBalance ? colors.warning : colors.success }]}>
+                  {showBalance ? formatCurrency(balanceDueCents) : settled ? "N$ 0" : formatCurrency(subtotal)}
+                </Text>
               </View>
             </View>
           </View>

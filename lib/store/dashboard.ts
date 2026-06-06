@@ -396,9 +396,20 @@ export const useDashboardStore = create<DashboardState>()(
       // === Products ===
       addProduct: (p) => {
         const id = `p${nextProductId++}`;
+        // Server-side SKU uniqueness validation
+        // If SKU already exists, strip it to force the caller to choose a unique one
+        let sku = p.sku;
+        if (sku) {
+          const { products: existing } = get();
+          if (existing.some((ep) => ep.sku === sku)) {
+            console.warn(`[store] SKU "${sku}" already exists — clearing SKU to prevent duplicate.`);
+            sku = undefined;
+          }
+        }
         const newProduct: DashboardProduct = {
           ...p,
           id,
+          sku,
           slug: slugify(p.name),
           createdAt: new Date().toISOString().split("T")[0],
         };
@@ -419,6 +430,14 @@ export const useDashboardStore = create<DashboardState>()(
           const nowInStock =
             (data.availability === "InStock" || data.availability === "LowStock") ||
             (data.stockQuantity !== undefined && data.stockQuantity > 0);
+
+          // SKU uniqueness check on update
+          if (data.sku && oldProduct && data.sku !== oldProduct.sku) {
+            if (s.products.some((ep) => ep.id !== id && ep.sku === data.sku)) {
+              console.warn(`[store] SKU "${data.sku}" already exists — clearing SKU from update to prevent duplicate.`);
+              data.sku = undefined;
+            }
+          }
 
           const result: Partial<DashboardState> = {
             products: s.products.map((p) => (p.id === id ? { ...p, ...data } : p)),

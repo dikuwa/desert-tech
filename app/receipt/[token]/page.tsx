@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { MessageCircle, Phone, Download, FileText } from "lucide-react";
+import { MessageCircle, Phone, Download, FileText, CheckCircle2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { getStatusBadgeClass } from "@/lib/dashboard-data";
 
 interface PublicReceiptPageProps {
   params: Promise<{ token: string }>;
@@ -54,6 +56,10 @@ export default async function PublicReceiptPage({ params }: PublicReceiptPagePro
   });
 
   const totalCents = data.subtotalCents + (data.fulfillmentMethod === "courier" ? (data.courierFeeCents || 0) : 0);
+  const paidCents = data.totalPaidCents || 0;
+  const balanceCents = data.balanceDueCents !== undefined ? data.balanceDueCents : Math.max(0, data.subtotalCents - paidCents);
+  const isPaidInFull = data.paymentStatus === "PaidInFull" || (data.paymentStatus !== "Unpaid" && balanceCents <= 0);
+  const isDepositPaid = data.paymentStatus === "DepositPaid";
 
   return (
     <div className="min-h-screen bg-background">
@@ -162,12 +168,46 @@ export default async function PublicReceiptPage({ params }: PublicReceiptPagePro
             </div>
           </div>
 
-          {/* Payment status */}
+          {/* Payment Summary */}
           <div className="px-6 py-4">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Payment Status</p>
-            <span className="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium border-success/20 bg-success-soft text-success">
-              {getStatusLabel(data.paymentStatus)}
-            </span>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Payment Summary</p>
+            <div className="flex items-center gap-2 mb-3">
+              <span className={cn("inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium", getStatusBadgeClass(data.paymentStatus))}>
+                {getStatusLabel(data.paymentStatus)}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-lg bg-success-soft/50 p-3">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-success mb-1">Paid</p>
+                <p className="text-lg font-bold text-success">{formatCents(paidCents)}</p>
+              </div>
+              <div className={cn("rounded-lg p-3", isPaidInFull ? "bg-success-soft/50" : "bg-warning-soft/50")}>
+                <p className={cn("text-[10px] font-semibold uppercase tracking-wider mb-1", isPaidInFull ? "text-success" : "text-warning")}>
+                  {isPaidInFull ? "Settled" : "Balance Due"}
+                </p>
+                <p className={cn("text-lg font-bold", isPaidInFull ? "text-success" : "text-destructive")}>
+                  {isPaidInFull ? "N$ 0" : formatCents(balanceCents)}
+                </p>
+              </div>
+            </div>
+            {isPaidInFull && (
+              <div className="mt-3 rounded-lg border border-success/20 bg-success-soft/50 px-4 py-3 flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-xs font-semibold text-success">Paid in Full</p>
+                  <p className="text-[11px] text-success/80 mt-0.5">No outstanding balance.</p>
+                </div>
+              </div>
+            )}
+            {isDepositPaid && balanceCents > 0 && (
+              <div className="mt-3 rounded-lg border border-warning/20 bg-warning-soft/50 px-4 py-3 flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-warning mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-xs font-semibold text-warning">Deposit Received</p>
+                  <p className="text-[11px] text-warning/80 mt-0.5">{formatCents(balanceCents)} remaining.</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
