@@ -19,6 +19,7 @@ import {
   AlertTriangle,
   Plus,
   Banknote,
+  FileText,
 } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
@@ -287,6 +288,13 @@ export default function OrderDetailPage() {
               Restore
             </button>
           )}
+          <Link
+            href={`/dashboard/orders/${order.id}/receipt`}
+            className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+          >
+            <FileText className="h-3.5 w-3.5" />
+            Receipt
+          </Link>
           <button
             onClick={() => setConfirmAction("delete")}
             className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-destructive hover:border-destructive/30 hover:bg-destructive/5 transition-colors"
