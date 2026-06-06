@@ -36,6 +36,7 @@ import type {
   PaymentMethod,
 } from "@/lib/dashboard-data";
 
+let nextOrderId = 11;
 let nextProductId = 20;
 let nextCategoryId = 10;
 let nextPromotionId = 10;
@@ -87,6 +88,14 @@ interface DashboardState {
   togglePromotionActive: (id: string) => void;
 
   // Orders
+  addOrder: (o: {
+    customerName: string;
+    customerPhone: string;
+    preferredContact: string;
+    itemCount: number;
+    subtotalCents: number;
+    payment?: { amountCents: number; method: string; note?: string };
+  }) => DashboardOrder;
   updateOrderContactStatus: (id: string, contactStatus: OrderContactStatus) => void;
   updateOrderPaymentStatus: (id: string, paymentStatus: string) => void;
   updateOrderFulfillmentStatus: (id: string, fulfillmentStatus: string) => void;
@@ -455,6 +464,57 @@ export const useDashboardStore = create<DashboardState>()(
         })),
 
       // === Orders ===
+      addOrder: (o) => {
+        const id = `o${nextOrderId++}`;
+        const orderNumber = `DT-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+        const now = new Date().toISOString();
+        const paymentStatus: DashboardOrder["paymentStatus"] = o.payment
+          ? o.payment.amountCents >= o.subtotalCents
+            ? "PaidInFull"
+            : "DepositPaid"
+          : "Unpaid";
+
+        const newOrder: DashboardOrder = {
+          id,
+          orderNumber,
+          customerName: o.customerName,
+          customerPhone: o.customerPhone,
+          itemCount: o.itemCount,
+          subtotalCents: o.subtotalCents,
+          contactStatus: "NotContacted",
+          paymentStatus,
+          fulfillmentStatus: "Pending",
+          preferredContact: o.preferredContact,
+          createdAt: now,
+          updatedAt: now,
+          paymentStatusAt: o.payment ? now : undefined,
+        };
+
+        set((s) => ({
+          orders: [newOrder, ...s.orders],
+        }));
+
+        // Record payment if provided
+        if (o.payment) {
+          get().addPayment({
+            orderNumber: newOrder.orderNumber,
+            customerName: o.customerName,
+            amountCents: o.payment.amountCents,
+            method: o.payment.method,
+            status: "Confirmed",
+            note: o.payment.note,
+          });
+        }
+
+        // Create notification
+        get().addNotification({
+          type: "order",
+          title: o.payment ? "New Walk-in Order + Payment" : "New Walk-in Order",
+          message: `${o.customerName} — ${newOrder.orderNumber}${o.payment ? ` — ${paymentStatus === "PaidInFull" ? "Paid in full" : "Deposit received"}` : ""}`,
+        });
+
+        return newOrder;
+      },
       updateOrderContactStatus: (id, contactStatus) =>
         set((s) => ({
           orders: s.orders.map((o) =>

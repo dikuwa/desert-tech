@@ -8,7 +8,9 @@ import {
   ChevronLeft,
   ChevronRight,
   ShoppingBag,
+  Plus,
 } from "lucide-react";
+import Link from "next/link";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
 import {
@@ -107,6 +109,13 @@ export default function OrdersPage() {
             {filtered.length} order{filtered.length !== 1 ? "s" : ""}
           </p>
         </div>
+        <Link
+          href="/dashboard/orders/new"
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-all"
+        >
+          <Plus className="h-4 w-4" />
+          New Order
+        </Link>
       </div>
 
       {/* Search + Filter */}
