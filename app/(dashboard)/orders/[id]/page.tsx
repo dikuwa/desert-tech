@@ -57,7 +57,7 @@ function buildTimeline(order: DashboardOrder): TimelineEntry[] {
       stage: "Contact",
       status: order.contactStatus,
       label: getStatusLabel(order.contactStatus),
-      timestamp: order.updatedAt,
+      timestamp: order.contactStatusAt || order.createdAt,
       icon: order.contactStatus === "Contacted" ? CheckCircle2 : Clock,
       iconClass:
         order.contactStatus === "Contacted"
@@ -69,7 +69,7 @@ function buildTimeline(order: DashboardOrder): TimelineEntry[] {
       stage: "Payment",
       status: order.paymentStatus,
       label: getStatusLabel(order.paymentStatus),
-      timestamp: order.updatedAt,
+      timestamp: order.paymentStatusAt || order.createdAt,
       icon:
         order.paymentStatus === "PaidInFull"
           ? CheckCircle2
@@ -88,7 +88,7 @@ function buildTimeline(order: DashboardOrder): TimelineEntry[] {
       stage: "Fulfillment",
       status: order.fulfillmentStatus,
       label: getStatusLabel(order.fulfillmentStatus),
-      timestamp: order.updatedAt,
+      timestamp: order.fulfillmentStatusAt || order.createdAt,
       icon:
         order.fulfillmentStatus === "Completed"
           ? CheckCircle2
@@ -127,6 +127,9 @@ export default function OrderDetailPage() {
   const updateFulfillmentStatus = useDashboardStore(
     (s) => s.updateOrderFulfillmentStatus,
   );
+  const resetOrderStatuses = useDashboardStore(
+    (s) => s.resetOrderStatuses,
+  );
 
   if (!order) notFound();
 
@@ -163,9 +166,7 @@ export default function OrderDetailPage() {
   };
 
   const handleRestore = () => {
-    updateFulfillmentStatus(order.id, "Pending");
-    updatePaymentStatus(order.id, "Unpaid");
-    updateContactStatus(order.id, "NotContacted");
+    resetOrderStatuses(order.id);
   };
 
   const contactMethodIcon = () => {

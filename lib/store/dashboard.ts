@@ -90,6 +90,7 @@ interface DashboardState {
   updateOrderContactStatus: (id: string, contactStatus: OrderContactStatus) => void;
   updateOrderPaymentStatus: (id: string, paymentStatus: string) => void;
   updateOrderFulfillmentStatus: (id: string, fulfillmentStatus: string) => void;
+  resetOrderStatuses: (id: string) => void;
   addPayment: (p: Omit<DashboardPayment, "id" | "recordedAt">) => void;
   addNotification: (n: Omit<DashboardNotification, "id" | "createdAt" | "isRead">) => void;
 
@@ -457,7 +458,7 @@ export const useDashboardStore = create<DashboardState>()(
         set((s) => ({
           orders: s.orders.map((o) =>
             o.id === id
-              ? { ...o, contactStatus: contactStatus as DashboardOrder["contactStatus"], updatedAt: new Date().toISOString() }
+              ? { ...o, contactStatus: contactStatus as DashboardOrder["contactStatus"], contactStatusAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
               : o
           ),
         })),
@@ -465,7 +466,7 @@ export const useDashboardStore = create<DashboardState>()(
         set((s) => ({
           orders: s.orders.map((o) =>
             o.id === id
-              ? { ...o, paymentStatus: paymentStatus as DashboardOrder["paymentStatus"], updatedAt: new Date().toISOString() }
+              ? { ...o, paymentStatus: paymentStatus as DashboardOrder["paymentStatus"], paymentStatusAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
               : o
           ),
         })),
@@ -473,7 +474,24 @@ export const useDashboardStore = create<DashboardState>()(
         set((s) => ({
           orders: s.orders.map((o) =>
             o.id === id
-              ? { ...o, fulfillmentStatus: fulfillmentStatus as DashboardOrder["fulfillmentStatus"], updatedAt: new Date().toISOString() }
+              ? { ...o, fulfillmentStatus: fulfillmentStatus as DashboardOrder["fulfillmentStatus"], fulfillmentStatusAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+              : o
+          ),
+        })),
+      resetOrderStatuses: (id) =>
+        set((s) => ({
+          orders: s.orders.map((o) =>
+            o.id === id
+              ? {
+                  ...o,
+                  contactStatus: "NotContacted" as const,
+                  paymentStatus: "Unpaid" as const,
+                  fulfillmentStatus: "Pending" as const,
+                  contactStatusAt: undefined,
+                  paymentStatusAt: undefined,
+                  fulfillmentStatusAt: undefined,
+                  updatedAt: new Date().toISOString(),
+                }
               : o
           ),
         })),

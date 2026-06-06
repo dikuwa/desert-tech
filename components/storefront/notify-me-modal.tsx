@@ -278,6 +278,7 @@ export function NotifyMeModal({
             <button
               onClick={handleSubmit}
               disabled={submitting}
+              data-testid="notify-submit"
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-md active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {submitting ? (

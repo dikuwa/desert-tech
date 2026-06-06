@@ -15,6 +15,9 @@ export interface DashboardOrder {
   preferredContact: string;
   createdAt: string;
   updatedAt: string;
+  contactStatusAt?: string;
+  paymentStatusAt?: string;
+  fulfillmentStatusAt?: string;
 }
 
 export interface DashboardOrderDetail extends DashboardOrder {
