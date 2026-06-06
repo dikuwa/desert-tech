@@ -20,6 +20,7 @@ import {
   Plus,
   Banknote,
   FileText,
+  History,
 } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
@@ -158,6 +159,7 @@ export default function OrderDetailPage() {
   const resetOrderStatuses = useDashboardStore((s) => s.resetOrderStatuses);
   const deleteOrderFromStore = useDashboardStore((s) => s.deleteOrder);
   const addPayment = useDashboardStore((s) => s.addPayment);
+  const auditLogs = useDashboardStore((s) => s.auditLogs);
   const addNotification = useDashboardStore((s) => s.addNotification);
   const customers = useDashboardStore((s) => s.customers);
   const addCustomer = useDashboardStore((s) => s.addCustomer);
@@ -720,6 +722,53 @@ export default function OrderDetailPage() {
                   </motion.div>
                 ))}
               </AnimatePresence>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Audit Trail */}
+      <div className="rounded-xl border border-border bg-card">
+        <div className="px-5 py-3 border-b border-border">
+          <h2 className="text-xs font-semibold text-foreground flex items-center gap-2">
+            <History className="h-3.5 w-3.5 text-muted-foreground" />
+            Audit Trail
+          </h2>
+        </div>
+        <div className="p-5">
+          {auditLogs.filter((a) => a.entityId === orderId).length === 0 ? (
+            <p className="text-xs text-muted-foreground">No audit entries recorded for this order yet.</p>
+          ) : (
+            <div className="space-y-0">
+              {auditLogs
+                .filter((a) => a.entityId === orderId)
+                .slice(0, 10)
+                .map((entry) => (
+                  <div
+                    key={entry.id}
+                    className="flex items-start justify-between gap-3 border-t border-border/60 py-2.5 first:border-t-0"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-semibold text-foreground">{entry.action}</span>
+                        <span className="text-[10px] text-muted-foreground bg-muted rounded px-1.5 py-0.5">
+                          by {entry.performedBy}
+                        </span>
+                      </div>
+                      {entry.details && (
+                        <p className="text-[11px] text-muted-foreground mt-0.5">{entry.details}</p>
+                      )}
+                    </div>
+                    <time className="shrink-0 text-[10px] text-muted-foreground whitespace-nowrap">
+                      {new Date(entry.timestamp).toLocaleString("en-NA", {
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </time>
+                  </div>
+                ))}
             </div>
           )}
         </div>
