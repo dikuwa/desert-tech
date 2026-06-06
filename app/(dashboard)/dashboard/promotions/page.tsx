@@ -15,6 +15,7 @@ import { useState, useRef } from "react";import {
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 export default function DashboardPromotionsPage() {
   const promotions = useDashboardStore((s) => s.promotions);
@@ -25,6 +26,7 @@ export default function DashboardPromotionsPage() {
 
   const [showAdd, setShowAdd] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [form, setForm] = useState({ title: "", description: "", imageUrl: "", discountLabel: "", placement: "FeaturedSection", type: "general" as string, isFeatured: true });
   const [uploading, setUploading] = useState(false);
   const addImageInputRef = useRef<HTMLInputElement>(null);
@@ -293,13 +295,28 @@ export default function DashboardPromotionsPage() {
                     {promo.isActive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                   </button>
                   <button onClick={() => startEdit(promo)} className="rounded-lg p-2 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"><Pencil className="h-4 w-4" /></button>
-                  <button onClick={() => deletePromotion(promo.id)} className="rounded-lg p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors"><Trash2 className="h-4 w-4" /></button>
+                  <button onClick={() => setDeleteConfirm(promo.id)} className="rounded-lg p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors"><Trash2 className="h-4 w-4" /></button>
                 </div>
               </div>
             )}
           </div>
         ))}
       </div>
+
+      <ConfirmDialog
+        open={deleteConfirm !== null}
+        onOpenChange={() => setDeleteConfirm(null)}
+        title="Delete promotion?"
+        description="This promotion will be permanently removed from the store. This action cannot be undone."
+        confirm={{
+          label: "Delete Promotion",
+          onClick: () => {
+            if (deleteConfirm) deletePromotion(deleteConfirm);
+            setDeleteConfirm(null);
+          },
+          variant: "danger",
+        }}
+      />
     </div>
   );
 }

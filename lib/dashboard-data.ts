@@ -30,6 +30,16 @@ export interface DashboardOrder {
   fulfillmentStatusAt?: string;
   timelineEvents?: OrderTimelineEvent[];
   items?: { name: string; quantity: number; unitPriceCents: number }[];
+  fulfillmentMethod?: "collection" | "courier";
+  courierFeeCents?: number;
+  shipping?: {
+    recipientName: string;
+    phone: string;
+    address: string;
+    city: string;
+    region: string;
+    deliveryNotes?: string;
+  };
 }
 
 export interface DashboardOrderDetail extends DashboardOrder {

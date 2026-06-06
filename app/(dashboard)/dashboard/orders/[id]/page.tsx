@@ -455,7 +455,41 @@ export default function OrderDetailPage() {
                 <span className="font-bold text-foreground">{formatCents(order.subtotalCents)}</span>
               </div>
 
-              {/* Payment progress */}
+              {/* Fulfillment / Shipping info */}
+            {(order.fulfillmentMethod === "courier" || order.courierFeeCents) && (
+              <div className="rounded-lg bg-muted/30 p-3 space-y-2 border border-border/50">
+                <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
+                  <Package className="h-3.5 w-3.5 text-muted-foreground" />
+                  {order.fulfillmentMethod === "courier" ? "Courier Delivery" : "Fulfillment"}
+                </div>
+                {order.courierFeeCents ? (
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Courier Fee</span>
+                    <span className="font-semibold text-foreground">{formatCents(order.courierFeeCents)}</span>
+                  </div>
+                ) : null}
+                {order.fulfillmentMethod === "collection" ? (
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Collection</span>
+                    <span className="font-semibold text-success">Free</span>
+                  </div>
+                ) : null}
+                {order.shipping && (
+                  <div className="border-t border-border/50 pt-2 mt-1 space-y-1">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Shipping Address</p>
+                    <p className="text-xs text-foreground">{order.shipping.recipientName}</p>
+                    <p className="text-xs text-muted-foreground">{order.shipping.phone}</p>
+                    <p className="text-xs text-muted-foreground">{order.shipping.address}</p>
+                    <p className="text-xs text-muted-foreground">{order.shipping.city}, {order.shipping.region}</p>
+                    {order.shipping.deliveryNotes && (
+                      <p className="text-xs text-muted-foreground italic">Note: {order.shipping.deliveryNotes}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Payment progress */}
               {paymentStarted && (
                 <div className="rounded-lg bg-muted/50 p-3 space-y-2">
                   <div className="flex justify-between text-xs">

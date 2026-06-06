@@ -319,6 +319,78 @@ export default function CheckoutPage() {
               </div>
             </div>
 
+            {/* Fulfillment Method */}
+            <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+              <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+                <svg className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                Delivery Method
+              </h2>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setFulfillmentMethod("collection")}
+                  className={cn(
+                    "flex-1 rounded-xl border-2 p-4 text-left transition-all",
+                    fulfillmentMethod === "collection"
+                      ? "border-primary bg-accent/50"
+                      : "border-border hover:border-muted-foreground/30",
+                  )}
+                >
+                  <p className="text-sm font-semibold text-foreground">Collection at Store</p>
+                  <p className="text-xs text-muted-foreground mt-1">Free &mdash; Windhoek</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFulfillmentMethod("courier")}
+                  className={cn(
+                    "flex-1 rounded-xl border-2 p-4 text-left transition-all",
+                    fulfillmentMethod === "courier"
+                      ? "border-primary bg-accent/50"
+                      : "border-border hover:border-muted-foreground/30",
+                  )}
+                >
+                  <p className="text-sm font-semibold text-foreground">Courier Delivery</p>
+                  <p className="text-xs text-muted-foreground mt-1">Nationwide &mdash; fee applies</p>
+                </button>
+              </div>
+
+              {fulfillmentMethod === "courier" && (
+                <div className="space-y-3 pt-2 border-t border-border">
+                  <p className="text-xs font-semibold text-foreground">Shipping Details</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-muted-foreground">Recipient Name</label>
+                      <input value={shippingName} onChange={e => setShippingName(e.target.value)} placeholder="Full name" className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground">Phone Number</label>
+                      <input value={shippingPhone} onChange={e => setShippingPhone(e.target.value)} placeholder="+264 81 234 5678" className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="text-xs text-muted-foreground">Street Address</label>
+                      <input value={shippingAddress} onChange={e => setShippingAddress(e.target.value)} placeholder="Street name, house/building number" className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground">Town / City</label>
+                      <input value={shippingCity} onChange={e => setShippingCity(e.target.value)} placeholder="e.g. Windhoek" className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground">Region</label>
+                      <input value={shippingRegion} onChange={e => setShippingRegion(e.target.value)} placeholder="e.g. Khomas" className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="text-xs text-muted-foreground">Courier Fee (NAD)</label>
+                      <input type="number" value={courierFeeCents ? courierFeeCents / 100 : ""} onChange={e => setCourierFeeCents((parseFloat(e.target.value) || 0) * 100)} placeholder="0 — leave blank if unsure" className="mt-1 h-10 w-full max-w-[200px] rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="text-xs text-muted-foreground">Delivery Notes (optional)</label>
+                      <input value={deliveryNotes} onChange={e => setDeliveryNotes(e.target.value)} placeholder="Instructions, landmarks, etc." className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Notes */}
             <div className="rounded-xl border border-border bg-card p-6">
               <h2 className="text-base font-semibold text-foreground mb-4">

@@ -18,6 +18,7 @@ import {
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 const STORE_EMAIL = process.env.NEXT_PUBLIC_STORE_EMAIL || "sales@desertechnam.com";
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
@@ -34,6 +35,7 @@ export default function StaffPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [inviteModal, setInviteModal] = useState<string | null>(null); // staff ID or "new"
+  const [deactivateConfirm, setDeactivateConfirm] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", email: "", role: "Staff" as "Staff" | "Admin", permissions: [] as string[] });
 
   // For inline edit
@@ -249,7 +251,7 @@ export default function StaffPage() {
                 </button>
                 {member.role !== "Admin" && (
                   <button
-                    onClick={() => toggleStaffActive(member.id)}
+                    onClick={() => setDeactivateConfirm(member.id)}
                     className={cn(
                       "rounded-lg p-2 transition-colors",
                       member.isActive
@@ -443,6 +445,28 @@ export default function StaffPage() {
           </div>
         </div>
       )}
+
+      {/* Deactivate Confirmation */}
+      <ConfirmDialog
+        open={deactivateConfirm !== null}
+        onOpenChange={() => setDeactivateConfirm(null)}
+        title={deactivateConfirm ? `${staff.find(s => s.id === deactivateConfirm)?.isActive ? "Deactivate" : "Activate"} staff member?` : ""}
+        description={
+          deactivateConfirm
+            ? staff.find(s => s.id === deactivateConfirm)?.isActive
+              ? "This staff member will be deactivated and will no longer be able to access the dashboard."
+              : "This staff member will be reactivated and regain access to the dashboard."
+            : ""
+        }
+        confirm={{
+          label: deactivateConfirm && staff.find(s => s.id === deactivateConfirm)?.isActive ? "Deactivate" : "Activate",
+          onClick: () => {
+            if (deactivateConfirm) toggleStaffActive(deactivateConfirm);
+            setDeactivateConfirm(null);
+          },
+          variant: deactivateConfirm && staff.find(s => s.id === deactivateConfirm)?.isActive ? "warning" : "default",
+        }}
+      />
 
       {/* Add staff button */}
       <div className="rounded-xl border border-dashed border-border bg-muted/50 p-8 text-center">

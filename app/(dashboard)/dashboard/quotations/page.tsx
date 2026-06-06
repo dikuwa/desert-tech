@@ -17,6 +17,7 @@ import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
 import { formatCents, getStatusBadgeClass, getStatusLabel } from "@/lib/dashboard-data";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 export default function QuotationsPage() {
   const quotations = useDashboardStore((s) => s.quotations);
@@ -169,27 +170,13 @@ export default function QuotationsPage() {
                         </button>
                       </>
                     )}
-                    {deleteConfirm === qt.id ? (
-                      <button
-                        onClick={() => {
-                          deleteQuotation(qt.id);
-                          setDeleteConfirm(null);
-                          toast.success("Quotation deleted");
-                        }}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-success hover:bg-success-soft transition-colors"
-                        title="Confirm delete"
-                      >
-                        <CheckCircle2 className="h-4 w-4" />
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => setDeleteConfirm(qt.id)}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    )}
+                    <button
+                      onClick={() => setDeleteConfirm(qt.id)}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
               </div>
@@ -197,6 +184,25 @@ export default function QuotationsPage() {
           ))}
         </div>
       )}
+
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        open={deleteConfirm !== null}
+        onOpenChange={() => setDeleteConfirm(null)}
+        title="Delete quotation?"
+        description="This quotation will be permanently removed. This action cannot be undone."
+        confirm={{
+          label: "Delete Quotation",
+          onClick: () => {
+            if (deleteConfirm) {
+              deleteQuotation(deleteConfirm);
+              toast.success("Quotation deleted");
+            }
+            setDeleteConfirm(null);
+          },
+          variant: "danger",
+        }}
+      />
     </div>
   );
 }

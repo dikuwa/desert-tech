@@ -109,6 +109,16 @@ interface DashboardState {
     subtotalCents: number;
     items?: { name: string; quantity: number; unitPriceCents: number }[];
     payment?: { amountCents: number; method: string; note?: string };
+    fulfillmentMethod?: "collection" | "courier";
+    courierFeeCents?: number;
+    shipping?: {
+      recipientName: string;
+      phone: string;
+      address: string;
+      city: string;
+      region: string;
+      deliveryNotes?: string;
+    };
   }) => DashboardOrder;
   updateOrderContactStatus: (id: string, contactStatus: OrderContactStatus) => void;
   updateOrderPaymentStatus: (id: string, paymentStatus: string) => void;
@@ -557,6 +567,9 @@ export const useDashboardStore = create<DashboardState>()(
           createdAt: now,
           updatedAt: now,
           paymentStatusAt: o.payment ? now : undefined,
+          fulfillmentMethod: o.fulfillmentMethod,
+          courierFeeCents: o.courierFeeCents,
+          shipping: o.shipping,
           items: o.items,
           timelineEvents: [
             createOrderEvent("Order", "Created", "Order created", now),

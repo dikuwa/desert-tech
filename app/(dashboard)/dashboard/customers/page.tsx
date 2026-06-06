@@ -6,6 +6,7 @@ import { Search, Users, MessageCircle, Phone, Mail, ChevronLeft, ChevronRight, P
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { formatCents, getStatusBadgeClass, getStatusLabel } from "@/lib/dashboard-data";
 import { cn } from "@/lib/utils";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -20,7 +21,7 @@ export default function CustomersPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ fullName: "", phone: "", email: "", whatsapp: "", preferredContact: ["WhatsApp"] as string[] });
   const [editId, setEditId] = useState<string | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [showOrdersFor, setShowOrdersFor] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
@@ -155,11 +156,7 @@ export default function CustomersPage() {
                   </div>
                   <div className="flex items-center gap-1">
                     <button onClick={() => startEdit(customer)} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"><Pencil className="h-3.5 w-3.5" /></button>
-                    {deleteConfirm === customer.id ? (
-                      <button onClick={() => handleDelete(customer.id)} className="rounded-md p-1.5 text-success hover:bg-success-soft transition-colors" title="Confirm delete"><Trash2 className="h-3.5 w-3.5" /></button>
-                    ) : (
-                      <button onClick={() => setDeleteConfirm(customer.id)} className="rounded-md p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
-                    )}
+                    <button onClick={() => setConfirmDelete(customer.id)} className="rounded-md p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
                   </div>
                 </div>
                 <div className="space-y-1.5 text-xs text-muted-foreground">
@@ -245,6 +242,22 @@ export default function CustomersPage() {
           <p className="text-sm font-medium text-foreground">No customers found</p>
         </div>
       )}
+
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        open={confirmDelete !== null}
+        onOpenChange={() => setConfirmDelete(null)}
+        title="Delete customer?"
+        description="This customer will be permanently removed along with their data. This action cannot be undone."
+        confirm={{
+          label: "Delete Customer",
+          onClick: () => {
+            if (confirmDelete) handleDelete(confirmDelete);
+            setConfirmDelete(null);
+          },
+          variant: "danger",
+        }}
+      />
 
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2">

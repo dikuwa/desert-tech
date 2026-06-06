@@ -144,6 +144,16 @@ interface ReceiptPDFProps {
   paymentStatus: string;
   storeLocation?: string;
   storePhone?: string;
+  fulfillmentMethod?: "collection" | "courier";
+  courierFeeCents?: number;
+  shipping?: {
+    recipientName: string;
+    phone: string;
+    address: string;
+    city: string;
+    region: string;
+    deliveryNotes?: string;
+  };
 }
 
 function formatCurrency(cents: number): string {
@@ -168,9 +178,13 @@ export function ReceiptPDF({
   paymentStatus,
   storeLocation = "Windhoek, Namibia",
   storePhone = "+264 85 277 5140",
+  fulfillmentMethod,
+  courierFeeCents,
+  shipping,
 }: ReceiptPDFProps) {
   const statusLabel = paymentLabel(paymentStatus);
   const settled = paymentStatus === "PaidInFull" || paymentStatus === "Paid";
+  const totalCents = subtotal + (fulfillmentMethod === "courier" && courierFeeCents ? courierFeeCents : 0);
 
   return (
     <Document>
@@ -211,6 +225,16 @@ export function ReceiptPDF({
             <Text style={styles.customerName}>{customerName}</Text>
             <Text style={styles.customerLine}>{customerPhone}</Text>
             {customerEmail && <Text style={styles.customerLine}>{customerEmail}</Text>}
+            {shipping && (
+              <View style={{ marginTop: 6 }}>
+                <Text style={[styles.label, { marginBottom: 3 }]}>Shipping Address</Text>
+                <Text style={[styles.customerLine, { marginBottom: 1 }]}>{shipping.recipientName}</Text>
+                <Text style={styles.customerLine}>{shipping.phone}</Text>
+                <Text style={styles.customerLine}>{shipping.address}</Text>
+                <Text style={styles.customerLine}>{shipping.city}, {shipping.region}</Text>
+                {shipping.deliveryNotes && <Text style={styles.customerLine}>Note: {shipping.deliveryNotes}</Text>}
+              </View>
+            )}
           </View>
 
           <View style={styles.section}>
@@ -237,13 +261,20 @@ export function ReceiptPDF({
                 <Text style={styles.totalLabel}>Subtotal</Text>
                 <Text style={styles.totalValue}>{formatCurrency(subtotal)}</Text>
               </View>
-              <View style={styles.totalRow}>
-                <Text style={styles.totalLabel}>Collection</Text>
-                <Text style={[styles.totalValue, { color: colors.success }]}>Free</Text>
-              </View>
+              {fulfillmentMethod === "courier" && courierFeeCents ? (
+                <View style={styles.totalRow}>
+                  <Text style={styles.totalLabel}>Courier Fee</Text>
+                  <Text style={styles.totalValue}>{formatCurrency(courierFeeCents)}</Text>
+                </View>
+              ) : (
+                <View style={styles.totalRow}>
+                  <Text style={styles.totalLabel}>Collection</Text>
+                  <Text style={[styles.totalValue, { color: colors.success }]}>Free</Text>
+                </View>
+              )}
               <View style={styles.grandTotal}>
                 <Text style={styles.grandText}>Total</Text>
-                <Text style={[styles.grandText, { color: colors.primary }]}>{formatCurrency(subtotal)}</Text>
+                <Text style={[styles.grandText, { color: colors.primary }]}>{formatCurrency(totalCents)}</Text>
               </View>
             </View>
           </View>

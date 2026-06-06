@@ -267,13 +267,29 @@ export default function OrderReceiptPage() {
               <span className="text-muted-foreground">Subtotal</span>
               <span className="font-medium text-foreground">{formatCents(order.subtotalCents)}</span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Collection</span>
-              <span className="font-medium text-success">Free</span>
-            </div>
+            {order.fulfillmentMethod === "courier" ? (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Courier Fee</span>
+                <span className="font-medium text-foreground">{formatCents(order.courierFeeCents || 0)}</span>
+              </div>
+            ) : (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Collection</span>
+                <span className="font-medium text-success">Free</span>
+              </div>
+            )}
+            {order.shipping && (
+              <div className="text-xs text-muted-foreground border-t border-border/50 pt-2 mt-1 space-y-0.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wider">Shipping Address</p>
+                <p>{order.shipping.recipientName}</p>
+                <p>{order.shipping.phone}</p>
+                <p>{order.shipping.address}</p>
+                <p>{order.shipping.city}, {order.shipping.region}</p>
+              </div>
+            )}
             <div className="flex justify-between text-base font-bold border-t border-border pt-1.5 mt-1.5">
               <span className="text-foreground">Total</span>
-              <span className="text-primary">{formatCents(order.subtotalCents)}</span>
+              <span className="text-primary">{formatCents(order.subtotalCents + (order.fulfillmentMethod === "courier" ? (order.courierFeeCents || 0) : 0))}</span>
             </div>
           </div>
         </div>
