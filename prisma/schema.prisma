@@ -253,6 +253,22 @@ model Notification {
   user User @relation(fields: [userId], references: [id])
 }
 
+model BackInStockRequest {
+  id               String   @id @default(cuid())
+  productId        String
+  productName      String
+  customerName     String
+  preferredContact String   @default("WhatsApp")
+  contactValue     String
+  urgency          String   @default("Flexible")
+  note             String?
+  status           String   @default("New")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id])
+}
+
 model ContactMessage {
   id        String   @id @default(cuid())
   fullName  String

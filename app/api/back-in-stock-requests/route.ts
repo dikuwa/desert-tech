@@ -1,0 +1,146 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+
+const requestSchema = z.object({
+  productId: z.string().min(1),
+  productName: z.string().min(1),
+  customerName: z.string().min(1).max(100),
+  preferredContact: z.enum(["WhatsApp", "Phone", "Email"]),
+  contactValue: z.string().min(1).max(200),
+  urgency: z.enum(["ASAP", "Flexible", "JustChecking"]),
+  note: z.string().max(500).optional(),
+});
+
+// Product IDs that are known to be sold out (from lib/data.ts)
+const SOLD_OUT_PRODUCT_IDS = new Set(["p4", "p13"]);
+
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    const validated = requestSchema.parse(body);
+
+    // Validate product exists and is sold out
+    const { products } = await import("@/lib/data");
+    const product = products.find((p) => p.id === validated.productId);
+
+    if (!product) {
+      return NextResponse.json(
+        { success: false, error: "Product not found" },
+        { status: 404 },
+      );
+    }
+
+    if (product.availability !== "sold_out") {
+      // Also check dashboard products for admin-added products
+      const { useDashboardStore } = await import("@/lib/store/dashboard");
+      const store = useDashboardStore.getState();
+      const dashProduct = store.products.find((p) => p.id === validated.productId);
+      if (!dashProduct || dashProduct.availability !== "OutOfStock") {
+        return NextResponse.json(
+          { success: false, error: "This product is currently available for purchase" },
+          { status: 400 },
+        );
+      }
+    }
+
+    // Try database first
+    try {
+      const { db } = await import("@/lib/db");
+      if (db) {
+        // Check for existing open request for same product + contact
+        const existing = await db.$queryRawUnsafe<Array<{ id: string }>>(
+          `SELECT id FROM "BackInStockRequest"
+           WHERE "productId" = $1 AND "contactValue" = $2 AND "status" IN ('New', 'ReadyToContact')
+           LIMIT 1`,
+          validated.productId,
+          validated.contactValue,
+        );
+
+        if (existing.length > 0) {
+          return NextResponse.json({
+            success: true,
+            duplicate: true,
+            message: "You've already requested this item.",
+          });
+        }
+
+        await db.$executeRawUnsafe(
+          `INSERT INTO "BackInStockRequest" ("id", "productId", "productName", "customerName", "preferredContact", "contactValue", "urgency", "note", "status", "createdAt", "updatedAt")
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'New', NOW(), NOW())`,
+          crypto.randomUUID(),
+          validated.productId,
+          validated.productName,
+          validated.customerName,
+          validated.preferredContact,
+          validated.contactValue,
+          validated.urgency,
+          validated.note || null,
+        );
+      }
+    } catch {
+      // Database unavailable — fall through to in-memory store
+      console.log("Database unavailable, storing back-in-stock request in-memory");
+    }
+
+    // Always store in in-memory store for dashboard visibility
+    const { addBackInStockRequest, findDuplicateRequest } = await import(
+      "@/lib/back-in-stock-store"
+    );
+
+    const duplicate = findDuplicateRequest(validated.productId, validated.contactValue);
+    if (duplicate) {
+      return NextResponse.json({
+        success: true,
+        duplicate: true,
+        message: "You've already requested this item.",
+      });
+    }
+
+    addBackInStockRequest({
+      productId: validated.productId,
+      productName: validated.productName,
+      customerName: validated.customerName,
+      preferredContact: validated.preferredContact,
+      contactValue: validated.contactValue,
+      urgency: validated.urgency,
+      note: validated.note,
+    });
+
+    // Also add to Zustand dashboard store for immediate visibility
+    try {
+      const { useDashboardStore } = await import("@/lib/store/dashboard");
+      useDashboardStore.getState().addBackInStockRequest({
+        productId: validated.productId,
+        productName: validated.productName,
+        customerName: validated.customerName,
+        preferredContact: validated.preferredContact,
+        contactValue: validated.contactValue,
+        urgency: validated.urgency,
+        note: validated.note,
+      });
+    } catch {
+      // Zustand store not available (server-side)
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "We'll notify you when this item is available.",
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { success: false, error: "Validation failed", details: error.errors },
+        { status: 400 },
+      );
+    }
+    console.error("Back-in-stock request error:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        error:
+          "Something went wrong. Please try again or contact us directly.",
+      },
+      { status: 500 },
+    );
+  }
+}

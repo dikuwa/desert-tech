@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { useCart } from "@/lib/store/cart";
 import { useWishlist } from "@/lib/store/wishlist";
 import { toast } from "sonner";
+import { NotifyMeModal } from "@/components/storefront/notify-me-modal";
 
 export interface ProductData {
   id: string;
@@ -173,10 +174,7 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
 
         {isSoldOut ? (
-          <button className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted">
-            <Bell className="h-3.5 w-3.5" />
-            Notify Me
-          </button>
+          <NotifyMeModal productId={product.id} productName={product.name} />
         ) : (
           <button
               onClick={handleAddToCart}

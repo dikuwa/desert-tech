@@ -21,6 +21,7 @@ import {
   ChevronLeft,
   Megaphone,
   ExternalLink,
+  BellDot,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -36,6 +37,7 @@ const adminNavItems = [
   { href: "/dashboard/follow-ups", label: "Follow-ups", icon: CalendarClock },
   { href: "/dashboard/receipts", label: "Receipts", icon: FileText },
   { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
+  { href: "/dashboard/back-in-stock", label: "Stock Requests", icon: BellDot },
 ];
 
 const financialNavItems = [
@@ -58,6 +60,8 @@ export function DashboardSidebar() {
   const userRole = useDashboardStore((s) => s.userRole);
   const currentUser = useDashboardStore((s) => s.currentUser);
   const isStaff = userRole === "Staff";
+  const unreadNotifications = useDashboardStore((s) => s.notifications.filter(n => !n.isRead).length);
+  const newStockRequests = useDashboardStore((s) => s.backInStockRequests.filter(r => r.status === "New").length);
 
   const handleSignOut = async () => {
     setSigningOut(true);
@@ -107,7 +111,9 @@ export function DashboardSidebar() {
         {adminNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
-          const unreadCount = item.href === "/dashboard/notifications" ? useDashboardStore((s) => s.notifications.filter(n => !n.isRead).length) : 0;
+          let count = 0;
+          if (item.href === "/dashboard/notifications") count = unreadNotifications;
+          if (item.href === "/dashboard/back-in-stock") count = newStockRequests;
           return (
             <Link
               key={item.href}
@@ -121,9 +127,9 @@ export function DashboardSidebar() {
             >
               <div className="relative shrink-0">
                 <Icon className="h-5 w-5" />
-                {item.href === "/dashboard/notifications" && unreadCount > 0 && (
+                {count > 0 && (
                   <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground leading-none">
-                    {unreadCount > 9 ? "9+" : unreadCount}
+                    {count > 9 ? "9+" : count}
                   </span>
                 )}
               </div>

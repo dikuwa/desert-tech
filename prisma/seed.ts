@@ -141,6 +141,7 @@ async function main() {
     { name: "Logitech MX Master 3S", slug: "logitech-mx-master-3s", sku: "DT-008", brand: "Logitech", category: "Accessories", priceCents: 159900, stockQuantity: 25, lowStockThreshold: 5, isFeatured: false, description: "Premium wireless mouse with quiet clicks and 8K DPI.", specifications: "Wireless • 8K DPI • Quiet Clicks • USB-C • 70h Battery • Multi-Device" },
     { name: 'MacBook Pro 14" M4 Pro', slug: "macbook-pro-14-m4-pro", sku: "DT-009", brand: "Apple", category: "Apple", priceCents: 2799900, stockQuantity: 3, lowStockThreshold: 3, isFeatured: false, description: "Professional laptop with M4 Pro chip for demanding workflows.", specifications: "14\" Liquid Retina XDR • Apple M4 Pro • 24GB RAM • 512GB SSD" },
     { name: "ASUS ROG Strix G16", slug: "asus-rog-strix-g16", sku: "DT-010", brand: "ASUS", category: "Gaming", priceCents: 2249900, stockQuantity: 1, lowStockThreshold: 3, isFeatured: false, description: "Gaming laptop with RTX 4070 and high-refresh display.", specifications: "16\" QHD 240Hz • Intel i9 • RTX 4070 • 16GB DDR5 • 1TB SSD • Win 11" },
+    { name: "iPhone 16 Pro Max", slug: "iphone-16-pro-max", sku: "DT-011", brand: "Apple", category: "Phones & Tablets", priceCents: 2199900, stockQuantity: 0, lowStockThreshold: 3, isFeatured: false, description: "The most advanced iPhone ever with A18 Pro, 48MP camera system, and titanium design.", specifications: "6.9\" OLED • A18 Pro • 256GB • Titanium • 48MP Camera" },
   ];
 
   for (const product of products) {
@@ -209,6 +210,43 @@ async function main() {
   }
 
   console.log("  ✓ Promotions created");
+
+  // Create back-in-stock requests
+  const ipadPro = await prisma.product.findUnique({ where: { slug: "ipad-pro-13-m4" } });
+  const iphone16 = await prisma.product.findUnique({ where: { slug: "iphone-16-pro-max" } });
+
+  if (ipadPro) {
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "BackInStockRequest" ("id", "productId", "productName", "customerName", "preferredContact", "contactValue", "urgency", "note", "status", "createdAt", "updatedAt")
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+       ON CONFLICT ("id") DO NOTHING`,
+      "seed-bis-1", ipadPro.id, 'iPad Pro 13" M4', "Helena Ndapanda", "WhatsApp", "264811234567", "ASAP", "Need for school, starting next week", "New",
+    );
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "BackInStockRequest" ("id", "productId", "productName", "customerName", "preferredContact", "contactValue", "urgency", "note", "status", "createdAt", "updatedAt")
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+       ON CONFLICT ("id") DO NOTHING`,
+      "seed-bis-2", ipadPro.id, 'iPad Pro 13" M4', "Tomas Shikongo", "Email", "tomas@example.com", "Flexible", "Would like to know when back in stock", "New",
+    );
+    console.log("  ✓ Back-in-stock requests for iPad Pro 13\" M4");
+  }
+
+  if (iphone16) {
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "BackInStockRequest" ("id", "productId", "productName", "customerName", "preferredContact", "contactValue", "urgency", "note", "status", "createdAt", "updatedAt")
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+       ON CONFLICT ("id") DO NOTHING`,
+      "seed-bis-3", iphone16.id, "iPhone 16 Pro Max", "Maria Kambonde", "Phone", "264852345678", "JustChecking", null, "ReadyToContact",
+    );
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "BackInStockRequest" ("id", "productId", "productName", "customerName", "preferredContact", "contactValue", "urgency", "note", "status", "createdAt", "updatedAt")
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+       ON CONFLICT ("id") DO NOTHING`,
+      "seed-bis-4", iphone16.id, "iPhone 16 Pro Max", "Petrus Nangolo", "WhatsApp", "264813456789", "ASAP", "Upgrading from iPhone 13", "Contacted",
+    );
+    console.log("  ✓ Back-in-stock requests for iPhone 16 Pro Max");
+  }
+
   console.log("\n✅ Database seeded successfully!");
   console.log("   Admin login: admin@deserttech.com");
   console.log("   Staff login: staff@deserttech.com");

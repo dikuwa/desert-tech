@@ -9,8 +9,7 @@ import {
   MessageCircle,
   Phone,
   Check,
-  AlertTriangle,
-  Share2,
+  Bell,
   Truck,
   ShieldCheck,
   RotateCcw,
@@ -18,6 +17,7 @@ import {
 import { getProductBySlug, formatNAD, products, categories } from "@/lib/data";
 import { useCart } from "@/lib/store/cart";
 import { useWishlist } from "@/lib/store/wishlist";
+import { NotifyMeModal } from "@/components/storefront/notify-me-modal";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -234,10 +234,16 @@ export default function ProductDetailPage() {
                 )}
               </button>
             ) : (
-              <button className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-6 py-3.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted cursor-not-allowed opacity-60">
-                <AlertTriangle className="h-5 w-5" />
-                Currently Sold Out
-              </button>
+              <NotifyMeModal
+                productId={product.id}
+                productName={product.name}
+                trigger={
+                  <button className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-6 py-3.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:scale-[0.98]">
+                    <Bell className="h-5 w-5" />
+                    Notify Me
+                  </button>
+                }
+              />
             )}
           </div>
 

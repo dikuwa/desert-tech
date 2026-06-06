@@ -9,6 +9,7 @@ import {
   mockStaff as initialStaff,
   mockFollowUps as initialFollowUps,
   mockNotifications as initialNotifications,
+  mockBackInStockRequests as initialBackInStockRequests,
   mockPayments as initialPayments,
   storeSettings as initialSettings,
   defaultContactDetails,
@@ -25,6 +26,10 @@ import type {
   DashboardFollowUp,
   DashboardNotification,
   DashboardPayment,
+  DashboardBackInStockRequest,
+  BackInStockStatus,
+  BackInStockUrgency,
+  BackInStockContactMethod,
   BankDetail,
   ContactDetail,
   PaymentMethod,
@@ -36,6 +41,7 @@ let nextPromotionId = 10;
 let nextStaffId = 10;
 let nextFollowUpId = 10;
 let nextNotificationId = 10;
+let nextBackInStockId = 10;
 let nextPaymentId = 10;
 let nextContactDetailId = 10;
 let nextBankDetailId = 10;
@@ -127,6 +133,13 @@ interface DashboardState {
   addInvite: (invite: { token: string; email: string; name: string; role: string; createdAt: string }) => void;
   markInviteUsed: (token: string) => void;
 
+  // Back-In-Stock Requests
+  backInStockRequests: DashboardBackInStockRequest[];
+  addBackInStockRequest: (r: Omit<DashboardBackInStockRequest, "id" | "createdAt" | "updatedAt" | "status">) => void;
+  updateBackInStockStatus: (id: string, status: BackInStockStatus) => void;
+  deleteBackInStockRequest: (id: string) => void;
+  markBackInStockReadyForProduct: (productId: string, productName: string) => void;
+
   // Customers
   addCustomer: (c: Omit<DashboardCustomer, "id" | "createdAt" | "orderCount" | "totalSpentCents">) => void;
   updateCustomer: (id: string, data: Partial<DashboardCustomer>) => void;
@@ -173,6 +186,7 @@ export const useDashboardStore = create<DashboardState>()(
       bankDetails: defaultBankDetails,
       paymentMethods: defaultPaymentMethods,
       settings: initialSettings,
+      backInStockRequests: initialBackInStockRequests,
       userRole: "Admin",
       currentUser: "Admin User",
       invites: [],
@@ -330,9 +344,49 @@ export const useDashboardStore = create<DashboardState>()(
         }));
       },
       updateProduct: (id, data) =>
-        set((s) => ({
-          products: s.products.map((p) => (p.id === id ? { ...p, ...data } : p)),
-        })),
+        set((s) => {
+          const oldProduct = s.products.find((p) => p.id === id);
+          const wasOutOfStock =
+            oldProduct?.availability === "OutOfStock" ||
+            (oldProduct?.stockQuantity ?? 0) <= 0;
+          const nowInStock =
+            (data.availability === "InStock" || data.availability === "LowStock") ||
+            (data.stockQuantity !== undefined && data.stockQuantity > 0);
+
+          const result: Partial<DashboardState> = {
+            products: s.products.map((p) => (p.id === id ? { ...p, ...data } : p)),
+          };
+
+          // Stock-return trigger: if product was out of stock and now has stock
+          if (wasOutOfStock && nowInStock) {
+            const productName = data.name || oldProduct?.name || "";
+            const updatedRequests = s.backInStockRequests.map((r) =>
+              r.productId === id && r.status === "New"
+                ? { ...r, status: "ReadyToContact" as const, updatedAt: new Date().toISOString() }
+                : r,
+            );
+            const changedCount = updatedRequests.filter(
+              (r, i) =>
+                r.status === "ReadyToContact" &&
+                s.backInStockRequests[i]?.status === "New",
+            ).length;
+
+            if (changedCount > 0) {
+              const newNotif: DashboardNotification = {
+                id: `n${nextNotificationId++}`,
+                type: "stock",
+                title: "Stock Restored",
+                message: `${changedCount} customer${changedCount > 1 ? "s" : ""} requested ${productName}. Stock is now available.`,
+                isRead: false,
+                createdAt: new Date().toISOString(),
+              };
+              result.notifications = [newNotif, ...s.notifications];
+              result.backInStockRequests = updatedRequests;
+            }
+          }
+
+          return result;
+        }),
       deleteProduct: (id) =>
         set((s) => ({
           products: s.products.filter((p) => p.id !== id),
@@ -482,6 +536,66 @@ export const useDashboardStore = create<DashboardState>()(
         set((s) => ({
           notifications: s.notifications.filter((n) => n.id !== id),
         })),
+
+      // === Back-In-Stock Requests ===
+      addBackInStockRequest: (r) => {
+        const id = `bis${nextBackInStockId++}`;
+        const now = new Date().toISOString();
+        const newReq: DashboardBackInStockRequest = {
+          ...r,
+          id,
+          status: "New",
+          createdAt: now,
+          updatedAt: now,
+        };
+        set((s) => ({
+          backInStockRequests: [newReq, ...s.backInStockRequests],
+        }));
+        // Create dashboard notification
+        get().addNotification({
+          type: "backinstock",
+          title: "New Stock Request",
+          message: `${r.customerName} requested ${r.productName}`,
+        });
+      },
+      updateBackInStockStatus: (id, status) =>
+        set((s) => ({
+          backInStockRequests: s.backInStockRequests.map((r) =>
+            r.id === id ? { ...r, status, updatedAt: new Date().toISOString() } : r
+          ),
+        })),
+      deleteBackInStockRequest: (id) =>
+        set((s) => ({
+          backInStockRequests: s.backInStockRequests.filter((r) => r.id !== id),
+        })),
+      markBackInStockReadyForProduct: (productId, productName) =>
+        set((s) => {
+          const now = new Date().toISOString();
+          const updated = s.backInStockRequests.map((r) =>
+            r.productId === productId && r.status === "New"
+              ? { ...r, status: "ReadyToContact" as const, updatedAt: now }
+              : r
+          );
+          const changedCount = updated.filter(
+            (r, i) => r.status === "ReadyToContact" && s.backInStockRequests[i]?.status === "New"
+          ).length;
+
+          const result: Partial<DashboardState> = { backInStockRequests: updated };
+
+          if (changedCount > 0) {
+            const newNotif: DashboardNotification = {
+              id: `n${nextNotificationId++}`,
+              type: "stock",
+              title: "Stock Restored",
+              message: `${changedCount} customer${changedCount > 1 ? "s" : ""} requested ${productName}. Stock is now available.`,
+              isRead: false,
+              createdAt: new Date().toISOString(),
+            };
+            result.notifications = [newNotif, ...s.notifications];
+          }
+
+          return result;
+        }),
 
       // === Customers ===
       addCustomer: (c) => {

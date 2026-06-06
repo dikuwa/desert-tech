@@ -147,6 +147,24 @@ export interface DashboardNotification {
   createdAt: string;
 }
 
+export type BackInStockUrgency = "ASAP" | "Flexible" | "JustChecking";
+export type BackInStockContactMethod = "WhatsApp" | "Phone" | "Email";
+export type BackInStockStatus = "New" | "ReadyToContact" | "Contacted" | "Cancelled";
+
+export interface DashboardBackInStockRequest {
+  id: string;
+  productId: string;
+  productName: string;
+  customerName: string;
+  preferredContact: BackInStockContactMethod;
+  contactValue: string;
+  urgency: BackInStockUrgency;
+  note?: string;
+  status: BackInStockStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface DashboardPayment {
   id: string;
   orderNumber: string;
@@ -231,6 +249,72 @@ export const mockNotifications: DashboardNotification[] = [
   { id: "n4", type: "followup", title: "Follow-up Due", message: "Follow-up with John Mwale is due today", isRead: true, createdAt: "2026-06-02T06:00:00Z" },
   { id: "n5", type: "order", title: "Order Completed", message: "Order DT-P6Q7R8 has been marked as completed", isRead: true, createdAt: "2026-05-20T15:00:00Z" },
   { id: "n6", type: "contact", title: "New Enquiry", message: "New contact form submission from Helena Ndapanda", isRead: false, createdAt: "2026-06-01T18:30:00Z" },
+];
+
+export const mockBackInStockRequests: DashboardBackInStockRequest[] = [
+  {
+    id: "b1",
+    productId: "p4",
+    productName: 'iPad Pro 13" M4',
+    customerName: "Helena Ndapanda",
+    preferredContact: "WhatsApp",
+    contactValue: "264811234567",
+    urgency: "ASAP",
+    note: "Need for school, starting next week",
+    status: "New",
+    createdAt: "2026-06-02T09:00:00Z",
+    updatedAt: "2026-06-02T09:00:00Z",
+  },
+  {
+    id: "b2",
+    productId: "p4",
+    productName: 'iPad Pro 13" M4',
+    customerName: "Tomas Shikongo",
+    preferredContact: "Email",
+    contactValue: "tomas@example.com",
+    urgency: "Flexible",
+    note: "Would like to know when back in stock",
+    status: "New",
+    createdAt: "2026-06-01T14:30:00Z",
+    updatedAt: "2026-06-01T14:30:00Z",
+  },
+  {
+    id: "b3",
+    productId: "p13",
+    productName: "iPhone 16 Pro Max",
+    customerName: "Maria Kambonde",
+    preferredContact: "Phone",
+    contactValue: "264852345678",
+    urgency: "JustChecking",
+    status: "ReadyToContact",
+    createdAt: "2026-05-28T11:00:00Z",
+    updatedAt: "2026-06-02T08:00:00Z",
+  },
+  {
+    id: "b4",
+    productId: "p13",
+    productName: "iPhone 16 Pro Max",
+    customerName: "Petrus Nangolo",
+    preferredContact: "WhatsApp",
+    contactValue: "264813456789",
+    urgency: "ASAP",
+    note: "Upgrading from iPhone 13",
+    status: "Contacted",
+    createdAt: "2026-05-25T16:00:00Z",
+    updatedAt: "2026-05-30T10:00:00Z",
+  },
+  {
+    id: "b5",
+    productId: "p13",
+    productName: "iPhone 16 Pro Max",
+    customerName: "Selma Amadhila",
+    preferredContact: "WhatsApp",
+    contactValue: "264854567890",
+    urgency: "Flexible",
+    status: "Cancelled",
+    createdAt: "2026-05-20T08:00:00Z",
+    updatedAt: "2026-05-22T12:00:00Z",
+  },
 ];
 
 export const mockPayments: DashboardPayment[] = [
