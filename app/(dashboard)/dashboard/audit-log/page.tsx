@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import Link from "next/link";
-import { History, Search, ChevronLeft, ChevronRight, Clock, User, Copy, Check, ExternalLink } from "lucide-react";
+import { History, Search, ChevronLeft, ChevronRight, Clock, User, Copy, Check, ExternalLink, Download } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +18,8 @@ const ENTITY_COLORS: Record<string, string> = {
   category: "bg-orange-100 text-orange-700 border-orange-200",
   promotion: "bg-pink-100 text-pink-700 border-pink-200",
   backinstock: "bg-cyan-100 text-cyan-700 border-cyan-200",
+  brand: "bg-indigo-100 text-indigo-700 border-indigo-200",
+  notification: "bg-slate-100 text-slate-700 border-slate-200",
   settings: "bg-gray-100 text-gray-700 border-gray-200",
 };
 
@@ -33,6 +35,8 @@ const ENTITY_ROUTES: Record<string, (entityId: string) => string> = {
   promotion: () => `/dashboard/promotions`,
   settings: () => `/dashboard/settings`,
   backinstock: () => `/dashboard/back-in-stock`,
+  brand: () => `/dashboard/categories`,
+  notification: () => `/dashboard/notifications`,
 };
 
 function CopyButton({ text, label }: { text: string; label: string }) {
@@ -108,7 +112,7 @@ export default function AuditLogPage() {
   const [entityFilter, setEntityFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
 
-  const entityTypes = ["all", "order", "quotation", "product", "payment", "customer", "staff", "category", "promotion", "backinstock", "settings"];
+  const entityTypes = ["all", "order", "quotation", "product", "payment", "customer", "staff", "category", "promotion", "brand", "backinstock", "notification", "settings"];
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
@@ -146,6 +150,36 @@ export default function AuditLogPage() {
         <p className="text-sm text-muted-foreground mt-1">
           {auditLogs.length} total entries &middot; Click entity labels to navigate &middot; Copy IDs with the copy button
         </p>
+      </div>
+
+      {/* Export button */}
+      <div className="flex justify-end">
+        <button
+          onClick={() => {
+            const headers = ["Action","Entity Type","Entity Label","Entity ID","Performed By","Timestamp","Details"];
+            const rows = filtered.map((e) => [
+              e.action,
+              e.entityType,
+              e.entityLabel,
+              e.entityId,
+              e.performedBy,
+              new Date(e.timestamp).toISOString(),
+              e.details || "",
+            ]);
+            const csv = [headers.join(","), ...rows.map((r) => r.map((c) => `"${c.replace(/"/g, '""')}"`).join(","))].join("\n");
+            const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `audit-log-${new Date().toISOString().split("T")[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+          }}
+          className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        >
+          <Download className="h-3.5 w-3.5" />
+          Export CSV
+        </button>
       </div>
 
       {/* Search + Filters */}

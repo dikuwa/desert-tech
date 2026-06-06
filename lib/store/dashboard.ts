@@ -549,15 +549,24 @@ export const useDashboardStore = create<DashboardState>()(
           slug: slugify(b.name),
         };
         set((s) => ({ brands: [...s.brands, newBrand] }));
+        get().addAuditLog({ action: "Brand created", entityType: "brand", entityId: id, entityLabel: newBrand.name });
       },
-      updateBrand: (id, data) =>
+      updateBrand: (id, data) => {
+        const { brands } = get();
+        const brand = brands.find((b) => b.id === id);
         set((s) => ({
           brands: s.brands.map((br) => (br.id === id ? { ...br, ...data } : br)),
-        })),
-      deleteBrand: (id) =>
+        }));
+        if (brand) get().addAuditLog({ action: "Brand updated", entityType: "brand", entityId: id, entityLabel: brand.name });
+      },
+      deleteBrand: (id) => {
+        const { brands } = get();
+        const brand = brands.find((b) => b.id === id);
         set((s) => ({
           brands: s.brands.filter((br) => br.id !== id),
-        })),
+        }));
+        if (brand) get().addAuditLog({ action: "Brand deleted", entityType: "brand", entityId: id, entityLabel: brand.name });
+      },
       toggleBrandActive: (id) =>
         set((s) => ({
           brands: s.brands.map((br) =>
@@ -831,10 +840,14 @@ export const useDashboardStore = create<DashboardState>()(
         set((s) => ({
           notifications: s.notifications.map((n) => ({ ...n, isRead: true })),
         })),
-      deleteNotification: (id) =>
+      deleteNotification: (id) => {
+        const { notifications } = get();
+        const notif = notifications.find((n) => n.id === id);
         set((s) => ({
           notifications: s.notifications.filter((n) => n.id !== id),
-        })),
+        }));
+        if (notif) get().addAuditLog({ action: "Notification dismissed", entityType: "notification", entityId: id, entityLabel: notif.title });
+      },
 
       // === Back-In-Stock Requests ===
       addBackInStockRequest: (r) => {

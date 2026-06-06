@@ -114,7 +114,17 @@ export function DashboardSidebar() {
       </div>
 
       {/* Quick SKU Lookup */}
-      {!collapsed && (
+      {collapsed ? (
+        <div className="flex justify-center py-3">
+          <button
+            onClick={() => router.push("/dashboard/products")}
+            className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            title="Search products by SKU"
+          >
+            <Search className="h-4 w-4" />
+          </button>
+        </div>
+      ) : (
         <div className="px-3 pt-4 pb-2">
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />

@@ -224,7 +224,7 @@ export interface DashboardBrand {
 export interface AuditEntry {
   id: string;
   action: string;
-  entityType: "order" | "quotation" | "product" | "payment" | "customer" | "settings" | "backinstock";
+  entityType: "order" | "quotation" | "product" | "payment" | "customer" | "settings" | "backinstock" | "brand" | "notification";
   entityId: string;
   entityLabel: string;
   performedBy: string;
