@@ -232,7 +232,7 @@ export default function QuotationDetailPage() {
             <div>
               <p className="text-sm font-semibold text-foreground">{quotation.customerName}</p>
               <p className="text-xs text-muted-foreground">{quotation.customerPhone}</p>
-              <p className="text-xs text-muted-foreground">Contact via {quotation.preferredContact}</p>
+              <p className="text-xs text-muted-foreground">Contact via {Array.isArray(quotation.preferredContact) ? quotation.preferredContact.join(", ") : quotation.preferredContact}</p>
             </div>
           </div>
         </div>

@@ -24,12 +24,15 @@ import { useDashboardStore } from "@/lib/store/dashboard";
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
 const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
 
+const CONTACT_METHODS = ["WhatsApp", "Phone", "Email"] as const;
+type ContactMethod = (typeof CONTACT_METHODS)[number];
+
 const checkoutSchema = z.object({
   fullName: z.string().min(2, "Full name is required").max(100),
   phone: z.string().min(5, "Phone number is required").max(20),
   whatsapp: z.string().optional().or(z.literal("")),
   email: z.string().email("Invalid email").optional().or(z.literal("")),
-  preferredContact: z.enum(["WhatsApp", "Phone", "Email"]),
+  preferredContact: z.array(z.enum(CONTACT_METHODS)).min(1, "Select at least one contact method"),
   notes: z.string().max(500).optional(),
 });
 
@@ -55,16 +58,26 @@ export default function CheckoutPage() {
   const {
     register,
     handleSubmit,
+    setValue,
     watch,
     formState: { errors },
   } = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
-      preferredContact: "WhatsApp",
+      preferredContact: ["WhatsApp"],
     },
   });
 
   const preferredContact = watch("preferredContact");
+
+  const toggleContactMethod = (method: "WhatsApp" | "Phone" | "Email") => {
+    const current = preferredContact || [];
+    if (current.includes(method)) {
+      setValue("preferredContact", current.filter((m) => m !== method), { shouldValidate: true });
+    } else {
+      setValue("preferredContact", [...current, method], { shouldValidate: true });
+    }
+  };
 
   const onSubmit = async (data: CheckoutFormData) => {
     if (items.length === 0) return;
@@ -80,7 +93,7 @@ export default function CheckoutPage() {
           phone: data.phone,
           whatsapp: data.whatsapp || data.phone,
           email: data.email || undefined,
-          preferredContact: data.preferredContact,
+          preferredContact: Array.isArray(data.preferredContact) ? data.preferredContact.join(",") : data.preferredContact,
           notes: data.notes || undefined,
           items: items.map((i) => ({
             productId: i.productId,
@@ -242,36 +255,46 @@ export default function CheckoutPage() {
             {/* Preferred Contact */}
             <div className="rounded-xl border border-border bg-card p-6 space-y-4">
               <h2 className="text-base font-semibold text-foreground">Preferred Contact Method</h2>
+              <p className="text-xs text-muted-foreground">Select one or more methods</p>
               <div className="grid grid-cols-3 gap-3">
-                {(["WhatsApp", "Phone", "Email"] as const).map((method) => (
-                  <label
-                    key={method}
-                    className={cn(
-                      "flex cursor-pointer flex-col items-center gap-2 rounded-lg border p-4 transition-all",
-                      preferredContact === method
-                        ? "border-primary bg-accent text-primary"
-                        : "border-border text-muted-foreground hover:text-foreground hover:bg-muted",
-                    )}
-                  >
-                    <input
-                      type="radio"
-                      id={`contact-${method}`}
-                      value={method}
-                      {...register("preferredContact")}
-                      className="sr-only"
-                    />
-                    {method === "WhatsApp" ? (
-                      <MessageCircle className="h-5 w-5" />
-                    ) : method === "Phone" ? (
-                      <Phone className="h-5 w-5" />
-                    ) : (
-                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
-                    )}
-                    <span className="text-xs font-semibold">{method}</span>
-                  </label>
-                ))}
+                {(["WhatsApp", "Phone", "Email"] as const).map((method) => {
+                  const isSelected = (preferredContact || []).includes(method);
+                  return (
+                    <label
+                      key={method}
+                      className={cn(
+                        "flex cursor-pointer flex-col items-center gap-2 rounded-lg border p-4 transition-all",
+                        isSelected
+                          ? "border-primary bg-accent text-primary"
+                          : "border-border text-muted-foreground hover:text-foreground hover:bg-muted",
+                      )}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleContactMethod(method)}
+                        className="sr-only"
+                      />
+                      {method === "WhatsApp" ? (
+                        <MessageCircle className="h-5 w-5" />
+                      ) : method === "Phone" ? (
+                        <Phone className="h-5 w-5" />
+                      ) : (
+                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                      )}
+                      <span className="text-xs font-semibold">{method}</span>
+                      {isSelected && (
+                        <span className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary">
+                          <svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </span>
+                      )}
+                    </label>
+                  );
+                })}
               </div>
             </div>
 
@@ -351,7 +374,7 @@ export default function CheckoutPage() {
             </button>
 
             <p className="text-xs text-center text-muted-foreground">
-              By submitting, you agree that we&apos;ll contact you using your preferred method to
+              By submitting, you agree that we&apos;ll contact you using your selected method(s) to
               confirm your order.
             </p>
           </form>

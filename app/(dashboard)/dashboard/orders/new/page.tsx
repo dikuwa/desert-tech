@@ -45,7 +45,7 @@ export default function NewWalkinOrderPage() {
 
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
-  const [preferredContact, setPreferredContact] = useState("WhatsApp");
+  const [preferredContact, setPreferredContact] = useState<string[]>(["WhatsApp"]);
   const [showCustomerSearch, setShowCustomerSearch] = useState(false);
   const customerInputRef = useRef<HTMLInputElement>(null);
   const customerSearchRef = useRef<HTMLDivElement>(null);
@@ -63,7 +63,7 @@ export default function NewWalkinOrderPage() {
   const selectCustomer = useCallback((c: typeof customers[0]) => {
     setCustomerName(c.fullName);
     setCustomerPhone(c.phone);
-    setPreferredContact(c.preferredContact);
+    setPreferredContact(Array.isArray(c.preferredContact) ? c.preferredContact : [c.preferredContact || "WhatsApp"]);
     setShowCustomerSearch(false);
   }, []);
 
@@ -112,7 +112,7 @@ export default function NewWalkinOrderPage() {
       const newOrder = addOrder({
         customerName: customerName.trim(),
         customerPhone: customerPhone.trim(),
-        preferredContact,
+        preferredContact: preferredContact.length > 0 ? preferredContact : ["WhatsApp"],
         itemCount,
         subtotalCents,
         payment: recordPayment && paymentAmountCents > 0
@@ -204,7 +204,7 @@ export default function NewWalkinOrderPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-foreground">{c.fullName}</p>
-                        <p className="text-xs text-muted-foreground">{c.phone} &middot; {c.preferredContact}</p>
+                        <p className="text-xs text-muted-foreground">{c.phone} &middot; {Array.isArray(c.preferredContact) ? c.preferredContact.join(", ") : c.preferredContact}</p>
                       </div>
                       <div className="text-xs text-muted-foreground">
                         {c.orderCount} order{c.orderCount !== 1 ? "s" : ""}
@@ -228,23 +228,34 @@ export default function NewWalkinOrderPage() {
             </div>
             <div>
               <label className="text-sm font-medium text-foreground">
-                Preferred Contact
+                Preferred Contact <span className="text-[10px] text-muted-foreground">(select all that apply)</span>
               </label>
-              <Select
-                value={preferredContact}
-                onValueChange={setPreferredContact}
-              >
-                <SelectTrigger className="mt-1.5 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/30">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-border shadow-lg z-[80]">
-                  {CONTACT_METHODS.map((m) => (
-                    <SelectItem key={m} value={m} className="text-sm cursor-pointer focus:bg-accent">
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {CONTACT_METHODS.map((m) => {
+                  const isSelected = preferredContact.includes(m);
+                  return (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => {
+                        setPreferredContact(
+                          isSelected
+                            ? preferredContact.filter((c) => c !== m)
+                            : [...preferredContact, m],
+                        );
+                      }}
+                      className={cn(
+                        "rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors",
+                        isSelected
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "border-border text-muted-foreground hover:text-foreground hover:bg-muted",
+                      )}
+                    >
                       {m === "WhatsApp" ? "WhatsApp" : m === "Phone" ? "Phone Call" : "Email"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>

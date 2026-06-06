@@ -98,21 +98,21 @@ export default function PaymentsPage() {
         <div className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5">
           <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
           <select value={datePreset} onChange={e => { setDatePreset(e.target.value); setCurrentPage(1); }}
-            className="bg-transparent text-xs font-medium text-foreground border-none focus:outline-none py-1">
+            className="h-9 rounded-lg border border-border bg-card px-3 text-xs font-medium focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30">
             {datePresets.map(p => (
               <option key={p.label} value={p.label}>{p.label}</option>
             ))}
           </select>
         </div>
         <select value={methodFilter} onChange={e => { setMethodFilter(e.target.value); setCurrentPage(1); }}
-          className="h-9 rounded-lg border border-border bg-card px-3 text-xs font-medium focus:border-primary focus:outline-none">
+          className="h-9 rounded-lg border border-border bg-card px-3 text-xs font-medium focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30">
           <option value="All">All Methods</option>
           {methods.filter(m => m !== "All").map(m => (
             <option key={m} value={m}>{m}</option>
           ))}
         </select>
         <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1); }}
-          className="h-9 rounded-lg border border-border bg-card px-3 text-xs font-medium focus:border-primary focus:outline-none">
+          className="h-9 rounded-lg border border-border bg-card px-3 text-xs font-medium focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30">
           <option value="All">All Statuses</option>
           <option value="Confirmed">Confirmed</option>
           <option value="Pending">Pending</option>

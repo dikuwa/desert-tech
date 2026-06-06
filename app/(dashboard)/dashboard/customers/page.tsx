@@ -18,10 +18,10 @@ export default function CustomersPage() {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showAdd, setShowAdd] = useState(false);
+  const [form, setForm] = useState({ fullName: "", phone: "", email: "", whatsapp: "", preferredContact: ["WhatsApp"] as string[] });
   const [editId, setEditId] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [showOrdersFor, setShowOrdersFor] = useState<string | null>(null);
-  const [form, setForm] = useState({ fullName: "", phone: "", email: "", whatsapp: "", preferredContact: "WhatsApp" });
 
   const filtered = useMemo(() => {
     if (!search) return customers;
@@ -32,7 +32,16 @@ export default function CustomersPage() {
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
-  const resetForm = () => setForm({ fullName: "", phone: "", email: "", whatsapp: "", preferredContact: "WhatsApp" });
+  const resetForm = () => setForm({ fullName: "", phone: "", email: "", whatsapp: "", preferredContact: ["WhatsApp"] });
+
+  const toggleContact = (method: string) => {
+    setForm((f) => ({
+      ...f,
+      preferredContact: f.preferredContact.includes(method)
+        ? f.preferredContact.filter((m) => m !== method)
+        : [...f.preferredContact, method],
+    }));
+  };
 
   const handleAdd = () => {
     if (!form.fullName.trim() || !form.phone.trim()) return;
@@ -104,9 +113,9 @@ export default function CustomersPage() {
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground">Preferred contact:</span>
             {["WhatsApp", "Phone", "Email"].map(m => (
-              <button key={m} onClick={() => setForm(f => ({ ...f, preferredContact: m }))}
+              <button key={m} onClick={() => toggleContact(m)}
                 className={cn("rounded-lg border px-3 py-1.5 text-[11px] font-semibold transition-colors",
-                  form.preferredContact === m ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground")}>
+                  form.preferredContact.includes(m) ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground")}>
                 {m}
               </button>
             ))}
@@ -141,7 +150,7 @@ export default function CustomersPage() {
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-foreground">{customer.fullName}</p>
-                      <p className="text-xs text-muted-foreground">{customer.preferredContact}</p>
+                      <p className="text-xs text-muted-foreground">{Array.isArray(customer.preferredContact) ? customer.preferredContact.join(", ") : customer.preferredContact}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1">

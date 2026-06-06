@@ -160,7 +160,7 @@ export default function OrderDetailPage() {
       addCustomer({
         fullName: order.customerName.trim(),
         phone: order.customerPhone.trim(),
-        preferredContact: order.preferredContact || "WhatsApp",
+        preferredContact: Array.isArray(order.preferredContact) && order.preferredContact.length > 0 ? order.preferredContact : ["WhatsApp"],
       });
       toast.success(`${order.customerName} added to customers`);
     }
@@ -273,12 +273,11 @@ export default function OrderDetailPage() {
   };
 
   const contactIcon = () => {
-    switch (order.preferredContact) {
-      case "WhatsApp": return <MessageCircle className="h-4 w-4 text-whatsapp" />;
-      case "Phone": return <Phone className="h-4 w-4 text-blue-600" />;
-      case "Email": return <Mail className="h-4 w-4 text-blue-600" />;
-      default: return <Phone className="h-4 w-4" />;
-    }
+    const prefs = Array.isArray(order.preferredContact) ? order.preferredContact : [order.preferredContact];
+    if (prefs.includes("WhatsApp")) return <MessageCircle className="h-4 w-4 text-whatsapp" />;
+    if (prefs.includes("Phone")) return <Phone className="h-4 w-4 text-blue-600" />;
+    if (prefs.includes("Email")) return <Mail className="h-4 w-4 text-blue-600" />;
+    return <Phone className="h-4 w-4" />;
   };
 
   return (
@@ -367,7 +366,7 @@ export default function OrderDetailPage() {
               </h2>
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 {contactIcon()}
-                <span>{order.preferredContact}</span>
+                <span>{Array.isArray(order.preferredContact) ? order.preferredContact.join(", ") : order.preferredContact}</span>
               </div>
             </div>
             <div className="p-5">

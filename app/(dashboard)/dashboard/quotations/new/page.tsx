@@ -44,7 +44,7 @@ export default function NewQuotationPage() {
 
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
-  const [preferredContact, setPreferredContact] = useState("WhatsApp");
+  const [preferredContact, setPreferredContact] = useState<string[]>(["WhatsApp"]);
   const [showCustomerSearch, setShowCustomerSearch] = useState(false);
   const customerSearchRef = useRef<HTMLDivElement>(null);
 
@@ -61,7 +61,7 @@ export default function NewQuotationPage() {
   const selectCustomer = useCallback((c: typeof customers[0]) => {
     setCustomerName(c.fullName);
     setCustomerPhone(c.phone);
-    setPreferredContact(c.preferredContact);
+    setPreferredContact(Array.isArray(c.preferredContact) ? c.preferredContact : [c.preferredContact || "WhatsApp"]);
     setShowCustomerSearch(false);
   }, []);
 
@@ -109,7 +109,7 @@ export default function NewQuotationPage() {
       const newQuotation = addQuotation({
         customerName: customerName.trim(),
         customerPhone: customerPhone.trim(),
-        preferredContact,
+        preferredContact: preferredContact.length > 0 ? preferredContact : ["WhatsApp"],
         items: validItems,
         subtotalCents,
         notes: notes.trim() || undefined,
@@ -215,20 +215,34 @@ export default function NewQuotationPage() {
             </div>
             <div>
               <label className="text-sm font-medium text-foreground">
-                Preferred Contact
+                Preferred Contact <span className="text-[10px] text-muted-foreground">(select all that apply)</span>
               </label>
-              <Select value={preferredContact} onValueChange={setPreferredContact}>
-                <SelectTrigger className="mt-1.5 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/30">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-border shadow-lg z-[80]">
-                  {CONTACT_METHODS.map((m) => (
-                    <SelectItem key={m} value={m} className="text-sm cursor-pointer focus:bg-accent">
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {CONTACT_METHODS.map((m) => {
+                  const isSelected = preferredContact.includes(m);
+                  return (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => {
+                        setPreferredContact(
+                          isSelected
+                            ? preferredContact.filter((c) => c !== m)
+                            : [...preferredContact, m],
+                        );
+                      }}
+                      className={cn(
+                        "rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors",
+                        isSelected
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "border-border text-muted-foreground hover:text-foreground hover:bg-muted",
+                      )}
+                    >
                       {m === "WhatsApp" ? "WhatsApp" : m === "Phone" ? "Phone Call" : "Email"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>

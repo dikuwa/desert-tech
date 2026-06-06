@@ -96,8 +96,13 @@ export default function OrderReceiptPage() {
 
   const handleSendEmail = () => {
     const subject = encodeURIComponent(`Receipt for ${order.orderNumber} - ${storeSettings.storeName}`);
+    const paymentLine = isDepositPaid
+      ? `Paid: ${formatCents(totalPaidCents)}, Balance due: ${formatCents(balanceCents)}`
+      : isPaidInFull
+        ? "Paid in full."
+        : `Payment status: ${getStatusLabel(order.paymentStatus)}`;
     const body = encodeURIComponent(
-      `Hi ${order.customerName},\n\nPlease find your receipt for ${order.orderNumber}.\n\nTotal: ${formatCents(order.subtotalCents)}\n${isDepositPaid ? `Paid: ${formatCents(totalPaidCents)}, Balance due: ${formatCents(balanceCents)}` : isPaidInFull ? "Paid in full." : "Payment status: ${getStatusLabel(order.paymentStatus)}"}\n\nThank you for your business!\n${storeSettings.storeName}\n${storeSettings.email}`,
+      `Hi ${order.customerName},\n\nPlease find your receipt for ${order.orderNumber}.\n\nTotal: ${formatCents(order.subtotalCents)}\n${paymentLine}\n\nThank you for your business!\n${storeSettings.storeName}\n${storeSettings.email}`,
     );
     window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
   };
@@ -115,7 +120,7 @@ export default function OrderReceiptPage() {
         </Link>
         <div className="flex items-center gap-1.5">
           {/* Send method: only show customer's preferred, or all if none selected */}
-          {(!order.preferredContact || order.preferredContact === "WhatsApp") && (
+          {(!order.preferredContact || order.preferredContact.length === 0 || order.preferredContact.includes("WhatsApp")) && (
             <button
               onClick={handleSendWhatsApp}
               title="Send via WhatsApp"
@@ -124,7 +129,7 @@ export default function OrderReceiptPage() {
               <MessageCircle className="h-4 w-4" />
             </button>
           )}
-          {(!order.preferredContact || order.preferredContact === "Email") && (
+          {(!order.preferredContact || order.preferredContact.length === 0 || order.preferredContact.includes("Email")) && (
             <button
               onClick={handleSendEmail}
               title="Send via Email"
@@ -224,7 +229,7 @@ export default function OrderReceiptPage() {
             <div>
               <p className="text-sm font-semibold text-foreground">{order.customerName}</p>
               <p className="text-xs text-muted-foreground">{order.customerPhone}</p>
-              <p className="text-xs text-muted-foreground">Contact via {order.preferredContact}</p>
+              <p className="text-xs text-muted-foreground">Contact via {Array.isArray(order.preferredContact) ? order.preferredContact.join(", ") : order.preferredContact}</p>
             </div>
           </div>
         </div>

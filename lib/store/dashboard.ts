@@ -95,7 +95,7 @@ interface DashboardState {
   addOrder: (o: {
     customerName: string;
     customerPhone: string;
-    preferredContact: string;
+    preferredContact: string[];
     itemCount: number;
     subtotalCents: number;
     payment?: { amountCents: number; method: string; note?: string };
@@ -161,7 +161,7 @@ interface DashboardState {
   addQuotation: (q: {
     customerName: string;
     customerPhone: string;
-    preferredContact: string;
+    preferredContact: string[];
     items: { name: string; quantity: number; unitPriceCents: number }[];
     subtotalCents: number;
     notes?: string;
@@ -170,7 +170,7 @@ interface DashboardState {
   deleteQuotation: (id: string) => void;
 
   // Customers
-  addCustomer: (c: Omit<DashboardCustomer, "id" | "createdAt" | "orderCount" | "totalSpentCents">) => void;
+  addCustomer: (c: Omit<DashboardCustomer, "id" | "createdAt" | "orderCount" | "totalSpentCents" | "preferredContact"> & { preferredContact?: string[] }) => void;
   updateCustomer: (id: string, data: Partial<DashboardCustomer>) => void;
   deleteCustomer: (id: string) => void;
 }
@@ -501,7 +501,7 @@ export const useDashboardStore = create<DashboardState>()(
           contactStatus: "NotContacted",
           paymentStatus,
           fulfillmentStatus: "Pending",
-          preferredContact: o.preferredContact,
+          preferredContact: Array.isArray(o.preferredContact) ? o.preferredContact : [o.preferredContact || "WhatsApp"],
           createdAt: now,
           updatedAt: now,
           paymentStatusAt: o.payment ? now : undefined,
@@ -727,7 +727,7 @@ export const useDashboardStore = create<DashboardState>()(
           quotationNumber,
           customerName: q.customerName,
           customerPhone: q.customerPhone,
-          preferredContact: q.preferredContact,
+          preferredContact: Array.isArray(q.preferredContact) ? q.preferredContact : [q.preferredContact || "WhatsApp"],
           items: q.items,
           subtotalCents: q.subtotalCents,
           notes: q.notes,
@@ -757,6 +757,7 @@ export const useDashboardStore = create<DashboardState>()(
           customers: [
             {
               ...c,
+              preferredContact: c.preferredContact || ["WhatsApp"],
               id: `c${s.customers.length + 10}`,
               orderCount: 0,
               totalSpentCents: 0,

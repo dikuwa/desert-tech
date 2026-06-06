@@ -46,7 +46,7 @@ export default function OrdersPage() {
       addCustomer({
         fullName: order.customerName.trim(),
         phone: order.customerPhone.trim(),
-        preferredContact: order.preferredContact || "WhatsApp",
+        preferredContact: Array.isArray(order.preferredContact) && order.preferredContact.length > 0 ? order.preferredContact : ["WhatsApp"],
       });
       toast.success(`${order.customerName} added to customers`);
     }
