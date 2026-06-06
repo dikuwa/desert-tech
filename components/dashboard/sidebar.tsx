@@ -22,6 +22,7 @@ import {
   Megaphone,
   ExternalLink,
   PackageSearch,
+  History,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -39,6 +40,10 @@ const adminNavItems = [
   { href: "/dashboard/quotations", label: "Quotations", icon: FileText },
   { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
   { href: "/dashboard/back-in-stock", label: "Stock Requests", icon: PackageSearch },
+];
+
+const monitoringNavItems = [
+  { href: "/dashboard/audit-log", label: "Audit Log", icon: History },
 ];
 
 const financialNavItems = [
@@ -183,6 +188,27 @@ export function DashboardSidebar() {
         })}
 
         {/* Settings - always visible */}
+        {/* Monitoring section - hidden from Staff */}
+        {!isStaff && monitoringNavItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = pathname === item.href;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                isActive
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              )}
+            >
+              <Icon className="h-5 w-5 shrink-0" />
+              {!collapsed && <span>{item.label}</span>}
+            </Link>
+          );
+        })}
+
         <div className="pt-2 mt-2 border-t border-border" />
 
         {bottomNavItems.map((item) => {

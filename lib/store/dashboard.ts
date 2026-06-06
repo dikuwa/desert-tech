@@ -442,6 +442,7 @@ export const useDashboardStore = create<DashboardState>()(
             c.name === p.category ? { ...c, productCount: c.productCount + 1 } : c
           ),
         }));
+        get().addAuditLog({ action: "Product created", entityType: "product", entityId: newProduct.id, entityLabel: newProduct.name });
       },
       updateProduct: (id, data) =>
         set((s) => {
@@ -495,10 +496,14 @@ export const useDashboardStore = create<DashboardState>()(
 
           return result;
         }),
-      deleteProduct: (id) =>
+      deleteProduct: (id) => {
+        const { products } = get();
+        const product = products.find((p) => p.id === id);
         set((s) => ({
           products: s.products.filter((p) => p.id !== id),
-        })),
+        }));
+        if (product) get().addAuditLog({ action: "Product deleted", entityType: "product", entityId: id, entityLabel: product.name });
+      },
 
       // === Categories ===
       addCategory: (c) => {
@@ -643,6 +648,8 @@ export const useDashboardStore = create<DashboardState>()(
           message: `${o.customerName} — ${newOrder.orderNumber}${o.payment ? ` — ${paymentStatus === "PaidInFull" ? "Paid in full" : "Deposit received"}` : ""}`,
         });
 
+        get().addAuditLog({ action: "Order created", entityType: "order", entityId: id, entityLabel: orderNumber });
+
         return newOrder;
       },
       updateOrderContactStatus: (id, contactStatus) => {
@@ -759,6 +766,7 @@ export const useDashboardStore = create<DashboardState>()(
           recordedAt: new Date().toISOString(),
         };
         set((s) => ({ payments: [newPayment, ...s.payments] }));
+        get().addAuditLog({ action: `Payment recorded: ${p.method}`, entityType: "payment", entityId: id, entityLabel: `${p.customerName} — ${p.orderNumber}` });
       },
       addNotification: (n) => {
         const id = `n${nextNotificationId++}`;
@@ -932,10 +940,14 @@ export const useDashboardStore = create<DashboardState>()(
         }));
         if (q) get().addAuditLog({ action: `Quotation status: ${status}`, entityType: "quotation", entityId: id, entityLabel: q.quotationNumber });
       },
-      deleteQuotation: (id) =>
+      deleteQuotation: (id) => {
+        const { quotations } = get();
+        const q = quotations.find((qt) => qt.id === id);
         set((s) => ({
           quotations: s.quotations.filter((q) => q.id !== id),
-        })),
+        }));
+        if (q) get().addAuditLog({ action: "Quotation deleted", entityType: "quotation", entityId: id, entityLabel: q.quotationNumber });
+      },
 
       // === Customers ===
       addCustomer: (c) => {
@@ -953,16 +965,24 @@ export const useDashboardStore = create<DashboardState>()(
           ],
         }));
       },
-      updateCustomer: (id, data) =>
+      updateCustomer: (id, data) => {
+        const { customers } = get();
+        const customer = customers.find((c) => c.id === id);
         set((s) => ({
           customers: s.customers.map((c) =>
             c.id === id ? { ...c, ...data } : c
           ),
-        })),
-      deleteCustomer: (id) =>
+        }));
+        if (customer) get().addAuditLog({ action: "Customer updated", entityType: "customer", entityId: id, entityLabel: customer.fullName });
+      },
+      deleteCustomer: (id) => {
+        const { customers } = get();
+        const customer = customers.find((c) => c.id === id);
         set((s) => ({
           customers: s.customers.filter((c) => c.id !== id),
-        })),
+        }));
+        if (customer) get().addAuditLog({ action: "Customer deleted", entityType: "customer", entityId: id, entityLabel: customer.fullName });
+      },
     }),
     {
       name: "desert-tech-dashboard",
