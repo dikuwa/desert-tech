@@ -132,43 +132,55 @@ export default function BackInStockPage() {
   };
 
   const getContactAction = (req: DashboardBackInStockRequest) => {
-    switch (req.preferredContact) {
+    const methods = Array.isArray(req.preferredContact) ? req.preferredContact : [req.preferredContact];
+    const values = req.contactValues ?? Object.fromEntries(methods.map((method) => [method, req.contactValue]));
+    return (
+      <div className="flex flex-wrap gap-2">
+        {methods.map((method) => {
+          const contactValue = values[method] || req.contactValue;
+          switch (method) {
       case "WhatsApp":
         return (
           <a
-            href={`https://wa.me/${req.contactValue.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hi ${req.customerName}, regarding your request for ${req.productName} — it's now available!`)}`}
+            key={method}
+            href={`https://wa.me/${contactValue.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hi ${req.customerName}, regarding your request for ${req.productName} — it's now available!`)}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-sm text-whatsapp hover:underline"
             title="Open WhatsApp"
           >
             <MessageCircle className="h-4 w-4" />
-            <span className="hidden sm:inline">{req.contactValue}</span>
+            <span className="hidden sm:inline">{contactValue}</span>
           </a>
         );
       case "Phone":
         return (
           <a
-            href={`tel:${req.contactValue}`}
+            key={method}
+            href={`tel:${contactValue}`}
             className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"
             title="Call"
           >
             <Phone className="h-4 w-4" />
-            <span className="hidden sm:inline">{req.contactValue}</span>
+            <span className="hidden sm:inline">{contactValue}</span>
           </a>
         );
       case "Email":
         return (
           <a
-            href={`mailto:${req.contactValue}`}
+            key={method}
+            href={`mailto:${contactValue}`}
             className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"
             title="Send email"
           >
             <Mail className="h-4 w-4" />
-            <span className="hidden sm:inline">{req.contactValue}</span>
+            <span className="hidden sm:inline">{contactValue}</span>
           </a>
         );
-    }
+          }
+        })}
+      </div>
+    );
   };
 
   useEffect(() => {

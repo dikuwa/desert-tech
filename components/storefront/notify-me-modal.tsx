@@ -13,11 +13,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -38,7 +34,7 @@ type Urgency = "ASAP" | "Flexible" | "JustChecking";
 interface FormErrors {
   customerName?: string;
   preferredContact?: string;
-  contactValue?: string;
+  contactValues?: Partial<Record<ContactMethod, string>>;
   urgency?: string;
 }
 
@@ -54,8 +50,12 @@ export function NotifyMeModal({
   const setOpen = controlledOnOpenChange ?? setInternalOpen;
 
   const [customerName, setCustomerName] = useState("");
-  const [preferredContact, setPreferredContact] = useState<ContactMethod>("WhatsApp");
-  const [contactValue, setContactValue] = useState("");
+  const [preferredContact, setPreferredContact] = useState<ContactMethod[]>(["WhatsApp"]);
+  const [contactValues, setContactValues] = useState<Record<ContactMethod, string>>({
+    WhatsApp: "",
+    Phone: "",
+    Email: "",
+  });
   const [urgency, setUrgency] = useState<Urgency>("Flexible");
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -66,13 +66,19 @@ export function NotifyMeModal({
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
     if (!customerName.trim()) newErrors.customerName = "Name is required";
-    if (!contactValue.trim()) newErrors.contactValue = "Contact value is required";
-    if (preferredContact === "Email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactValue)) {
-      newErrors.contactValue = "Enter a valid email address";
+    if (preferredContact.length === 0) newErrors.preferredContact = "Select at least one contact method";
+    const contactErrors: Partial<Record<ContactMethod, string>> = {};
+    for (const method of preferredContact) {
+      const value = contactValues[method].trim();
+      if (!value) {
+        contactErrors[method] = `${method} contact is required`;
+      } else if (method === "Email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+        contactErrors[method] = "Enter a valid email address";
+      } else if ((method === "Phone" || method === "WhatsApp") && value.length < 5) {
+        contactErrors[method] = "Enter a valid phone number";
+      }
     }
-    if ((preferredContact === "Phone" || preferredContact === "WhatsApp") && contactValue.trim().length < 5) {
-      newErrors.contactValue = "Enter a valid phone number";
-    }
+    if (Object.keys(contactErrors).length > 0) newErrors.contactValues = contactErrors;
     if (!urgency) newErrors.urgency = "Select urgency";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -91,7 +97,9 @@ export function NotifyMeModal({
           productName,
           customerName: customerName.trim(),
           preferredContact,
-          contactValue: contactValue.trim(),
+          contactValues: Object.fromEntries(
+            preferredContact.map((method) => [method, contactValues[method].trim()]),
+          ),
           urgency,
           note: note.trim() || undefined,
         }),
@@ -119,16 +127,19 @@ export function NotifyMeModal({
     }
   };
 
-  const handleContactMethodChange = (value: string) => {
-    setPreferredContact(value as ContactMethod);
-    setErrors((prev) => ({ ...prev, preferredContact: undefined, contactValue: undefined }));
-    setContactValue("");
+  const toggleContactMethod = (method: ContactMethod) => {
+    setPreferredContact((methods) =>
+      methods.includes(method)
+        ? methods.filter((item) => item !== method)
+        : [...methods, method],
+    );
+    setErrors((prev) => ({ ...prev, preferredContact: undefined }));
   };
 
   const resetForm = () => {
     setCustomerName("");
-    setPreferredContact("WhatsApp");
-    setContactValue("");
+    setPreferredContact(["WhatsApp"]);
+    setContactValues({ WhatsApp: "", Phone: "", Email: "" });
     setUrgency("Flexible");
     setNote("");
     setSubmitted(false);
@@ -206,49 +217,55 @@ export function NotifyMeModal({
 
               {/* Preferred Contact */}
               <div className="space-y-1.5">
-                <Label htmlFor="preferredContact">Preferred Contact Method *</Label>
-                <Select value={preferredContact} onValueChange={handleContactMethodChange}>
-                  <SelectTrigger id="preferredContact">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="WhatsApp">WhatsApp</SelectItem>
-                    <SelectItem value="Phone">Phone</SelectItem>
-                    <SelectItem value="Email">Email</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label>Preferred Contact Methods *</Label>
+                <div className="flex flex-wrap gap-2">
+                  {(["WhatsApp", "Phone", "Email"] as ContactMethod[]).map((method) => (
+                    <button
+                      key={method}
+                      type="button"
+                      aria-pressed={preferredContact.includes(method)}
+                      onClick={() => toggleContactMethod(method)}
+                      className={cn(
+                        "rounded-lg border px-3 py-2 text-xs font-semibold transition-colors",
+                        preferredContact.includes(method)
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border text-muted-foreground hover:bg-muted hover:text-foreground",
+                      )}
+                    >
+                      {method}
+                    </button>
+                  ))}
+                </div>
+                {errors.preferredContact && <p className="text-xs text-destructive">{errors.preferredContact}</p>}
               </div>
 
-              {/* Contact Value */}
-              <div className="space-y-1.5">
-                <Label htmlFor="contactValue">
-                  {preferredContact === "WhatsApp"
-                    ? "WhatsApp Number *"
-                    : preferredContact === "Phone"
-                      ? "Phone Number *"
-                      : "Email Address *"}
-                </Label>
-                <Input
-                  id="contactValue"
-                  type={preferredContact === "Email" ? "email" : "tel"}
-                  value={contactValue}
-                  onChange={(e) => { setContactValue(e.target.value); setErrors((prev) => ({ ...prev, contactValue: undefined })); }}
-                  placeholder={
-                    preferredContact === "WhatsApp"
-                      ? "e.g. 264812345678"
-                      : preferredContact === "Phone"
-                        ? "e.g. +264 81 234 5678"
-                        : "e.g. john@example.com"
-                  }
-                  className={cn(errors.contactValue && "border-destructive")}
-                />
-                {errors.contactValue && (
-                  <p className="flex items-center gap-1 text-xs text-destructive">
-                    <AlertCircle className="h-3 w-3" />
-                    {errors.contactValue}
-                  </p>
-                )}
-              </div>
+              {preferredContact.map((method) => (
+                <div key={method} className="space-y-1.5">
+                  <Label htmlFor={`contact-${method}`}>
+                    {method === "Email" ? "Email Address *" : `${method} Number *`}
+                  </Label>
+                  <Input
+                    id={`contact-${method}`}
+                    type={method === "Email" ? "email" : "tel"}
+                    value={contactValues[method]}
+                    onChange={(e) => {
+                      setContactValues((values) => ({ ...values, [method]: e.target.value }));
+                      setErrors((prev) => ({
+                        ...prev,
+                        contactValues: { ...prev.contactValues, [method]: undefined },
+                      }));
+                    }}
+                    placeholder={method === "Email" ? "e.g. john@example.com" : "e.g. +264 81 234 5678"}
+                    className={cn(errors.contactValues?.[method] && "border-destructive")}
+                  />
+                  {errors.contactValues?.[method] && (
+                    <p className="flex items-center gap-1 text-xs text-destructive">
+                      <AlertCircle className="h-3 w-3" />
+                      {errors.contactValues[method]}
+                    </p>
+                  )}
+                </div>
+              ))}
 
               {/* Urgency */}
               <div className="space-y-1.5">

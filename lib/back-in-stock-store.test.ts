@@ -21,8 +21,9 @@ const sampleRequest = {
   productId: "p1",
   productName: "Test Product",
   customerName: "John Doe",
-  preferredContact: "WhatsApp" as const,
+  preferredContact: ["WhatsApp"] as ("WhatsApp" | "Phone" | "Email")[],
   contactValue: "264811234567",
+  contactValues: { WhatsApp: "264811234567" },
   urgency: "ASAP" as const,
   note: "Need it soon",
 };

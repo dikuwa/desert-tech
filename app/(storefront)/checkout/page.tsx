@@ -93,7 +93,7 @@ export default function CheckoutPage() {
           phone: data.phone,
           whatsapp: data.whatsapp || data.phone,
           email: data.email || undefined,
-          preferredContact: Array.isArray(data.preferredContact) ? data.preferredContact.join(",") : data.preferredContact,
+          preferredContact: data.preferredContact,
           notes: data.notes || undefined,
           items: items.map((i) => ({
             productId: i.productId,

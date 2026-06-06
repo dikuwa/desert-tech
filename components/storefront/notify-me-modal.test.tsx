@@ -62,13 +62,8 @@ describe("NotifyMeModal", () => {
 
     await user.click(screen.getByText("Notify Me"));
 
-    // Select Email via the select trigger
-    const contactTrigger = screen.getAllByRole("combobox")[0];
-    await user.click(contactTrigger);
-
-    // Use findByText for portal-rendered content
-    const emailOption = await screen.findByText("Email", {}, { timeout: 2000 });
-    await user.click(emailOption);
+    await user.click(screen.getByRole("button", { name: "WhatsApp" }));
+    await user.click(screen.getByRole("button", { name: "Email" }));
 
     const emailInput = screen.getByLabelText("Email Address *");
     await user.type(emailInput, "not-an-email");
@@ -96,6 +91,41 @@ describe("NotifyMeModal", () => {
 
     await waitFor(() => {
       expect(screen.getByText("You're on the list!")).toBeDefined();
+    });
+  });
+
+  it("submits more than one preferred contact method", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ success: true }),
+    });
+
+    const user = userEvent.setup();
+    render(<NotifyMeModal {...defaultProps} />);
+
+    await user.click(screen.getByText("Notify Me"));
+    await user.click(screen.getByRole("button", { name: "Email" }));
+    await user.type(screen.getByLabelText("Your Name *"), "John Mwale");
+    await user.type(screen.getByLabelText("WhatsApp Number *"), "264812345678");
+    await user.type(screen.getByLabelText("Email Address *"), "john@example.com");
+    await user.click(screen.getByTestId("notify-submit"));
+
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith(
+        "/api/back-in-stock-requests",
+        expect.objectContaining({
+          body: expect.any(String),
+        }),
+      );
+    });
+
+    const request = mockFetch.mock.calls[0][1];
+    expect(JSON.parse(request.body)).toMatchObject({
+      preferredContact: ["WhatsApp", "Email"],
+      contactValues: {
+        WhatsApp: "264812345678",
+        Email: "john@example.com",
+      },
     });
   });
 

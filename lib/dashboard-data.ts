@@ -176,8 +176,9 @@ export interface DashboardBackInStockRequest {
   productId: string;
   productName: string;
   customerName: string;
-  preferredContact: BackInStockContactMethod;
+  preferredContact: BackInStockContactMethod[];
   contactValue: string;
+  contactValues?: Partial<Record<BackInStockContactMethod, string>>;
   urgency: BackInStockUrgency;
   note?: string;
   status: BackInStockStatus;
@@ -291,7 +292,7 @@ export const mockBackInStockRequests: DashboardBackInStockRequest[] = [
     productId: "p4",
     productName: 'iPad Pro 13" M4',
     customerName: "Helena Ndapanda",
-    preferredContact: "WhatsApp",
+    preferredContact: ["WhatsApp"],
     contactValue: "264811234567",
     urgency: "ASAP",
     note: "Need for school, starting next week",
@@ -304,7 +305,7 @@ export const mockBackInStockRequests: DashboardBackInStockRequest[] = [
     productId: "p4",
     productName: 'iPad Pro 13" M4',
     customerName: "Tomas Shikongo",
-    preferredContact: "Email",
+    preferredContact: ["Email"],
     contactValue: "tomas@example.com",
     urgency: "Flexible",
     note: "Would like to know when back in stock",
@@ -317,7 +318,7 @@ export const mockBackInStockRequests: DashboardBackInStockRequest[] = [
     productId: "p13",
     productName: "iPhone 16 Pro Max",
     customerName: "Maria Kambonde",
-    preferredContact: "Phone",
+    preferredContact: ["Phone"],
     contactValue: "264852345678",
     urgency: "JustChecking",
     status: "ReadyToContact",
@@ -329,7 +330,7 @@ export const mockBackInStockRequests: DashboardBackInStockRequest[] = [
     productId: "p13",
     productName: "iPhone 16 Pro Max",
     customerName: "Petrus Nangolo",
-    preferredContact: "WhatsApp",
+    preferredContact: ["WhatsApp"],
     contactValue: "264813456789",
     urgency: "ASAP",
     note: "Upgrading from iPhone 13",
@@ -342,7 +343,7 @@ export const mockBackInStockRequests: DashboardBackInStockRequest[] = [
     productId: "p13",
     productName: "iPhone 16 Pro Max",
     customerName: "Selma Amadhila",
-    preferredContact: "WhatsApp",
+    preferredContact: ["WhatsApp"],
     contactValue: "264854567890",
     urgency: "Flexible",
     status: "Cancelled",

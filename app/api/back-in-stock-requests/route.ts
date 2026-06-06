@@ -5,8 +5,8 @@ const requestSchema = z.object({
   productId: z.string().min(1),
   productName: z.string().min(1),
   customerName: z.string().min(1).max(100),
-  preferredContact: z.enum(["WhatsApp", "Phone", "Email"]),
-  contactValue: z.string().min(1).max(200),
+  preferredContact: z.array(z.enum(["WhatsApp", "Phone", "Email"])).min(1).max(3),
+  contactValues: z.record(z.enum(["WhatsApp", "Phone", "Email"]), z.string().min(1).max(200)),
   urgency: z.enum(["ASAP", "Flexible", "JustChecking"]),
   note: z.string().max(500).optional(),
 });
@@ -39,9 +39,16 @@ export async function GET() {
       for (const request of databaseRequests) {
         byId.set(request.id, {
           ...request,
-          preferredContact: request.preferredContact as "WhatsApp" | "Phone" | "Email",
+          preferredContact: request.preferredContact.split(",") as ("WhatsApp" | "Phone" | "Email")[],
           urgency: request.urgency as "ASAP" | "Flexible" | "JustChecking",
           status: request.status as "New" | "ReadyToContact" | "Contacted" | "Cancelled",
+          contactValues: (() => {
+            try {
+              return JSON.parse(request.contactValue);
+            } catch {
+              return { [request.preferredContact]: request.contactValue };
+            }
+          })(),
           note: request.note ?? undefined,
           createdAt: request.createdAt.toISOString(),
           updatedAt: request.updatedAt.toISOString(),
@@ -96,7 +103,7 @@ export async function POST(req: Request) {
            WHERE "productId" = $1 AND "contactValue" = $2 AND "status" IN ('New', 'ReadyToContact')
            LIMIT 1`,
           validated.productId,
-          validated.contactValue,
+          JSON.stringify(validated.contactValues),
         );
 
         if (existing.length > 0) {
@@ -114,8 +121,8 @@ export async function POST(req: Request) {
           validated.productId,
           validated.productName,
           validated.customerName,
-          validated.preferredContact,
-          validated.contactValue,
+          validated.preferredContact.join(","),
+          JSON.stringify(validated.contactValues),
           validated.urgency,
           validated.note || null,
         );
@@ -130,7 +137,8 @@ export async function POST(req: Request) {
       "@/lib/back-in-stock-store"
     );
 
-    const duplicate = findDuplicateRequest(validated.productId, validated.contactValue);
+    const serializedContactValues = JSON.stringify(validated.contactValues);
+    const duplicate = findDuplicateRequest(validated.productId, serializedContactValues);
     if (duplicate) {
       return NextResponse.json({
         success: true,
@@ -144,7 +152,8 @@ export async function POST(req: Request) {
       productName: validated.productName,
       customerName: validated.customerName,
       preferredContact: validated.preferredContact,
-      contactValue: validated.contactValue,
+      contactValue: serializedContactValues,
+      contactValues: validated.contactValues,
       urgency: validated.urgency,
       note: validated.note,
     });
@@ -157,7 +166,8 @@ export async function POST(req: Request) {
         productName: validated.productName,
         customerName: validated.customerName,
         preferredContact: validated.preferredContact,
-        contactValue: validated.contactValue,
+        contactValue: serializedContactValues,
+        contactValues: validated.contactValues,
         urgency: validated.urgency,
         note: validated.note,
       });

@@ -9,8 +9,9 @@ export interface StoredBackInStockRequest {
   productId: string;
   productName: string;
   customerName: string;
-  preferredContact: "WhatsApp" | "Phone" | "Email";
+  preferredContact: ("WhatsApp" | "Phone" | "Email")[];
   contactValue: string;
+  contactValues?: Partial<Record<"WhatsApp" | "Phone" | "Email", string>>;
   urgency: "ASAP" | "Flexible" | "JustChecking";
   note?: string;
   status: "New" | "ReadyToContact" | "Contacted" | "Cancelled";

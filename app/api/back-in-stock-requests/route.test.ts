@@ -6,8 +6,8 @@ const requestSchema = z.object({
   productId: z.string().min(1),
   productName: z.string().min(1),
   customerName: z.string().min(1).max(100),
-  preferredContact: z.enum(["WhatsApp", "Phone", "Email"]),
-  contactValue: z.string().min(1).max(200),
+  preferredContact: z.array(z.enum(["WhatsApp", "Phone", "Email"])).min(1).max(3),
+  contactValues: z.record(z.enum(["WhatsApp", "Phone", "Email"]), z.string().min(1).max(200)),
   urgency: z.enum(["ASAP", "Flexible", "JustChecking"]),
   note: z.string().max(500).optional(),
 });
@@ -18,8 +18,8 @@ describe("BackInStockRequest validation", () => {
       productId: "p4",
       productName: 'iPad Pro 13" M4',
       customerName: "John Mwale",
-      preferredContact: "WhatsApp" as const,
-      contactValue: "264812345678",
+      preferredContact: ["WhatsApp"] as const,
+      contactValues: { WhatsApp: "264812345678" },
       urgency: "ASAP" as const,
     };
 
@@ -33,8 +33,8 @@ describe("BackInStockRequest validation", () => {
       productId: "p4",
       productName: 'iPad Pro 13" M4',
       customerName: "John Mwale",
-      preferredContact: "WhatsApp" as const,
-      contactValue: "264812345678",
+      preferredContact: ["WhatsApp"] as const,
+      contactValues: { WhatsApp: "264812345678" },
       urgency: "Flexible" as const,
       note: "Need it for school",
     };
@@ -48,8 +48,8 @@ describe("BackInStockRequest validation", () => {
       productId: "",
       productName: 'iPad Pro 13" M4',
       customerName: "John Mwale",
-      preferredContact: "WhatsApp" as const,
-      contactValue: "264812345678",
+      preferredContact: ["WhatsApp"] as const,
+      contactValues: { WhatsApp: "264812345678" },
       urgency: "ASAP" as const,
     };
 
@@ -61,8 +61,8 @@ describe("BackInStockRequest validation", () => {
       productId: "p4",
       productName: 'iPad Pro 13" M4',
       customerName: "",
-      preferredContact: "WhatsApp" as const,
-      contactValue: "264812345678",
+      preferredContact: ["WhatsApp"] as const,
+      contactValues: { WhatsApp: "264812345678" },
       urgency: "ASAP" as const,
     };
 
@@ -74,8 +74,8 @@ describe("BackInStockRequest validation", () => {
       productId: "p4",
       productName: 'iPad Pro 13" M4',
       customerName: "John Mwale",
-      preferredContact: "Signal",
-      contactValue: "264812345678",
+      preferredContact: ["Signal"],
+      contactValues: { Signal: "264812345678" },
       urgency: "ASAP" as const,
     };
 
@@ -87,8 +87,8 @@ describe("BackInStockRequest validation", () => {
       productId: "p4",
       productName: 'iPad Pro 13" M4',
       customerName: "John Mwale",
-      preferredContact: "WhatsApp" as const,
-      contactValue: "264812345678",
+      preferredContact: ["WhatsApp"] as const,
+      contactValues: { WhatsApp: "264812345678" },
       urgency: "Urgent",
     };
 
@@ -100,8 +100,8 @@ describe("BackInStockRequest validation", () => {
       productId: "p4",
       productName: 'iPad Pro 13" M4',
       customerName: "John Mwale",
-      preferredContact: "WhatsApp" as const,
-      contactValue: "264812345678",
+      preferredContact: ["WhatsApp"] as const,
+      contactValues: { WhatsApp: "264812345678" },
       urgency: "ASAP" as const,
       note: "x".repeat(501),
     };
@@ -116,12 +116,12 @@ describe("BackInStockRequest validation", () => {
         productId: "p4",
         productName: "Test",
         customerName: "John",
-        preferredContact: method,
-        contactValue: method === "Email" ? "a@b.com" : "123456789",
+        preferredContact: [method],
+        contactValues: { [method]: method === "Email" ? "a@b.com" : "123456789" },
         urgency: "JustChecking" as const,
       };
       const result = requestSchema.parse(data);
-      expect(result.preferredContact).toBe(method);
+      expect(result.preferredContact).toContain(method);
     }
   });
 
@@ -132,8 +132,8 @@ describe("BackInStockRequest validation", () => {
         productId: "p4",
         productName: "Test",
         customerName: "John",
-        preferredContact: "WhatsApp" as const,
-        contactValue: "264812345678",
+        preferredContact: ["WhatsApp"] as const,
+        contactValues: { WhatsApp: "264812345678" },
         urgency,
       };
       const result = requestSchema.parse(data);

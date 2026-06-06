@@ -7,7 +7,10 @@ const orderSchema = z.object({
   phone: z.string().min(5).max(20),
   whatsapp: z.string().optional(),
   email: z.string().email().optional().or(z.literal("")),
-  preferredContact: z.enum(["WhatsApp", "Phone", "Email"]),
+  preferredContact: z.union([
+    z.enum(["WhatsApp", "Phone", "Email"]).transform((method) => [method]),
+    z.array(z.enum(["WhatsApp", "Phone", "Email"])).min(1).max(3),
+  ]),
   notes: z.string().max(500).optional(),
   items: z.array(
     z.object({
@@ -25,6 +28,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const validated = orderSchema.parse(body);
+    const preferredContact = validated.preferredContact.join(",");
 
     // Generate a unique order number
     const timestamp = Date.now().toString(36).toUpperCase();
@@ -57,7 +61,7 @@ export async function POST(req: Request) {
             fullName: validated.fullName,
             whatsapp: validated.whatsapp || validated.phone,
             email: validated.email || null,
-            preferredContact: validated.preferredContact,
+            preferredContact,
             notes: validated.notes || null,
           },
         });
@@ -68,7 +72,7 @@ export async function POST(req: Request) {
             phone: validated.phone,
             whatsapp: validated.whatsapp || validated.phone,
             email: validated.email || null,
-            preferredContact: validated.preferredContact,
+            preferredContact,
             notes: validated.notes || null,
           },
         });
@@ -82,7 +86,7 @@ export async function POST(req: Request) {
           contactStatus: "NotContacted",
           paymentStatus: "Unpaid",
           fulfillmentStatus: "Pending",
-          preferredContact: validated.preferredContact,
+          preferredContact,
           subtotalCents,
           notes: validated.notes || null,
           items: {
@@ -119,7 +123,7 @@ export async function POST(req: Request) {
       contactStatus: "NotContacted",
       paymentStatus: "Unpaid",
       fulfillmentStatus: "Pending",
-      preferredContact: validated.preferredContact,
+      preferredContact,
       notes: validated.notes || undefined,
       items: validated.items.map((i) => ({
         name: i.name,
@@ -135,7 +139,7 @@ export async function POST(req: Request) {
         orderNumber,
         fullName: validated.fullName,
         phone: validated.phone,
-        preferredContact: validated.preferredContact,
+        preferredContact,
         itemCount: validated.items.reduce((sum, i) => sum + i.quantity, 0),
         subtotal: subtotalCents,
         items: validated.items.map((i) => ({
