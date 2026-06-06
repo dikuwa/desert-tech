@@ -13,23 +13,16 @@ export default function DashboardPage() {
   const notifications = useDashboardStore((s) => s.notifications);
   const followUps = useDashboardStore((s) => s.followUps);
 
+  const payments = useDashboardStore((s) => s.payments);
+  const recentOrders = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
+  const totalRevenue = payments
+    .filter((p) => p.status === "Confirmed")
+    .reduce((sum, p) => sum + p.amountCents, 0);
+
   const pendingOrders = orders.filter((o) => o.contactStatus === "NotContacted");
   const lowStockProducts = products.filter((p) => p.availability === "LowStock" || p.stockQuantity <= p.lowStockThreshold);
   const pendingFollowUps = followUps.filter((f) => f.status === "Pending");
   const unreadNotifications = notifications.filter((n) => !n.isRead);
-  const payments = useDashboardStore((s) => s.payments);
-  const recentOrders = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
-  const totalRevenue = orders.filter((o) => o.paymentStatus === "PaidInFull").reduce((sum, o) => sum + o.subtotalCents, 0);
-
-  // Compute outstanding balance: sum of (subtotal - paid) for orders not fully paid or cancelled
-  const outstandingBalance = orders
-    .filter((o) => o.fulfillmentStatus !== "Cancelled" && o.paymentStatus !== "PaidInFull")
-    .reduce((sum, o) => {
-      const totalPaid = payments
-        .filter((p) => p.orderNumber === o.orderNumber)
-        .reduce((s, p) => s + p.amountCents, 0);
-      return sum + Math.max(0, o.subtotalCents - totalPaid);
-    }, 0);
 
   const stats = [
     { label: "New Orders", value: pendingOrders.length, icon: ShoppingBag, color: "text-primary", bg: "bg-accent", href: "/dashboard/orders" },
@@ -37,8 +30,7 @@ export default function DashboardPage() {
     { label: "Pending Follow-ups", value: pendingFollowUps.length, icon: CalendarClock, color: "text-info", bg: "bg-info-soft", href: "/dashboard/follow-ups" },
     { label: "Unread Notifications", value: unreadNotifications.length, icon: Bell, color: "text-destructive", bg: "bg-destructive/10", href: "/dashboard/notifications" },
     { label: "Total Customers", value: customers.length, icon: Users, color: "text-success", bg: "bg-success-soft", href: "/dashboard/customers" },
-    { label: "Outstanding Balance", value: formatCents(outstandingBalance), icon: TrendingUp, color: "text-destructive", bg: "bg-destructive/10", href: "/dashboard/orders" },
-    { label: "Revenue (Paid)", value: formatCents(totalRevenue), icon: TrendingUp, color: "text-success", bg: "bg-success-soft", href: "/dashboard/orders" },
+    { label: "Revenue Collected", value: formatCents(totalRevenue), icon: TrendingUp, color: "text-success", bg: "bg-success-soft", href: "/dashboard/payments" },
   ];
 
   return (
@@ -48,33 +40,26 @@ export default function DashboardPage() {
         <p className="text-sm text-muted-foreground mt-1">Overview of your store operations.</p>
       </div>
 
-      {/* Stats Grid - Professional, equal-height cards */}
-      <div className="bg-noise rounded-xl p-4">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
-          {stats.map((stat, idx) => {
-            const Icon = stat.icon;
-            return (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: idx * 0.05 }}
-                className="min-h-0"
-              >
-                <Link href={stat.href}
-                  className="flex flex-col justify-center rounded-xl border border-border bg-card p-5 transition-all hover:shadow-sm hover:border-primary/20 min-h-[170px] lg:min-h-[180px] overflow-hidden group">
-                  <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${stat.bg}`}>
-                    <Icon className={`h-5.5 w-5.5 ${stat.color}`} />
-                  </div>
-                  <div className="mt-3">
-                    <p className="text-2xl font-bold text-foreground tabular-nums whitespace-nowrap overflow-hidden text-ellipsis">{stat.value}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{stat.label}</p>
-                  </div>
-                </Link>
-              </motion.div>
-            );
-          })}
-        </div>
+      {/* Stats Grid - compact */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        {stats.map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <Link
+              key={stat.label}
+              href={stat.href}
+              className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 transition-all hover:shadow-sm hover:border-primary/20 group"
+            >
+              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${stat.bg}`}>
+                <Icon className={`h-4 w-4 ${stat.color}`} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-foreground tabular-nums truncate">{stat.value}</p>
+                <p className="text-[10px] text-muted-foreground truncate">{stat.label}</p>
+              </div>
+            </Link>
+          );
+        })}
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6 bg-noise rounded-xl p-4">

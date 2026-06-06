@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, ImagePlus } from "lucide-react";
 import Link from "next/link";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { MoneyInput } from "@/components/ui/money-input";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
 
@@ -20,12 +21,11 @@ export default function NewProductPage() {
   const addProduct = useDashboardStore((s) => s.addProduct);
   const products = useDashboardStore((s) => s.products);
   const [submitting, setSubmitting] = useState(false);
-  const [images, setImages] = useState<string[]>([]);
-  const [form, setForm] = useState({
+  const [images, setImages] = useState<string[]>([]);    const [form, setForm] = useState({
     name: "", brand: "", category: "Apple", condition: "New" as const,
-    priceCents: "", stockQuantity: "0", reorderLimit: "5",
+    priceCents: 0, stockQuantity: 0, reorderLimit: 5,
     description: "", sku: "", warranty: "", isFeatured: false,
-    priceWas: "",
+    priceWas: 0,
   });
 
   // Auto-generate SKU when name or brand changes
@@ -41,7 +41,7 @@ export default function NewProductPage() {
     setForm(prev => ({ ...prev, sku }));
   }, [products]);
 
-  const updateField = (field: string, value: string | boolean) => {
+  const updateField = (field: string, value: string | boolean | number) => {
     setForm(prev => {
       const updated = { ...prev, [field]: value };
       // Auto-generate SKU when name or brand changes, but only if SKU wasn't manually edited
@@ -99,10 +99,10 @@ export default function NewProductPage() {
       brand: form.brand.trim(),
       category: form.category,
       condition: form.condition,
-      priceCents: parseInt(form.priceCents),
-      stockQuantity: parseInt(form.stockQuantity) || 0,
-      lowStockThreshold: parseInt(form.reorderLimit) || 5,
-      availability: parseInt(form.stockQuantity) > 0 ? "InStock" : "OutOfStock",
+      priceCents: form.priceCents,
+      stockQuantity: form.stockQuantity || 0,
+      lowStockThreshold: form.reorderLimit || 5,
+      availability: form.stockQuantity > 0 ? "InStock" : "OutOfStock",
       isPublished: true,
       isFeatured: form.isFeatured,
       sku: form.sku || undefined,
@@ -155,10 +155,9 @@ export default function NewProductPage() {
 
             <div className="rounded-xl border border-border bg-card p-6 space-y-5">
               <h2 className="text-base font-semibold text-foreground">Pricing & Stock</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                <div>
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">                  <div>
                   <label className="text-sm font-medium text-foreground">Price *</label>
-                  <input value={form.priceCents} onChange={e => updateField("priceCents", e.target.value)} type="number" className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" placeholder="1899900" />
+                  <MoneyInput value={form.priceCents} onChange={v => updateField("priceCents", v)} className="h-11" />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground">Stock Quantity</label>
@@ -170,7 +169,7 @@ export default function NewProductPage() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground">Price Was</label>
-                  <input value={form.priceWas || ""} onChange={e => updateField("priceWas", e.target.value)} type="number" className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" placeholder="2149900" />
+                  <MoneyInput value={form.priceWas} onChange={v => updateField("priceWas", v)} className="h-11" placeholder="0" />
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

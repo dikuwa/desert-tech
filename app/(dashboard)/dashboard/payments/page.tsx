@@ -53,20 +53,43 @@ export default function PaymentsPage() {
     return ["All", ...Array.from(m)];
   }, [payments]);
 
+  const orders = useDashboardStore((s) => s.orders);
+
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
   const totalCollected = payments.filter(p => p.status === "Confirmed").reduce((s, p) => s + p.amountCents, 0);
 
+  // Outstanding balance: sum of (subtotal - paid) for non-cancelled, non-paid orders
+  const outstandingBalance = orders
+    .filter((o) => o.fulfillmentStatus !== "Cancelled" && o.paymentStatus !== "PaidInFull")
+    .reduce((sum, o) => {
+      const totalPaid = payments
+        .filter((p) => p.orderNumber === o.orderNumber)
+        .reduce((s, p) => s + p.amountCents, 0);
+      return sum + Math.max(0, o.subtotalCents - totalPaid);
+    }, 0);
+
+  const partialOrders = orders.filter(
+    (o) => o.fulfillmentStatus !== "Cancelled" && o.paymentStatus === "DepositPaid"
+  ).length;
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Payments</h1>
           <p className="text-sm text-muted-foreground mt-1">{filtered.length} payment records</p>
         </div>
-        <div className="rounded-lg border border-border bg-card px-4 py-2">
-          <p className="text-xs text-muted-foreground">Total Collected</p>
-          <p className="text-lg font-bold text-foreground">{formatCents(totalCollected)}</p>
+        <div className="flex gap-3">
+          <div className="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-2">
+            <p className="text-[10px] text-destructive font-semibold uppercase tracking-wider">Outstanding</p>
+            <p className="text-lg font-bold text-destructive">{formatCents(outstandingBalance)}</p>
+            {partialOrders > 0 && <p className="text-[10px] text-destructive/70">{partialOrders} orders with deposits</p>}
+          </div>
+          <div className="rounded-lg border border-border bg-card px-4 py-2">
+            <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Collected</p>
+            <p className="text-lg font-bold text-foreground">{formatCents(totalCollected)}</p>
+          </div>
         </div>
       </div>
 

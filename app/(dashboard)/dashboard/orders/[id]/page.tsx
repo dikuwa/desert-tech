@@ -47,7 +47,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { MoneyInput } from "@/components/ui/money-input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
@@ -164,7 +164,7 @@ export default function OrderDetailPage() {
 
   // Record Payment dialog
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentAmountCents, setPaymentAmountCents] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<string>("BankTransfer");
   const [paymentNote, setPaymentNote] = useState("");
   const [submittingPayment, setSubmittingPayment] = useState(false);
@@ -211,13 +211,10 @@ export default function OrderDetailPage() {
   };
 
   const handleRecordPayment = () => {
-    const amount = parseInt(paymentAmount);
+    const amount = paymentAmountCents;
     if (!amount || amount <= 0) {
       toast.error("Enter a valid payment amount");
       return;
-    }
-    if (amount > balanceCents && !paymentDone) {
-      // Overpayment — still allowed but cap at the order total
     }
     if (amount > balanceCents && !paymentDone) {
       toast.warning("Amount exceeds the balance — order will be marked as paid in full.");
@@ -245,7 +242,7 @@ export default function OrderDetailPage() {
 
     setSubmittingPayment(false);
     setShowPaymentDialog(false);
-    setPaymentAmount("");
+    setPaymentAmountCents(0);
     setPaymentMethod("BankTransfer");
     setPaymentNote("");
     toast.success(`Payment of ${formatCents(amount)} recorded`);
@@ -475,24 +472,22 @@ export default function OrderDetailPage() {
                 </SelectContent>
               </Select>
 
-              {/* Record Payment button */}
-              {canChangePayment && !paymentDone && (
+              {/* Record Payment button — only when DepositPaid */}
+              {order.paymentStatus === "DepositPaid" && (
                 <>
                   <button
                     onClick={() => setShowPaymentDialog(true)}
-                    className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+                    className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-warning/20 bg-warning-soft px-3 py-2 text-xs font-medium text-warning hover:bg-warning hover:text-white transition-colors"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Record Payment
                   </button>
 
                   {/* Show balance due */}
-                  {paymentStarted && (
-                    <div className="flex items-center justify-between text-xs bg-muted/40 rounded-md px-3 py-2">
-                      <span className="text-muted-foreground">Balance due</span>
-                      <span className="font-semibold text-destructive">{formatCents(balanceCents)}</span>
-                    </div>
-                  )}
+                  <div className="flex items-center justify-between text-xs bg-muted/40 rounded-md px-3 py-2">
+                    <span className="text-muted-foreground">Balance due</span>
+                    <span className="font-semibold text-destructive">{formatCents(balanceCents)}</span>
+                  </div>
                 </>
               )}
             </div>
@@ -597,18 +592,12 @@ export default function OrderDetailPage() {
           <div className="space-y-3 py-2">
             <div className="space-y-1">
               <Label htmlFor="pay-amount" className="text-xs">Amount</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">N$</span>
-                <Input
-                  id="pay-amount"
-                  type="number"
-                  value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(e.target.value)}
-                  placeholder="0"
-                  className="pl-9 h-9 text-sm"
-                  autoFocus
-                />
-              </div>
+              <MoneyInput
+                id="pay-amount"
+                value={paymentAmountCents}
+                onChange={setPaymentAmountCents}
+                className="h-9 text-sm"
+              />
             </div>
 
             <div className="space-y-1">
@@ -627,21 +616,21 @@ export default function OrderDetailPage() {
 
             <div className="space-y-1">
               <Label htmlFor="pay-note" className="text-xs">Note (optional)</Label>
-              <Input
+              <input
                 id="pay-note"
                 value={paymentNote}
                 onChange={(e) => setPaymentNote(e.target.value)}
                 placeholder="e.g. Deposit via Standard Bank"
-                className="h-9 text-xs"
+                className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
               />
             </div>
 
             <button
               onClick={handleRecordPayment}
-              disabled={submittingPayment || !paymentAmount || parseInt(paymentAmount) <= 0}
+              disabled={submittingPayment || paymentAmountCents <= 0}
               className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {submittingPayment ? "Recording..." : `Record ${formatCents(parseInt(paymentAmount) || 0)}`}
+              {submittingPayment ? "Recording..." : `Record ${formatCents(paymentAmountCents)}`}
             </button>
           </div>
         </DialogContent>
