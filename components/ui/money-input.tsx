@@ -25,14 +25,14 @@ export function MoneyInput({
   id,
   showPrefix = true,
 }: MoneyInputProps) {
-  const [text, setText] = useState(() => centsToHuman(value).replace(/\.00$/, ""));
+  const [text, setText] = useState(() => centsToHuman(value));
   const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Sync external value changes
   useEffect(() => {
     if (!focused) {
-      setText(centsToHuman(value).replace(/\.00$/, ""));
+      setText(centsToHuman(value));
     }
   }, [value, focused]);
 
@@ -50,9 +50,9 @@ export function MoneyInput({
 
   const handleBlur = useCallback(() => {
     setFocused(false);
-    // Format on blur: show cleaned-up value
+    // Format on blur: always show 2 decimal places
     const cents = parseHumanToCents(text);
-    setText(centsToHuman(cents).replace(/\.00$/, ""));
+    setText(centsToHuman(cents));
     onChange(cents);
   }, [text, onChange]);
 
