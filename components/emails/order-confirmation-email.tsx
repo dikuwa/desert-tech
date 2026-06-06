@@ -36,13 +36,16 @@ export function OrderConfirmationEmail({
       <Body style={main}>
         <Container style={container}>
           <Section style={header}>
-            <Img
-              src={`${baseUrl}/images/desertech-doc-logo.svg`}
-              alt={storeName}
-              width="180"
-              height="54"
-              style={logo}
-            />
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12 }}>
+              <Img
+                src={`${baseUrl}/images/receipt-icon.svg`}
+                alt="Desert Technology"
+                width="40"
+                height="40"
+                style={{ display: "block" }}
+              />
+              <span style={{ fontSize: 18, fontWeight: 700, color: "#1a1a2e" }}>{storeName}</span>
+            </div>
             <Text style={tagline}>Thank you for your order</Text>
           </Section>
 

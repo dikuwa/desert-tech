@@ -175,6 +175,20 @@ export interface DashboardBackInStockRequest {
   updatedAt: string;
 }
 
+export interface DashboardQuotation {
+  id: string;
+  quotationNumber: string;
+  customerName: string;
+  customerPhone: string;
+  preferredContact: string;
+  items: { name: string; quantity: number; unitPriceCents: number }[];
+  subtotalCents: number;
+  notes?: string;
+  status: "Draft" | "Sent" | "Accepted" | "Declined";
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface DashboardPayment {
   id: string;
   orderNumber: string;

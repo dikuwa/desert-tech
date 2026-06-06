@@ -152,9 +152,9 @@ export default function OrderReceiptPage() {
         <div className="px-6 py-5 border-b border-border flex items-start justify-between">
           <div className="flex items-start gap-3">
             <img
-              src="/images/desertech-doc-logo.svg"
+              src="/images/receipt-icon.svg"
               alt="Desert Technology"
-              className="h-12 w-auto object-contain mt-0.5"
+              className="h-10 w-auto object-contain mt-0.5"
               onError={(e) => {
                 const target = e.currentTarget;
                 target.style.display = "none";

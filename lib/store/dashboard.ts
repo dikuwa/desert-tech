@@ -26,6 +26,7 @@ import type {
   DashboardFollowUp,
   DashboardNotification,
   DashboardPayment,
+  DashboardQuotation,
   DashboardBackInStockRequest,
   BackInStockStatus,
   BackInStockUrgency,
@@ -37,6 +38,7 @@ import type {
 } from "@/lib/dashboard-data";
 
 let nextOrderId = 11;
+let nextQuotationId = 1;
 let nextProductId = 20;
 let nextCategoryId = 10;
 let nextPromotionId = 10;
@@ -60,6 +62,7 @@ interface DashboardState {
   staff: DashboardStaff[];
   followUps: DashboardFollowUp[];
   notifications: DashboardNotification[];
+  quotations: DashboardQuotation[];
   payments: DashboardPayment[];
   contactDetails: ContactDetail[];
   bankDetails: BankDetail[];
@@ -153,6 +156,18 @@ interface DashboardState {
   deleteBackInStockRequest: (id: string) => void;
   markBackInStockReadyForProduct: (productId: string, productName: string) => void;
 
+  // Quotations
+  addQuotation: (q: {
+    customerName: string;
+    customerPhone: string;
+    preferredContact: string;
+    items: { name: string; quantity: number; unitPriceCents: number }[];
+    subtotalCents: number;
+    notes?: string;
+  }) => DashboardQuotation;
+  updateQuotationStatus: (id: string, status: DashboardQuotation["status"]) => void;
+  deleteQuotation: (id: string) => void;
+
   // Customers
   addCustomer: (c: Omit<DashboardCustomer, "id" | "createdAt" | "orderCount" | "totalSpentCents">) => void;
   updateCustomer: (id: string, data: Partial<DashboardCustomer>) => void;
@@ -194,6 +209,7 @@ export const useDashboardStore = create<DashboardState>()(
       staff: initialStaff,
       followUps: initialFollowUps,
       notifications: initialNotifications,
+      quotations: [],
       payments: initialPayments,
       contactDetails: defaultContactDetails,
       bankDetails: defaultBankDetails,
@@ -699,6 +715,40 @@ export const useDashboardStore = create<DashboardState>()(
 
           return result;
         }),
+
+      // === Quotations ===
+      addQuotation: (q) => {
+        const id = `qtn${nextQuotationId++}`;
+        const quotationNumber = `QTN-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+        const now = new Date().toISOString();
+        const newQuotation: DashboardQuotation = {
+          id,
+          quotationNumber,
+          customerName: q.customerName,
+          customerPhone: q.customerPhone,
+          preferredContact: q.preferredContact,
+          items: q.items,
+          subtotalCents: q.subtotalCents,
+          notes: q.notes,
+          status: "Draft",
+          createdAt: now,
+          updatedAt: now,
+        };
+        set((s) => ({ quotations: [newQuotation, ...s.quotations] }));
+        return newQuotation;
+      },
+      updateQuotationStatus: (id, status) =>
+        set((s) => ({
+          quotations: s.quotations.map((q) =>
+            q.id === id
+              ? { ...q, status, updatedAt: new Date().toISOString() }
+              : q
+          ),
+        })),
+      deleteQuotation: (id) =>
+        set((s) => ({
+          quotations: s.quotations.filter((q) => q.id !== id),
+        })),
 
       // === Customers ===
       addCustomer: (c) => {

@@ -22,8 +22,8 @@ const colors = {
   success: "#15803D",
 };
 
-const logoPath = path.join(process.cwd(), "public", "images", "desertech-doc-logo.png");
-const logoDataUri = `data:image/png;base64,${readFileSync(logoPath).toString("base64")}`;
+const iconPath = path.join(process.cwd(), "public", "images", "receipt-icon.svg");
+const iconDataUri = `data:image/svg+xml;base64,${readFileSync(iconPath).toString("base64")}`;
 
 const styles = StyleSheet.create({
   page: {
@@ -41,8 +41,8 @@ const styles = StyleSheet.create({
     borderBottom: `1px solid ${colors.border}`,
   },
   logo: {
-    width: 190,
-    height: 58,
+    width: 40,
+    height: 40,
     objectFit: "contain" as const,
   },
   companyDetails: {
@@ -238,7 +238,7 @@ export function ReceiptPDF({
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Image src={logoDataUri} style={styles.logo} />
+            <Image src={iconDataUri} style={styles.logo} />
             <View style={styles.companyDetails}>
               <Text style={styles.companyDetailText}>{storeLocation}, {storePhone}</Text>
             </View>

@@ -7,13 +7,13 @@ import {
   ArrowLeft,
   Plus,
   Trash2,
-  DollarSign,
   Save,
   User,
   ShoppingBag,
-  CreditCard,
+  FileText,
   Search,
   Check,
+  StickyNote,
 } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
@@ -34,12 +34,11 @@ interface LineItem {
   unitPriceCents: number;
 }
 
-const PAYMENT_METHODS = ["BankTransfer", "Cash", "PhoneTransfer", "Card", "Other"] as const;
 const CONTACT_METHODS = ["WhatsApp", "Phone", "Email"] as const;
 
-export default function NewWalkinOrderPage() {
+export default function NewQuotationPage() {
   const router = useRouter();
-  const addOrder = useDashboardStore((s) => s.addOrder);
+  const addQuotation = useDashboardStore((s) => s.addQuotation);
   const customers = useDashboardStore((s) => s.customers);
   const products = useDashboardStore((s) => s.products);
 
@@ -47,7 +46,6 @@ export default function NewWalkinOrderPage() {
   const [customerPhone, setCustomerPhone] = useState("");
   const [preferredContact, setPreferredContact] = useState("WhatsApp");
   const [showCustomerSearch, setShowCustomerSearch] = useState(false);
-  const customerInputRef = useRef<HTMLInputElement>(null);
   const customerSearchRef = useRef<HTMLDivElement>(null);
 
   const matchingCustomers = useMemo(() => {
@@ -70,12 +68,7 @@ export default function NewWalkinOrderPage() {
   const [items, setItems] = useState<LineItem[]>([
     { name: "", quantity: 1, unitPriceCents: 0 },
   ]);
-
-  const [recordPayment, setRecordPayment] = useState(false);
-  const [paymentAmountCents, setPaymentAmountCents] = useState(0);
-  const [paymentMethod, setPaymentMethod] = useState("BankTransfer");
-  const [paymentNote, setPaymentNote] = useState("");
-
+  const [notes, setNotes] = useState("");
   const [activeProductSearch, setActiveProductSearch] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -109,27 +102,23 @@ export default function NewWalkinOrderPage() {
     setSubmitting(true);
 
     try {
-      const newOrder = addOrder({
+      const validItems = items.filter(
+        (item) => item.name.trim() && item.quantity > 0 && item.unitPriceCents > 0,
+      );
+
+      const newQuotation = addQuotation({
         customerName: customerName.trim(),
         customerPhone: customerPhone.trim(),
         preferredContact,
-        itemCount,
+        items: validItems,
         subtotalCents,
-        payment: recordPayment && paymentAmountCents > 0
-          ? {
-              amountCents: paymentAmountCents,
-              method: paymentMethod,
-              note: paymentNote || undefined,
-            }
-          : undefined,
+        notes: notes.trim() || undefined,
       });
 
-      toast.success(`Order ${newOrder.orderNumber} created`);
-
-      // Navigate to the receipt page
-      router.push(`/dashboard/orders/${newOrder.id}/receipt`);
+      toast.success(`Quotation ${newQuotation.quotationNumber} created`);
+      router.push(`/dashboard/quotations/${newQuotation.id}`);
     } catch (err) {
-      toast.error("Failed to create order");
+      toast.error("Failed to create quotation");
     } finally {
       setSubmitting(false);
     }
@@ -139,18 +128,18 @@ export default function NewWalkinOrderPage() {
     <div className="space-y-6 max-w-3xl mx-auto">
       {/* Back */}
       <Link
-        href="/dashboard/orders"
+        href="/dashboard/quotations"
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
-        Orders
+        Quotations
       </Link>
 
       <h1 className="text-2xl font-bold tracking-tight text-foreground">
-        New Walk-in Order
+        New Quotation
       </h1>
       <p className="text-sm text-muted-foreground -mt-4">
-        Record an in-store or WhatsApp purchase manually.
+        Create a price quotation for a customer. Send via WhatsApp or print.
       </p>
 
       <form
@@ -174,7 +163,6 @@ export default function NewWalkinOrderPage() {
               <div className="relative mt-1.5">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <input
-                  ref={customerInputRef}
                   value={customerName}
                   onChange={(e) => {
                     setCustomerName(e.target.value);
@@ -186,7 +174,6 @@ export default function NewWalkinOrderPage() {
                   placeholder="Search existing customer or type new name"
                 />
               </div>
-              {/* Customer search dropdown */}
               {showCustomerSearch && matchingCustomers.length > 0 && (
                 <div className="absolute z-50 mt-1 w-full rounded-lg border border-border bg-card shadow-lg overflow-hidden">
                   {matchingCustomers.map((c) => (
@@ -230,10 +217,7 @@ export default function NewWalkinOrderPage() {
               <label className="text-sm font-medium text-foreground">
                 Preferred Contact
               </label>
-              <Select
-                value={preferredContact}
-                onValueChange={setPreferredContact}
-              >
+              <Select value={preferredContact} onValueChange={setPreferredContact}>
                 <SelectTrigger className="mt-1.5 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/30">
                   <SelectValue />
                 </SelectTrigger>
@@ -276,7 +260,6 @@ export default function NewWalkinOrderPage() {
                   <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">
                     Item Name
                   </label>
-                  <Search className="absolute left-3 top-[34px] h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
                   <input
                     value={item.name}
                     onChange={(e) => {
@@ -285,7 +268,7 @@ export default function NewWalkinOrderPage() {
                     }}
                     onFocus={() => setActiveProductSearch(idx)}
                     onBlur={() => setTimeout(() => setActiveProductSearch(null), 200)}
-                    className="h-9 w-full rounded-lg border border-border bg-background pl-8 pr-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    className="h-9 w-full rounded-lg border border-border bg-background pl-2.5 pr-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
                     placeholder="Search product or type name"
                   />
                   {/* Product search dropdown */}
@@ -341,7 +324,7 @@ export default function NewWalkinOrderPage() {
                 </div>
                 <div className="col-span-4">
                   <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">
-                    Price
+                    Unit Price
                   </label>
                   <MoneyInput
                     value={item.unitPriceCents}
@@ -374,87 +357,19 @@ export default function NewWalkinOrderPage() {
           </div>
         </div>
 
-        {/* Payment */}
-        <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-              <CreditCard className="h-4 w-4 text-muted-foreground" />
-              Payment
-            </h2>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <span className="text-xs text-muted-foreground">Record payment now</span>
-              <input
-                type="checkbox"
-                checked={recordPayment}
-                onChange={(e) => setRecordPayment(e.target.checked)}
-                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-              />
-            </label>
-          </div>
-
-          {recordPayment && (
-            <div className="space-y-3 p-3 rounded-lg bg-muted/30">
-              <p className="text-xs text-muted-foreground">
-                Total: <strong className="text-foreground">{formatCents(subtotalCents)}</strong>
-                {paymentAmountCents > 0 && (
-                  <span className="ml-2">
-                    &rarr; {paymentAmountCents >= subtotalCents ? "Paid in full" : `Deposit: ${formatCents(paymentAmountCents)}`}
-                    {paymentAmountCents > 0 && paymentAmountCents < subtotalCents && (
-                      <span className="text-destructive ml-1">
-                        (Balance: {formatCents(subtotalCents - paymentAmountCents)})
-                      </span>
-                    )}
-                  </span>
-                )}
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">
-                    Amount
-                  </label>
-                  <MoneyInput
-                    value={paymentAmountCents}
-                    onChange={setPaymentAmountCents}
-                    className="h-9 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">
-                    Method
-                  </label>
-                  <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                    <SelectTrigger className="h-9 text-xs rounded-lg border border-border bg-background px-3 focus:border-primary focus:ring-1 focus:ring-primary/30">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card border-border shadow-lg z-[80]">
-                      {PAYMENT_METHODS.map((m) => (
-                        <SelectItem key={m} value={m} className="text-sm cursor-pointer focus:bg-accent">
-                          {m === "BankTransfer" ? "Bank Transfer" : m === "PhoneTransfer" ? "Phone Transfer" : m}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">
-                    Note (optional)
-                  </label>
-                  <input
-                    value={paymentNote}
-                    onChange={(e) => setPaymentNote(e.target.value)}
-                    placeholder="e.g. Cash at store"
-                    className="h-9 w-full rounded-lg border border-border bg-background px-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {!recordPayment && (
-            <p className="text-xs text-muted-foreground">
-              A receipt will still be generated showing the amount due. Payment can be recorded later from the order detail page.
-            </p>
-          )}
+        {/* Notes */}
+        <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+          <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+            <StickyNote className="h-4 w-4 text-muted-foreground" />
+            Notes (optional)
+          </h2>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={3}
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 resize-none"
+            placeholder="Payment terms, delivery estimate, validity period, or any additional notes..."
+          />
         </div>
 
         {/* Submit */}
@@ -471,13 +386,13 @@ export default function NewWalkinOrderPage() {
           ) : (
             <>
               <Save className="h-4 w-4" />
-              Create Order{recordPayment ? " & Record Payment" : ""}
+              Create Quotation
             </>
           )}
         </button>
 
         <p className="text-xs text-center text-muted-foreground">
-          The order will be created with a generated order number and you&apos;ll be taken to the receipt page.
+          The quotation will be created as a draft. You can send it via WhatsApp or print it from the quotation page.
         </p>
       </form>
     </div>
