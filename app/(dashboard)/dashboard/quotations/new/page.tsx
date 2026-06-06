@@ -260,6 +260,7 @@ export default function NewQuotationPage() {
                   <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">
                     Item Name
                   </label>
+                  <Search className="absolute left-3 top-[34px] h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
                   <input
                     value={item.name}
                     onChange={(e) => {
@@ -268,7 +269,7 @@ export default function NewQuotationPage() {
                     }}
                     onFocus={() => setActiveProductSearch(idx)}
                     onBlur={() => setTimeout(() => setActiveProductSearch(null), 200)}
-                    className="h-9 w-full rounded-lg border border-border bg-background pl-2.5 pr-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    className="h-9 w-full rounded-lg border border-border bg-background pl-8 pr-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
                     placeholder="Search product or type name"
                   />
                   {/* Product search dropdown */}

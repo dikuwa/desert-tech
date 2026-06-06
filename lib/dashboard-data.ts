@@ -341,6 +341,12 @@ export const mockBackInStockRequests: DashboardBackInStockRequest[] = [
   },
 ];
 
+export const mockQuotations: DashboardQuotation[] = [
+  { id: "qtn1", quotationNumber: "QTN-A1B2C3", customerName: "John Mwale", customerPhone: "+264 81 123 4567", preferredContact: "WhatsApp", items: [{ name: 'MacBook Air 15" M3', quantity: 1, unitPriceCents: parseHumanToCents("18999") }, { name: "Logitech MX Master 3S", quantity: 1, unitPriceCents: parseHumanToCents("1599") }], subtotalCents: parseHumanToCents("20598"), notes: "Valid for 14 days. Delivery within 3 business days.", status: "Draft", createdAt: "2026-06-03T09:00:00Z", updatedAt: "2026-06-03T09:00:00Z" },
+  { id: "qtn2", quotationNumber: "QTN-D4E5F6", customerName: "Maria Shikongo", customerPhone: "+264 85 234 5678", preferredContact: "Phone", items: [{ name: "Dell XPS 16", quantity: 1, unitPriceCents: parseHumanToCents("25999") }], subtotalCents: parseHumanToCents("25999"), notes: "Price includes setup and data migration. Payment via bank transfer.", status: "Sent", createdAt: "2026-06-02T14:00:00Z", updatedAt: "2026-06-03T10:00:00Z" },
+  { id: "qtn3", quotationNumber: "QTN-G7H8I9", customerName: "Petrus Nangolo", customerPhone: "+264 81 345 6789", preferredContact: "WhatsApp", items: [{ name: "Gaming PC Ryzen 7", quantity: 1, unitPriceCents: parseHumanToCents("21999") }], subtotalCents: parseHumanToCents("21999"), status: "Accepted", createdAt: "2026-06-01T11:00:00Z", updatedAt: "2026-06-02T09:30:00Z" },
+];
+
 export const mockPayments: DashboardPayment[] = [
   { id: "pay1", orderNumber: "DT-G7H8I9", customerName: "Petrus Nangolo", amountCents: parseHumanToCents("10000"), method: "BankTransfer", status: "Confirmed", recordedAt: "2026-05-29T11:30:00Z" },
   { id: "pay2", orderNumber: "DT-J0K1L2", customerName: "Selma Amadhila", amountCents: parseHumanToCents("5999"), method: "Cash", status: "Confirmed", recordedAt: "2026-05-26T10:00:00Z" },
