@@ -120,11 +120,14 @@ export async function POST(request: NextRequest) {
       />,
     );
 
-    // Collect stream into buffer
-    const chunks: Uint8Array[] = [];
-    for await (const chunk of stream as unknown as AsyncIterable<Uint8Array>) {
-      chunks.push(chunk);
-    }
+    // Collect stream into buffer using event-based pattern
+    // (more compatible across Next.js runtimes than for-await-of)
+    const chunks: Buffer[] = [];
+    await new Promise<void>((resolve, reject) => {
+      stream.on("data", (chunk: Buffer) => chunks.push(chunk));
+      stream.on("end", resolve);
+      stream.on("error", reject);
+    });
     const pdfBuffer = Buffer.concat(chunks);
 
     const isView = body.view === true || body.view === "true" || body.view === 1;
