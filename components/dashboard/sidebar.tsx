@@ -36,7 +36,6 @@ const adminNavItems = [
   { href: "/dashboard/customers", label: "Customers", icon: Users },
   { href: "/dashboard/follow-ups", label: "Follow-ups", icon: CalendarClock },
   { href: "/dashboard/receipts", label: "Documents", icon: FileText },
-  { href: "/dashboard/quotations", label: "Quotations", icon: FileText },
   { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
   { href: "/dashboard/back-in-stock", label: "Stock Requests", icon: PackageSearch },
 ];

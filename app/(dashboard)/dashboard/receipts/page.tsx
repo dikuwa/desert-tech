@@ -17,7 +17,7 @@ import {
   CheckCircle2,
   XCircle,
   FileSpreadsheet,
-  Filter,
+  Plus,
 } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { formatCents, getStatusBadgeClass, getStatusLabel } from "@/lib/dashboard-data";
@@ -171,13 +171,24 @@ export default function DocumentsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Documents</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          {currentTab === "receipts"
-            ? `${paidOrders.length} receipts available`
-            : `${quotations.length} quotations`}
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Documents</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {currentTab === "receipts"
+              ? `${paidOrders.length} receipts available`
+              : `${quotations.length} quotations · ${quotations.filter((q) => q.status === "Draft").length} drafts`}
+          </p>
+        </div>
+        {currentTab === "quotations" && (
+          <Link
+            href="/dashboard/quotations/new"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-all"
+          >
+            <Plus className="h-4 w-4" />
+            New Quotation
+          </Link>
+        )}
       </div>
 
       {/* Tabs */}
@@ -265,8 +276,16 @@ export default function DocumentsPage() {
           <p className="text-xs text-muted-foreground mt-1">
             {currentTab === "receipts"
               ? "Receipts become available once orders are paid."
-              : "Create quotations from the Quotations section."}
+              : "Create a quotation to send to a customer."}
           </p>
+          {currentTab === "quotations" && !search && statusFilter === "all" && (
+            <Link
+              href="/dashboard/quotations/new"
+              className="mt-3 text-sm text-primary hover:text-primary/80 transition-colors"
+            >
+              Create your first quotation
+            </Link>
+          )}
         </div>
       ) : (
         <div className="space-y-2">
