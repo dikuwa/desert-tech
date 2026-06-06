@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { ExternalLink, Link as LinkIcon } from "lucide-react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -55,6 +56,10 @@ export default function OrderReceiptPage() {
   const isDepositPaid = order.paymentStatus === "DepositPaid";
 
   const receiptNumber = `RCP-${order.orderNumber.replace("DT-", "")}`;
+  const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
+
+  const [customerLink, setCustomerLink] = useState<string | null>(null);
+  const [generatingLink, setGeneratingLink] = useState(false);
 
   const handlePrint = () => {
     window.print();
@@ -87,11 +92,37 @@ export default function OrderReceiptPage() {
     toast.success("Receipt link copied");
   };
 
+  const handleGenerateCustomerLink = async () => {
+    setGeneratingLink(true);
+    try {
+      const res = await fetch("/api/documents/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "receipt",
+          referenceId: order.orderNumber,
+          documentNumber: receiptNumber,
+        }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        navigator.clipboard.writeText(data.url);
+        setCustomerLink(data.url);
+        toast.success("Customer link copied to clipboard");
+      }
+    } catch {
+      toast.error("Failed to generate link");
+    } finally {
+      setGeneratingLink(false);
+    }
+  };
+
   const handleSendWhatsApp = () => {
+    const publicLink = customerLink || `${window.location.origin}/api/receipts/generate?orderId=${order.orderNumber}`;
     const msg = encodeURIComponent(
-      `Hi ${order.customerName}, here is your receipt for ${order.orderNumber}. Total: ${formatCents(order.subtotalCents)}. ${isDepositPaid ? `Paid: ${formatCents(totalPaidCents)}, Balance due: ${formatCents(balanceCents)}.` : isPaidInFull ? "Paid in full." : ""}`,
+      `Hi ${order.customerName}, here is your receipt for ${order.orderNumber}. Total: ${formatCents(order.subtotalCents)}. ${isDepositPaid ? `Paid: ${formatCents(totalPaidCents)}, Balance due: ${formatCents(balanceCents)}.` : isPaidInFull ? "Paid in full." : ""}\n\nView online: ${publicLink}`,
     );
-    window.open(`https://wa.me/send?text=${msg}`, "_blank");
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
   };
 
   const handleSendEmail = () => {
@@ -139,11 +170,16 @@ export default function OrderReceiptPage() {
             </button>
           )}
           <button
-            onClick={handleCopyLink}
-            title="Copy link"
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            onClick={handleGenerateCustomerLink}
+            disabled={generatingLink}
+            title="Copy customer link"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-primary hover:border-primary/30 hover:bg-accent transition-colors"
           >
-            <Copy className="h-4 w-4" />
+            {generatingLink ? (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
+            ) : (
+              <LinkIcon className="h-4 w-4" />
+            )}
           </button>
           <button
             onClick={handleDownloadPDF}

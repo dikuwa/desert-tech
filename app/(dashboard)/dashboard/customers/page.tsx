@@ -78,7 +78,7 @@ export default function CustomersPage() {
 
   const handleDelete = (id: string) => {
     deleteCustomer(id);
-    setDeleteConfirm(null);
+    setConfirmDelete(null);
   };
 
   return (
