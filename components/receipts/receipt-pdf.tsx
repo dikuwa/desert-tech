@@ -1,14 +1,9 @@
-import { Document, Page, View, Text, Image, StyleSheet, Font } from "@react-pdf/renderer";
+import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
-Font.register({
-  family: "Helvetica",
-  fonts: [
-    { src: "Helvetica", fontWeight: "normal" },
-    { src: "Helvetica-Bold", fontWeight: "bold" },
-  ],
-});
+// Helvetica is a standard PDF font — no need to register it.
+// @react-pdf/renderer includes it by default.
 
 const colors = {
   primary: "#f68923",
@@ -20,8 +15,15 @@ const colors = {
   warning: "#d97706",
 };
 
-const iconPath = path.join(process.cwd(), "public", "images", "receipt-icon.svg");
-const iconDataUri = `data:image/svg+xml;base64,${readFileSync(iconPath).toString("base64")}`;
+// Load the receipt icon — fall back gracefully if the file is missing
+let iconDataUri: string | null = null;
+try {
+  const iconPath = path.join(process.cwd(), "public", "images", "receipt-icon.svg");
+  iconDataUri = `data:image/svg+xml;base64,${readFileSync(iconPath).toString("base64")}`;
+} catch {
+  // Icon is not critical for PDF rendering
+  iconDataUri = null;
+}
 
 const styles = StyleSheet.create({
   page: {
@@ -197,7 +199,7 @@ export function ReceiptPDF({
         <View style={styles.document}>
           <View style={styles.header}>
             <View style={styles.brand}>
-              <Image src={iconDataUri} style={styles.logo} />
+              {iconDataUri && <Image src={iconDataUri} style={styles.logo} />}
               <View>
                 <Text style={styles.companyName}>Desert Technology Consultant</Text>
                 <Text style={styles.companyLine}>{storeLocation}</Text>
