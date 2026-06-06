@@ -27,6 +27,7 @@ import {
   getStatusBadgeClass,
   getStatusLabel,
   formatCents,
+  computePaymentFields,
 } from "@/lib/dashboard-data";
 import type {
   DashboardOrder,
@@ -186,8 +187,11 @@ export default function OrderDetailPage() {
   };
 
   const orderPayments = payments.filter((p) => p.orderNumber === order.orderNumber);
-  const totalPaidCents = orderPayments.reduce((sum, p) => sum + p.amountCents, 0);
-  const balanceCents = order.subtotalCents - totalPaidCents;
+  const { totalPaidCents, balanceDueCents: balanceCents } = computePaymentFields(
+    order.subtotalCents,
+    order.paymentStatus,
+    orderPayments,
+  );
 
   const timeline = buildTimeline(order);
 

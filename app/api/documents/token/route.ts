@@ -17,6 +17,7 @@ import {
 } from "@/lib/document-tokens";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { getOrderByNumber } from "@/lib/order-store";
+import { computePaymentFields } from "@/lib/dashboard-data";
 
 export async function POST(request: NextRequest) {
   try {
@@ -101,10 +102,14 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      // Calculate payment totals from dashboard store payments
+      // Calculate payment totals from dashboard store payments (respects paymentStatus for PaidInFull)
       const orderPayments = payments.filter((p) => p.orderNumber === (order as any).orderNumber);
-      const totalPaidCents = orderPayments.reduce((sum, p) => sum + p.amountCents, 0);
-      const balanceDueCents = Math.max(0, order.subtotalCents - totalPaidCents);
+      const { totalPaidCents, balanceDueCents } = computePaymentFields(
+        order.subtotalCents,
+        order.paymentStatus,
+        orderPayments,
+        { fulfillmentMethod: (order as any).fulfillmentMethod, courierFeeCents: (order as any).courierFeeCents },
+      );
 
       return NextResponse.json({
         success: true,

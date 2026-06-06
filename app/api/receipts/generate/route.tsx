@@ -15,6 +15,7 @@ import { getOrderByNumber } from "@/lib/order-store";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { addReceipt } from "@/lib/receipt-store";
 import { uploadFile } from "@/lib/storage";
+import { computePaymentFields } from "@/lib/dashboard-data";
 
 // Helper to get a readable order from either the in-memory store or dashboard store
 function findOrder(orderIdOrNumber: string) {
@@ -23,8 +24,12 @@ function findOrder(orderIdOrNumber: string) {
   const order = orders.find((o) => o.id === orderIdOrNumber || o.orderNumber === orderIdOrNumber);
   if (order) {
     const orderPayments = payments.filter((p) => p.orderNumber === order.orderNumber);
-    const totalPaidCents = orderPayments.reduce((sum, p) => sum + p.amountCents, 0);
-    const balanceDueCents = Math.max(0, order.subtotalCents - totalPaidCents);
+    const { totalPaidCents, balanceDueCents } = computePaymentFields(
+      order.subtotalCents,
+      order.paymentStatus,
+      orderPayments,
+      { fulfillmentMethod: order.fulfillmentMethod, courierFeeCents: order.courierFeeCents },
+    );
     return {
       orderNumber: order.orderNumber,
       customerName: order.customerName,

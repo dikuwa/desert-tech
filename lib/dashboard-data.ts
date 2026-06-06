@@ -438,6 +438,41 @@ export const defaultPaymentMethods: PaymentMethod[] = [
   { id: "pm3", name: "Phone Transfer (E-Wallet)", type: "PhoneTransfer", details: "Send via mobile money or e-wallet", instructions: "Contact us for the phone number to send to", isActive: true },
 ];
 
+/**
+ * Compute totalPaidCents and balanceDueCents consistently,
+ * taking both payment records AND paymentStatus into account.
+ *
+ * When status is "PaidInFull", the order is treated as fully paid
+ * regardless of whether actual payment records exist.
+ */
+export function computePaymentFields(
+  subtotalCents: number,
+  paymentStatus: string,
+  payments: { amountCents: number }[],
+  options?: { courierFeeCents?: number; fulfillmentMethod?: string }
+) {
+  const orderTotal = subtotalCents + ((options?.fulfillmentMethod === "courier" && options?.courierFeeCents) ? options.courierFeeCents : 0);
+  const actualPaid = payments.reduce((sum, p) => sum + p.amountCents, 0);
+
+  let totalPaidCents: number;
+  let balanceDueCents: number;
+
+  if (paymentStatus === "PaidInFull") {
+    // Treat as fully settled regardless of payment records
+    totalPaidCents = Math.max(actualPaid, orderTotal);
+    balanceDueCents = 0;
+  } else if (paymentStatus === "DepositPaid") {
+    totalPaidCents = actualPaid;
+    balanceDueCents = Math.max(0, orderTotal - actualPaid);
+  } else {
+    // Unpaid or fallback
+    totalPaidCents = actualPaid;
+    balanceDueCents = Math.max(0, orderTotal - actualPaid);
+  }
+
+  return { totalPaidCents, balanceDueCents, orderTotal };
+}
+
 export function formatCents(cents: number): string {
   return `N$ ${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 0 })}`;
 }

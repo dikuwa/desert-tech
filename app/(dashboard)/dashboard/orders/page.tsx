@@ -19,6 +19,7 @@ import {
   getStatusBadgeClass,
   getStatusLabel,
   formatCents,
+  computePaymentFields,
 } from "@/lib/dashboard-data";
 import type { DashboardOrder } from "@/lib/dashboard-data";
 import { toast } from "sonner";
@@ -58,14 +59,17 @@ export default function OrdersPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [paymentFilter, setPaymentFilter] = useState<string>("All");
 
-  // Compute balance per order
+  // Compute balance per order (uses paymentStatus to handle PaidInFull without payment records)
   const orderBalances = useMemo(() => {
     const map: Record<string, number> = {};
     for (const o of orders) {
-      const totalPaid = payments
-        .filter((p) => p.orderNumber === o.orderNumber)
-        .reduce((sum, p) => sum + p.amountCents, 0);
-      map[o.id] = o.subtotalCents - totalPaid;
+      const orderPayments = payments.filter((p) => p.orderNumber === o.orderNumber);
+      const { balanceDueCents } = computePaymentFields(
+        o.subtotalCents,
+        o.paymentStatus,
+        orderPayments,
+      );
+      map[o.id] = balanceDueCents;
     }
     return map;
   }, [orders, payments]);

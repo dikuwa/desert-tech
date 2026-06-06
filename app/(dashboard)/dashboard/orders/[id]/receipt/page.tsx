@@ -24,6 +24,7 @@ import {
   formatCents,
   getStatusBadgeClass,
   getStatusLabel,
+  computePaymentFields,
 } from "@/lib/dashboard-data";
 import { toast } from "sonner";
 
@@ -50,9 +51,12 @@ export default function OrderReceiptPage() {
   }
 
   const orderPayments = payments.filter((p) => p.orderNumber === order.orderNumber);
-  const totalPaidCents = orderPayments.reduce((sum, p) => sum + p.amountCents, 0);
-  const balanceCents = order.subtotalCents - totalPaidCents;
-  const isPaidInFull = balanceCents <= 0 && order.paymentStatus !== "Unpaid";
+  const { totalPaidCents, balanceDueCents: balanceCents } = computePaymentFields(
+    order.subtotalCents,
+    order.paymentStatus,
+    orderPayments,
+  );
+  const isPaidInFull = order.paymentStatus === "PaidInFull" || (balanceCents <= 0 && order.paymentStatus !== "Unpaid");
   const isDepositPaid = order.paymentStatus === "DepositPaid";
 
   const receiptNumber = `RCP-${order.orderNumber.replace("DT-", "")}`;
