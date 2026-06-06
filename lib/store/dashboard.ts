@@ -108,7 +108,7 @@ interface DashboardState {
     preferredContact: string[];
     itemCount: number;
     subtotalCents: number;
-    items?: { name: string; quantity: number; unitPriceCents: number }[];
+    items?: { name: string; quantity: number; unitPriceCents: number; sku?: string }[];
     payment?: { amountCents: number; method: string; note?: string };
     fulfillmentMethod?: "collection" | "courier";
     courierFeeCents?: number;

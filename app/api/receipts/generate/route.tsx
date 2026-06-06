@@ -41,6 +41,7 @@ function findOrder(orderIdOrNumber: string) {
               quantity: item.quantity,
               unitPrice: item.unitPriceCents,
               total: item.unitPriceCents * item.quantity,
+              sku: item.sku,
             }))
           : [{ name: "Order Items", quantity: order.itemCount, unitPrice: order.subtotalCents / order.itemCount, total: order.subtotalCents }]),
       ],

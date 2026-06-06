@@ -32,6 +32,7 @@ interface LineItem {
   name: string;
   quantity: number;
   unitPriceCents: number;
+  sku?: string;
 }
 
 const PAYMENT_METHODS = ["BankTransfer", "Cash", "PhoneTransfer", "Card", "Other"] as const;
@@ -101,10 +102,10 @@ export default function NewWalkinOrderPage() {
     setItems(items.map((item, i) => (i === idx ? { ...item, [field]: value } : item)));
   };
 
-  const selectProduct = (idx: number, name: string, unitPriceCents: number) => {
+  const selectProduct = (idx: number, name: string, unitPriceCents: number, sku?: string) => {
     setItems((currentItems) =>
       currentItems.map((item, i) =>
-        i === idx ? { ...item, name, unitPriceCents } : item,
+        i === idx ? { ...item, name, unitPriceCents, sku } : item,
       ),
     );
     setActiveProductSearch(null);
@@ -337,7 +338,7 @@ export default function NewWalkinOrderPage() {
                             type="button"
                             onMouseDown={(e) => {
                               e.preventDefault();
-                              selectProduct(idx, p.name, p.priceCents);
+                              selectProduct(idx, p.name, p.priceCents, p.sku);
                             }}
                             className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-muted transition-colors border-b border-border last:border-0"
                           >

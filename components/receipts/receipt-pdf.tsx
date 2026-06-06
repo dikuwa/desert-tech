@@ -100,10 +100,11 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   cell: { fontSize: 8 },
-  description: { width: "52%" },
-  qty: { width: "12%", textAlign: "center" },
-  price: { width: "18%", textAlign: "right" },
-  total: { width: "18%", textAlign: "right", fontWeight: "bold" },
+  description: { width: "38%" },
+  sku: { width: "22%", textAlign: "left" },
+  qty: { width: "10%", textAlign: "center" },
+  price: { width: "15%", textAlign: "right" },
+  total: { width: "15%", textAlign: "right", fontWeight: "bold" },
   totals: { width: 210, marginLeft: "auto" },
   totalRow: {
     flexDirection: "row",
@@ -139,6 +140,7 @@ interface ReceiptItem {
   quantity: number;
   unitPrice: number;
   total: number;
+  sku?: string;
 }
 
 interface ReceiptPDFProps {
@@ -255,13 +257,15 @@ export function ReceiptPDF({
             <Text style={[styles.label, { marginBottom: 10 }]}>Items</Text>
             <View style={styles.tableHeader}>
               <Text style={[styles.headerText, styles.description]}>Description</Text>
+              <Text style={[styles.headerText, styles.sku]}>SKU</Text>
               <Text style={[styles.headerText, styles.qty]}>Qty</Text>
-              <Text style={[styles.headerText, styles.price]}>Unit Price</Text>
+              <Text style={[styles.headerText, styles.price]}>Price</Text>
               <Text style={[styles.headerText, styles.total]}>Total</Text>
             </View>
             {items.map((item, index) => (
               <View key={`${item.name}-${index}`} style={styles.tableRow}>
                 <Text style={[styles.cell, styles.description]}>{item.name}</Text>
+                <Text style={[styles.cell, styles.sku, { fontFamily: "Courier", fontSize: 7 }]}>{item.sku || "—"}</Text>
                 <Text style={[styles.cell, styles.qty]}>{item.quantity}</Text>
                 <Text style={[styles.cell, styles.price]}>{formatCurrency(item.unitPrice)}</Text>
                 <Text style={[styles.cell, styles.total]}>{formatCurrency(item.total)}</Text>

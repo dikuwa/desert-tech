@@ -29,7 +29,7 @@ export interface DashboardOrder {
   paymentStatusAt?: string;
   fulfillmentStatusAt?: string;
   timelineEvents?: OrderTimelineEvent[];
-  items?: { name: string; quantity: number; unitPriceCents: number }[];
+  items?: { name: string; quantity: number; unitPriceCents: number; sku?: string }[];
   fulfillmentMethod?: "collection" | "courier";
   courierFeeCents?: number;
   shipping?: {
@@ -43,7 +43,7 @@ export interface DashboardOrder {
 }
 
 export interface DashboardOrderDetail extends DashboardOrder {
-  items: { name: string; quantity: number; unitPriceCents: number; totalCents: number }[];
+  items: { name: string; quantity: number; unitPriceCents: number; totalCents: number; sku?: string }[];
   payments: { id: string; amountCents: number; method: string; status: string; note?: string; recordedAt: string }[];
   followUps: { id: string; type: string; status: string; note: string; dueAt?: string; assignedTo?: string }[];
   notes: string;
@@ -202,7 +202,7 @@ export interface DashboardQuotation {
   customerName: string;
   customerPhone: string;
   preferredContact: string[];
-  items: { name: string; quantity: number; unitPriceCents: number }[];
+  items: { name: string; quantity: number; unitPriceCents: number; sku?: string }[];
   subtotalCents: number;
   notes?: string;
   status: "Draft" | "Sent" | "Accepted" | "Declined";
@@ -245,15 +245,15 @@ export interface DashboardPayment {
 
 export const mockOrders: DashboardOrder[] = [
   { id: "o1", orderNumber: "DT-A1B2C3", customerName: "John Mwale", customerPhone: "+264 81 123 4567", itemCount: 2, subtotalCents: parseHumanToCents("24999"), contactStatus: "NotContacted", paymentStatus: "Unpaid", fulfillmentStatus: "Pending",  preferredContact: ["WhatsApp"], createdAt: "2026-06-01T10:30:00Z", updatedAt: "2026-06-01T10:30:00Z" },
-  { id: "o2", orderNumber: "DT-D4E5F6", customerName: "Maria Shikongo", customerPhone: "+264 85 234 5678", itemCount: 1, subtotalCents: parseHumanToCents("18599"), contactStatus: "Contacted", paymentStatus: "Unpaid", fulfillmentStatus: "Pending", preferredContact: ["Phone"], createdAt: "2026-05-30T14:15:00Z", updatedAt: "2026-05-31T09:00:00Z" },
+  { id: "o2", orderNumber: "DT-D4E5F6", customerName: "Maria Shikongo", customerPhone: "+264 85 234 5678", itemCount: 1, subtotalCents: parseHumanToCents("18599"), contactStatus: "Contacted", paymentStatus: "Unpaid", fulfillmentStatus: "Pending", preferredContact: ["Phone"], createdAt: "2026-05-30T14:15:00Z", updatedAt: "2026-05-31T09:00:00Z", items: [{ name: "Samsung Galaxy S25 Ultra", sku: "DT-PHT-0001", quantity: 1, unitPriceCents: parseHumanToCents("18599") }] },
   { id: "o3", orderNumber: "DT-G7H8I9", customerName: "Petrus Nangolo", customerPhone: "+264 81 345 6789", itemCount: 3, subtotalCents: parseHumanToCents("32499"), contactStatus: "Contacted", paymentStatus: "DepositPaid", fulfillmentStatus: "Pending", preferredContact: ["WhatsApp", "Phone"], createdAt: "2026-05-28T08:45:00Z", updatedAt: "2026-05-29T11:30:00Z" },
-  { id: "o4", orderNumber: "DT-J0K1L2", customerName: "Selma Amadhila", customerPhone: "+264 85 456 7890", itemCount: 1, subtotalCents: parseHumanToCents("5999"), contactStatus: "Contacted", paymentStatus: "PaidInFull", fulfillmentStatus: "Completed", preferredContact: ["Email"], createdAt: "2026-05-25T16:20:00Z", updatedAt: "2026-05-26T10:00:00Z" },
+  { id: "o4", orderNumber: "DT-J0K1L2", customerName: "Selma Amadhila", customerPhone: "+264 85 456 7890", itemCount: 1, subtotalCents: parseHumanToCents("5999"), contactStatus: "Contacted", paymentStatus: "PaidInFull", fulfillmentStatus: "Completed", preferredContact: ["Email"], createdAt: "2026-05-25T16:20:00Z", updatedAt: "2026-05-26T10:00:00Z", items: [{ name: "Hikvision 8CH CCTV Kit", sku: "DT-CCTV-0001", quantity: 1, unitPriceCents: parseHumanToCents("5999") }] },
   { id: "o5", orderNumber: "DT-M3N4O5", customerName: "Tomas Haingura", customerPhone: "+264 81 567 8901", itemCount: 2, subtotalCents: parseHumanToCents("15999"), contactStatus: "Contacted", paymentStatus: "PaidInFull", fulfillmentStatus: "ReadyForCollection", preferredContact: ["WhatsApp"], createdAt: "2026-05-22T09:00:00Z", updatedAt: "2026-05-24T14:00:00Z" },
   { id: "o6", orderNumber: "DT-P6Q7R8", customerName: "Lukas Indongo", customerPhone: "+264 85 678 9012", itemCount: 1, subtotalCents: parseHumanToCents("4499"), contactStatus: "Contacted", paymentStatus: "PaidInFull", fulfillmentStatus: "Completed", preferredContact: ["Phone", "WhatsApp"], createdAt: "2026-05-18T11:30:00Z", updatedAt: "2026-05-20T15:00:00Z" },
   { id: "o7", orderNumber: "DT-S9T0U1", customerName: "Grace Kambonde", customerPhone: "+264 81 789 0123", itemCount: 4, subtotalCents: parseHumanToCents("45999"), contactStatus: "NotContacted", paymentStatus: "Unpaid", fulfillmentStatus: "Pending", preferredContact: ["WhatsApp"], createdAt: "2026-06-02T08:00:00Z", updatedAt: "2026-06-02T08:00:00Z" },
   { id: "o8", orderNumber: "DT-V2W3X4", customerName: "David Nghifikwa", customerPhone: "+264 85 890 1234", itemCount: 2, subtotalCents: parseHumanToCents("21999"), contactStatus: "Contacted", paymentStatus: "Unpaid", fulfillmentStatus: "Cancelled", preferredContact: ["WhatsApp"], createdAt: "2026-05-15T13:00:00Z", updatedAt: "2026-05-16T10:00:00Z" },
   { id: "o9", orderNumber: "DT-Y5Z6A7", customerName: "Rachel Shovaleka", customerPhone: "+264 81 901 2345", itemCount: 1, subtotalCents: parseHumanToCents("2899"), contactStatus: "Contacted", paymentStatus: "Unpaid", fulfillmentStatus: "Pending", preferredContact: ["Email"], createdAt: "2026-06-01T15:30:00Z", updatedAt: "2026-06-01T15:30:00Z" },
-  { id: "o10", orderNumber: "DT-B8C9D0", customerName: "Erastus Hamutenya", customerPhone: "+264 85 012 3456", itemCount: 1, subtotalCents: parseHumanToCents("12999"), contactStatus: "Contacted", paymentStatus: "DepositPaid", fulfillmentStatus: "Pending", preferredContact: ["Phone", "Email"], createdAt: "2026-05-29T10:00:00Z", updatedAt: "2026-05-30T09:30:00Z" },
+  { id: "o10", orderNumber: "DT-B8C9D0", customerName: "Erastus Hamutenya", customerPhone: "+264 85 012 3456", itemCount: 1, subtotalCents: parseHumanToCents("12999"), contactStatus: "Contacted", paymentStatus: "DepositPaid", fulfillmentStatus: "Pending", preferredContact: ["Phone", "Email"], createdAt: "2026-05-29T10:00:00Z", updatedAt: "2026-05-30T09:30:00Z", items: [{ name: "Lenovo ThinkPad X1 Carbon", sku: "DT-LAP-0002", quantity: 1, unitPriceCents: parseHumanToCents("12999") }] },
 ];
 
 export const mockProducts: DashboardProduct[] = [
@@ -385,9 +385,9 @@ export const mockBackInStockRequests: DashboardBackInStockRequest[] = [
 ];
 
 export const mockQuotations: DashboardQuotation[] = [
-  { id: "qtn1", quotationNumber: "QTN-A1B2C3", customerName: "John Mwale", customerPhone: "+264 81 123 4567", preferredContact: ["WhatsApp"], items: [{ name: 'MacBook Air 15" M3', quantity: 1, unitPriceCents: parseHumanToCents("18999") }, { name: "Logitech MX Master 3S", quantity: 1, unitPriceCents: parseHumanToCents("1599") }], subtotalCents: parseHumanToCents("20598"), notes: "Valid for 14 days. Delivery within 3 business days.", status: "Draft", createdAt: "2026-06-03T09:00:00Z", updatedAt: "2026-06-03T09:00:00Z" },
-  { id: "qtn2", quotationNumber: "QTN-D4E5F6", customerName: "Maria Shikongo", customerPhone: "+264 85 234 5678", preferredContact: ["Phone"], items: [{ name: "Dell XPS 16", quantity: 1, unitPriceCents: parseHumanToCents("25999") }], subtotalCents: parseHumanToCents("25999"), notes: "Price includes setup and data migration. Payment via bank transfer.", status: "Sent", createdAt: "2026-06-02T14:00:00Z", updatedAt: "2026-06-03T10:00:00Z" },
-  { id: "qtn3", quotationNumber: "QTN-G7H8I9", customerName: "Petrus Nangolo", customerPhone: "+264 81 345 6789", preferredContact: ["WhatsApp", "Email"], items: [{ name: "Gaming PC Ryzen 7", quantity: 1, unitPriceCents: parseHumanToCents("21999") }], subtotalCents: parseHumanToCents("21999"), status: "Accepted", createdAt: "2026-06-01T11:00:00Z", updatedAt: "2026-06-02T09:30:00Z" },
+  { id: "qtn1", quotationNumber: "QTN-A1B2C3", customerName: "John Mwale", customerPhone: "+264 81 123 4567", preferredContact: ["WhatsApp"], items: [{ name: 'MacBook Air 15" M3', sku: "DT-APP-0001", quantity: 1, unitPriceCents: parseHumanToCents("18999") }, { name: "Logitech MX Master 3S", sku: "DT-ACC-0001", quantity: 1, unitPriceCents: parseHumanToCents("1599") }], subtotalCents: parseHumanToCents("20598"), notes: "Valid for 14 days. Delivery within 3 business days.", status: "Draft", createdAt: "2026-06-03T09:00:00Z", updatedAt: "2026-06-03T09:00:00Z" },
+  { id: "qtn2", quotationNumber: "QTN-D4E5F6", customerName: "Maria Shikongo", customerPhone: "+264 85 234 5678", preferredContact: ["Phone"], items: [{ name: "Dell XPS 16", sku: "DT-LAP-0001", quantity: 1, unitPriceCents: parseHumanToCents("25999") }], subtotalCents: parseHumanToCents("25999"), notes: "Price includes setup and data migration. Payment via bank transfer.", status: "Sent", createdAt: "2026-06-02T14:00:00Z", updatedAt: "2026-06-03T10:00:00Z" },
+  { id: "qtn3", quotationNumber: "QTN-G7H8I9", customerName: "Petrus Nangolo", customerPhone: "+264 81 345 6789", preferredContact: ["WhatsApp", "Email"], items: [{ name: "Gaming PC Ryzen 7", sku: "DT-GAME-0001", quantity: 1, unitPriceCents: parseHumanToCents("21999") }], subtotalCents: parseHumanToCents("21999"), status: "Accepted", createdAt: "2026-06-01T11:00:00Z", updatedAt: "2026-06-02T09:30:00Z" },
 ];
 
 export const mockBrands: DashboardBrand[] = [

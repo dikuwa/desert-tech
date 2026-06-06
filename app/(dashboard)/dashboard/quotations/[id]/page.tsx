@@ -255,7 +255,8 @@ export default function QuotationDetailPage() {
           <div className="space-y-2">
             {/* Header */}
             <div className="flex items-center text-[10px] text-muted-foreground font-semibold uppercase tracking-wider pb-1 border-b border-border">
-              <span className="flex-1">Description</span>
+              <span className="flex-[2]">Description</span>
+              <span className="w-24 text-center">SKU</span>
               <span className="w-12 text-center">Qty</span>
               <span className="w-20 text-right">Unit Price</span>
               <span className="w-20 text-right">Total</span>
@@ -263,7 +264,8 @@ export default function QuotationDetailPage() {
             {/* Items */}
             {quotation.items.map((item, idx) => (
               <div key={idx} className="flex items-center text-sm py-1">
-                <span className="flex-1 text-foreground">{item.name}</span>
+                <span className="flex-[2] text-foreground">{item.name}</span>
+                <span className="w-24 text-center"><span className="text-[11px] font-mono text-muted-foreground">{item.sku || "—"}</span></span>
                 <span className="w-12 text-center text-muted-foreground">{item.quantity}</span>
                 <span className="w-20 text-right text-foreground">{formatCents(item.unitPriceCents)}</span>
                 <span className="w-20 text-right font-semibold text-foreground">
