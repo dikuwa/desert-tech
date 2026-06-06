@@ -2,11 +2,12 @@
 
 import { useState, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, Save, ImagePlus } from "lucide-react";
+import { ArrowLeft, Save, ImagePlus, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { MoneyInput } from "@/components/ui/money-input";
 import { useDashboardStore } from "@/lib/store/dashboard";
+import { toast } from "sonner";
 
 export default function EditProductPage() {
   const router = useRouter();
@@ -16,6 +17,7 @@ export default function EditProductPage() {
   const product = products.find(p => p.id === params.id);
   const [submitting, setSubmitting] = useState(false);
   const [images, setImages] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   const [form, setForm] = useState(() => {
     if (!product) return null;
@@ -40,21 +42,36 @@ export default function EditProductPage() {
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files) return;
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    let successCount = 0;
+    let failCount = 0;
     for (const file of Array.from(files)) {
       const formData = new FormData();
       formData.append("file", file);
       try {
         const res = await fetch("/api/upload", { method: "POST", body: formData });
         const data = await res.json();
-        if (data.url) {
+        if (res.ok && data.url) {
           setImages(prev => [...prev, data.url]);
+          successCount++;
+        } else {
+          failCount++;
+          console.error("Upload error:", data.error || "Unknown error");
         }
       } catch (err) {
+        failCount++;
         console.error("Upload failed:", err);
       }
     }
+    setUploading(false);
     if (e.target) e.target.value = "";
+    if (successCount > 0) {
+      toast.success(`${successCount} image${successCount !== 1 ? "s" : ""} uploaded`);
+    }
+    if (failCount > 0) {
+      toast.error(`${failCount} upload${failCount !== 1 ? "s" : ""} failed. Check file types (JPEG, PNG, WebP, GIF, SVG) and size (max 5MB).`);
+    }
   };
 
   const removeImage = (idx: number) => {
@@ -90,6 +107,7 @@ export default function EditProductPage() {
       warranty: form.warranty || undefined,
       compareAtPriceCents: form.priceWas || undefined,
       imageUrl: images[0] || product.imageUrl,
+      images: images.length > 0 ? [...(product.images || []), ...images] : undefined,
     });
     setSubmitting(false);
     router.push("/dashboard/products");
@@ -211,10 +229,19 @@ export default function EditProductPage() {
             <div className="rounded-xl border border-border bg-card p-6 space-y-4">
               <h2 className="text-sm font-semibold text-foreground">Product Images</h2>
               <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" id="edit-image-upload" />
-              <label htmlFor="edit-image-upload" className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
-                <ImagePlus className="h-8 w-8 text-muted-foreground mb-2" />
-                <p className="text-xs text-muted-foreground">Click to upload images</p>
-                <p className="text-[10px] text-muted-foreground mt-1">You can select multiple images</p>
+              <label htmlFor="edit-image-upload" className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 text-center transition-colors cursor-pointer ${uploading ? "border-primary/50 bg-accent/30" : "border-border hover:border-primary/50"}`}>
+                {uploading ? (
+                  <>
+                    <Loader2 className="h-8 w-8 text-primary animate-spin mb-2" />
+                    <p className="text-xs text-primary">Uploading...</p>
+                  </>
+                ) : (
+                  <>
+                    <ImagePlus className="h-8 w-8 text-muted-foreground mb-2" />
+                    <p className="text-xs text-muted-foreground">Click to upload images</p>
+                    <p className="text-[10px] text-muted-foreground mt-1">You can select multiple images</p>
+                  </>
+                )}
               </label>
               {(existingImages.length > 0 || images.length > 0) && (
                 <div className="flex flex-wrap gap-2 mt-3">
