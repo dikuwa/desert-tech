@@ -37,6 +37,7 @@ import type {
   BankDetail,
   ContactDetail,
   PaymentMethod,
+  AuditEntry,
 } from "@/lib/dashboard-data";
 
 let nextOrderId = 11;
@@ -166,6 +167,10 @@ interface DashboardState {
   // Staff
   updateStaffRole: (id: string, role: string) => void;
 
+  // Audit Log
+  auditLogs: AuditEntry[];
+  addAuditLog: (entry: Omit<AuditEntry, "id" | "timestamp" | "performedBy">) => void;
+
   // Invites
   addInvite: (invite: { token: string; email: string; name: string; role: string; createdAt: string }) => void;
   markInviteUsed: (token: string) => void;
@@ -187,6 +192,7 @@ interface DashboardState {
     subtotalCents: number;
     notes?: string;
   }) => DashboardQuotation;
+  updateQuotation: (id: string, data: Partial<Pick<DashboardQuotation, "customerName" | "customerPhone" | "preferredContact" | "items" | "subtotalCents" | "notes">>) => void;
   updateQuotationStatus: (id: string, status: DashboardQuotation["status"]) => void;
   deleteQuotation: (id: string) => void;
 
@@ -257,6 +263,7 @@ export const useDashboardStore = create<DashboardState>()(
       userRole: "Admin",
       currentUser: "Admin User",
       invites: [],
+      auditLogs: [],
 
       // === Settings ===
       updateSettings: (data) =>
@@ -380,6 +387,21 @@ export const useDashboardStore = create<DashboardState>()(
         set((s) => ({
           staff: s.staff.map((m) => (m.id === id ? { ...m, role } : m)),
         })),
+
+      // === Audit Log ===
+      addAuditLog: (entry) => {
+        const id = `audit-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        const { currentUser } = get();
+        const newEntry: AuditEntry = {
+          ...entry,
+          id,
+          performedBy: currentUser,
+          timestamp: new Date().toISOString(),
+        };
+        set((s) => ({
+          auditLogs: [newEntry, ...s.auditLogs],
+        }));
+      },
 
       // === Invites ===
       addInvite: (invite) =>
@@ -623,33 +645,42 @@ export const useDashboardStore = create<DashboardState>()(
 
         return newOrder;
       },
-      updateOrderContactStatus: (id, contactStatus) =>
+      updateOrderContactStatus: (id, contactStatus) => {
+        const { orders } = get();
+        const order = orders.find((o) => o.id === id);
+        if (!order) return;
+        const now = new Date().toISOString();
+        const label = contactStatus === "Contacted" ? "Customer contacted" : "Contact reset";
         set((s) => ({
           orders: s.orders.map((o) =>
             o.id === id
               ? (() => {
-                  const now = new Date().toISOString();
                   return {
                     ...o,
                     contactStatus: contactStatus as DashboardOrder["contactStatus"],
                     contactStatusAt: now,
                     updatedAt: now,
                     timelineEvents: [
-                      createOrderEvent("Contact", contactStatus, contactStatus === "Contacted" ? "Customer contacted" : "Contact reset", now),
+                      createOrderEvent("Contact", contactStatus, label, now),
                       ...(o.timelineEvents ?? []),
                     ],
                   };
                 })()
               : o
           ),
-        })),
-      updateOrderPaymentStatus: (id, paymentStatus) =>
+        }));
+        get().addAuditLog({ action: label, entityType: "order", entityId: id, entityLabel: order.orderNumber });
+      },
+      updateOrderPaymentStatus: (id, paymentStatus) => {
+        const { orders } = get();
+        const order = orders.find((o) => o.id === id);
+        if (!order) return;
+        const now = new Date().toISOString();
+        const label = paymentStatus === "PaidInFull" ? "Paid in full" : paymentStatus === "DepositPaid" ? "Deposit paid" : "Awaiting payment";
         set((s) => ({
           orders: s.orders.map((o) =>
             o.id === id
               ? (() => {
-                  const now = new Date().toISOString();
-                  const label = paymentStatus === "PaidInFull" ? "Paid in full" : paymentStatus === "DepositPaid" ? "Deposit paid" : "Awaiting payment";
                   return {
                     ...o,
                     paymentStatus: paymentStatus as DashboardOrder["paymentStatus"],
@@ -660,17 +691,22 @@ export const useDashboardStore = create<DashboardState>()(
                 })()
               : o
           ),
-        })),
-      updateOrderFulfillmentStatus: (id, fulfillmentStatus) =>
+        }));
+        get().addAuditLog({ action: label, entityType: "order", entityId: id, entityLabel: order.orderNumber });
+      },
+      updateOrderFulfillmentStatus: (id, fulfillmentStatus) => {
+        const { orders } = get();
+        const order = orders.find((o) => o.id === id);
+        if (!order) return;
+        const now = new Date().toISOString();
+        const label =
+          fulfillmentStatus === "ReadyForCollection" ? "Ready for collection" :
+          fulfillmentStatus === "Completed" ? "Order completed" :
+          fulfillmentStatus === "Cancelled" ? "Order cancelled" : "Processing";
         set((s) => ({
           orders: s.orders.map((o) =>
             o.id === id
               ? (() => {
-                  const now = new Date().toISOString();
-                  const label =
-                    fulfillmentStatus === "ReadyForCollection" ? "Ready for collection" :
-                    fulfillmentStatus === "Completed" ? "Order completed" :
-                    fulfillmentStatus === "Cancelled" ? "Order cancelled" : "Processing";
                   return {
                     ...o,
                     fulfillmentStatus: fulfillmentStatus as DashboardOrder["fulfillmentStatus"],
@@ -681,7 +717,9 @@ export const useDashboardStore = create<DashboardState>()(
                 })()
               : o
           ),
-        })),
+        }));
+        get().addAuditLog({ action: label, entityType: "order", entityId: id, entityLabel: order.orderNumber });
+      },
       resetOrderStatuses: (id) =>
         set((s) => ({
           orders: s.orders.map((o) =>
@@ -870,14 +908,30 @@ export const useDashboardStore = create<DashboardState>()(
         set((s) => ({ quotations: [newQuotation, ...s.quotations] }));
         return newQuotation;
       },
-      updateQuotationStatus: (id, status) =>
+      updateQuotation: (id, data) => {
+        const { quotations } = get();
+        const q = quotations.find((qt) => qt.id === id);
         set((s) => ({
-          quotations: s.quotations.map((q) =>
-            q.id === id
-              ? { ...q, status, updatedAt: new Date().toISOString() }
-              : q
+          quotations: s.quotations.map((qt) =>
+            qt.id === id
+              ? { ...qt, ...data, updatedAt: new Date().toISOString() }
+              : qt
           ),
-        })),
+        }));
+        if (q) get().addAuditLog({ action: "Quotation updated", entityType: "quotation", entityId: id, entityLabel: q.quotationNumber });
+      },
+      updateQuotationStatus: (id, status) => {
+        const { quotations } = get();
+        const q = quotations.find((qt) => qt.id === id);
+        set((s) => ({
+          quotations: s.quotations.map((qt) =>
+            qt.id === id
+              ? { ...qt, status, updatedAt: new Date().toISOString() }
+              : qt
+          ),
+        }));
+        if (q) get().addAuditLog({ action: `Quotation status: ${status}`, entityType: "quotation", entityId: id, entityLabel: q.quotationNumber });
+      },
       deleteQuotation: (id) =>
         set((s) => ({
           quotations: s.quotations.filter((q) => q.id !== id),

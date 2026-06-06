@@ -14,6 +14,7 @@ import {
   User,
   ShoppingBag,
   Trash2,
+  Pencil,
 } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
@@ -157,6 +158,13 @@ export default function QuotationDetailPage() {
             <Printer className="h-3.5 w-3.5" />
             Print
           </button>
+          <Link
+            href={`/dashboard/quotations/${quotation.id}/edit`}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+            Edit
+          </Link>
           <button
             onClick={handleDelete}
             className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-destructive hover:border-destructive/30 transition-colors"

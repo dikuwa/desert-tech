@@ -1,9 +1,17 @@
-import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
+import { Document, Page, View, Text, Image, StyleSheet, Font } from "@react-pdf/renderer";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
-// Helvetica is a standard PDF font — no need to register it.
-// @react-pdf/renderer includes it by default.
+// Register Space Grotesk — the same font used by the website, for consistent branding
+const fontRegular = path.join(process.cwd(), "public", "fonts", "SpaceGrotesk-Regular.ttf");
+const fontBold = path.join(process.cwd(), "public", "fonts", "SpaceGrotesk-Bold.ttf");
+Font.register({
+  family: "SpaceGrotesk",
+  fonts: [
+    { src: fontRegular, fontWeight: "normal" },
+    { src: fontBold, fontWeight: "bold" },
+  ],
+});
 
 const colors = {
   primary: "#f68923",
@@ -27,27 +35,26 @@ try {
 
 const styles = StyleSheet.create({
   page: {
-    padding: 26,
-    paddingTop: 22,
-    paddingBottom: 22,
-    fontFamily: "Helvetica",
-    fontSize: 9,
+    padding: 20,
+    paddingTop: 16,
+    paddingBottom: 14,
+    fontFamily: "SpaceGrotesk",
+    fontSize: 8.5,
     color: colors.text,
     backgroundColor: "#ffffff",
   },
   document: {
-    border: `1px solid ${colors.border}`,
-    borderRadius: 6,
+    border: `1 solid ${colors.border}`,
   },
   section: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderBottom: `1px solid ${colors.border}`,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderBottom: `1 solid ${colors.border}`,
   },
   header: {
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderBottom: `1px solid ${colors.border}`,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottom: `1 solid ${colors.border}`,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
@@ -70,61 +77,61 @@ const styles = StyleSheet.create({
   infoGrid: { flexDirection: "row" },
   infoColumn: { flex: 1 },
   label: {
-    fontSize: 7,
+    fontSize: 6.5,
     fontWeight: "bold",
     color: colors.muted,
     textTransform: "uppercase",
-    letterSpacing: 0.6,
-    marginBottom: 4,
+    letterSpacing: 0.5,
+    marginBottom: 3,
   },
-  value: { fontSize: 9, fontWeight: "bold" },
-  customerName: { fontSize: 10, fontWeight: "bold", marginBottom: 3 },
-  customerLine: { fontSize: 8, color: colors.muted, marginBottom: 2 },
+  value: { fontSize: 8.5, fontWeight: "bold" },
+  customerName: { fontSize: 9, fontWeight: "bold", marginBottom: 2 },
+  customerLine: { fontSize: 7.5, color: colors.muted, marginBottom: 1.5 },
   tableHeader: {
     flexDirection: "row",
-    paddingBottom: 6,
-    borderBottom: `1px solid ${colors.border}`,
+    paddingBottom: 4,
+    borderBottom: `1 solid ${colors.border}`,
   },
-  tableRow: { flexDirection: "row", paddingVertical: 8 },
+  tableRow: { flexDirection: "row", paddingVertical: 5 },
   headerText: {
-    fontSize: 7,
+    fontSize: 6.5,
     fontWeight: "bold",
     color: colors.muted,
     textTransform: "uppercase",
   },
-  cell: { fontSize: 9 },
+  cell: { fontSize: 8 },
   description: { width: "52%" },
   qty: { width: "12%", textAlign: "center" },
   price: { width: "18%", textAlign: "right" },
   total: { width: "18%", textAlign: "right", fontWeight: "bold" },
-  totals: { width: 220, marginLeft: "auto" },
+  totals: { width: 210, marginLeft: "auto" },
   totalRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 4,
+    paddingVertical: 3,
   },
-  totalLabel: { fontSize: 9, color: colors.muted },
-  totalValue: { fontSize: 9, fontWeight: "bold" },
+  totalLabel: { fontSize: 8, color: colors.muted },
+  totalValue: { fontSize: 8, fontWeight: "bold" },
   grandTotal: {
     flexDirection: "row",
     justifyContent: "space-between",
-    borderTop: `1px solid ${colors.border}`,
-    paddingTop: 7,
-    marginTop: 3,
+    borderTop: `1 solid ${colors.border}`,
+    paddingTop: 4,
+    marginTop: 2,
   },
-  grandText: { fontSize: 12, fontWeight: "bold" },
+  grandText: { fontSize: 10, fontWeight: "bold" },
   paymentSummary: { flexDirection: "row" },
   paymentBox: {
     flex: 1,
-    borderRadius: 6,
+    borderRadius: 4,
     backgroundColor: colors.surface,
-    padding: 11,
-    marginRight: 8,
+    padding: 8,
+    marginRight: 6,
   },
   paymentBoxLast: { marginRight: 0 },
-  paymentValue: { fontSize: 13, fontWeight: "bold", marginTop: 4 },
-  footer: { paddingHorizontal: 20, paddingVertical: 10, textAlign: "center" },
-  footerText: { fontSize: 7, color: colors.muted, marginBottom: 2 },
+  paymentValue: { fontSize: 11, fontWeight: "bold", marginTop: 3 },
+  footer: { paddingHorizontal: 16, paddingVertical: 7, textAlign: "center" },
+  footerText: { fontSize: 6.5, color: colors.muted, marginBottom: 1 },
 });
 
 interface ReceiptItem {

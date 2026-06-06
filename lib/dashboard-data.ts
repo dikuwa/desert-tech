@@ -221,6 +221,17 @@ export interface DashboardBrand {
   sortOrder: number;
 }
 
+export interface AuditEntry {
+  id: string;
+  action: string;
+  entityType: "order" | "quotation" | "product" | "payment" | "customer" | "settings";
+  entityId: string;
+  entityLabel: string;
+  performedBy: string;
+  timestamp: string;
+  details?: string;
+}
+
 export interface DashboardPayment {
   id: string;
   orderNumber: string;
