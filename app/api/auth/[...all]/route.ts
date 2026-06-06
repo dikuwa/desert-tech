@@ -204,31 +204,28 @@ async function handleMockRequest(request: NextRequest) {
     // Try database authentication if available
     if (hasDatabase()) {
       const dbUser = await authenticateUser(email, password);
-      if (!dbUser) {
-        return NextResponse.json(
-          { error: "Invalid email or password" },
-          { status: 401 },
-        );
+      if (dbUser) {
+        const { token, expiresAt } = await createDatabaseSession(dbUser.id, dbUser.email);
+
+        const response = NextResponse.json({
+          user: dbUser,
+          session: {
+            token,
+            expiresAt,
+            id: `sess-${dbUser.id}`,
+          },
+        });
+        response.cookies.set(MOCK_SESSION_COOKIE, token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+          maxAge: 7 * 24 * 60 * 60,
+        });
+        return response;
       }
-
-      const { token, expiresAt } = await createDatabaseSession(dbUser.id, dbUser.email);
-
-      const response = NextResponse.json({
-        user: dbUser,
-        session: {
-          token,
-          expiresAt,
-          id: `sess-${dbUser.id}`,
-        },
-      });
-      response.cookies.set(MOCK_SESSION_COOKIE, token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: 7 * 24 * 60 * 60,
-      });
-      return response;
+      // DB auth failed — fall through to mock fallback so devs can always sign in
+      console.warn("[auth] DB authentication failed, falling back to mock users");
     }
 
     // Fall back to mock users (no password check)
