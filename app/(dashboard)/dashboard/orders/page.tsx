@@ -9,6 +9,8 @@ import {
   ChevronRight,
   ShoppingBag,
   Plus,
+  UserCheck,
+  UserX,
 } from "lucide-react";
 import Link from "next/link";
 import { useDashboardStore } from "@/lib/store/dashboard";
@@ -19,6 +21,7 @@ import {
   formatCents,
 } from "@/lib/dashboard-data";
 import type { DashboardOrder } from "@/lib/dashboard-data";
+import { toast } from "sonner";
 
 const ITEMS_PER_PAGE = 15;
 
@@ -26,6 +29,28 @@ export default function OrdersPage() {
   const router = useRouter();
   const orders = useDashboardStore((s) => s.orders);
   const payments = useDashboardStore((s) => s.payments);
+  const customers = useDashboardStore((s) => s.customers);
+  const addCustomer = useDashboardStore((s) => s.addCustomer);
+  const deleteCustomer = useDashboardStore((s) => s.deleteCustomer);
+
+  const toggleCustomer = (order: typeof orders[0]) => {
+    const existing = customers.find(
+      (c) =>
+        c.fullName.toLowerCase() === order.customerName.toLowerCase() &&
+        c.phone === order.customerPhone,
+    );
+    if (existing) {
+      deleteCustomer(existing.id);
+      toast.success(`${existing.fullName} removed from customers`);
+    } else {
+      addCustomer({
+        fullName: order.customerName.trim(),
+        phone: order.customerPhone.trim(),
+        preferredContact: order.preferredContact || "WhatsApp",
+      });
+      toast.success(`${order.customerName} added to customers`);
+    }
+  };
 
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<keyof DashboardOrder>("createdAt");
@@ -196,12 +221,15 @@ export default function OrdersPage() {
                     <ArrowUpDown className="h-3 w-3" />
                   </button>
                 </th>
+                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Customer
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {paginated.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
+                  <td colSpan={9} className="px-4 py-12 text-center text-muted-foreground">
                     <ShoppingBag className="mx-auto h-8 w-8 mb-2 opacity-40" />
                     <p>No orders found</p>
                   </td>
@@ -271,6 +299,36 @@ export default function OrdersPage() {
                         month: "short",
                         day: "numeric",
                       })}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {(() => {
+                        const isCustomer = customers.some(
+                          (c) =>
+                            c.fullName.toLowerCase() === order.customerName.toLowerCase() &&
+                            c.phone === order.customerPhone,
+                        );
+                        return (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleCustomer(order);
+                            }}
+                            title={isCustomer ? "Remove from customers" : "Save to customers"}
+                            className={cn(
+                              "inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors",
+                              isCustomer
+                                ? "text-success hover:text-destructive hover:bg-destructive/5"
+                                : "text-muted-foreground hover:text-primary hover:bg-primary/5",
+                            )}
+                          >
+                            {isCustomer ? (
+                              <UserCheck className="h-3.5 w-3.5" />
+                            ) : (
+                              <UserX className="h-3.5 w-3.5" />
+                            )}
+                          </button>
+                        );
+                      })()}
                     </td>
                   </tr>
                 ))

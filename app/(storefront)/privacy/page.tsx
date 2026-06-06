@@ -3,7 +3,7 @@ import { ArrowRight, ShieldCheck } from "lucide-react";
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
 const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
-const STORE_EMAIL = process.env.NEXT_PUBLIC_STORE_EMAIL || "info@deserttechnology.com.na";
+const STORE_EMAIL = process.env.NEXT_PUBLIC_STORE_EMAIL || "sales@desertechnam.com";
 
 export default function PrivacyPage() {
   return (

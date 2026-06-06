@@ -359,7 +359,7 @@ export const storeSettings = {
   storeName: "Desert Technology Consultant",
   phone: "+264 85 277 5140",
   whatsapp: "264852775140",
-  email: "info@deserttechnology.com.na",
+  email: "sales@desertechnam.com",
   address: "Windhoek, Namibia",
   bankName: "Standard Bank",
   bankAccountName: "Desert TECHNOLOGIES",
@@ -376,7 +376,7 @@ export const storeSettings = {
 export const defaultContactDetails: ContactDetail[] = [
   { id: "cd1", type: "phone", label: "Main", value: "+264 85 277 5140", isActive: true },
   { id: "cd2", type: "whatsapp", label: "Sales", value: "264852775140", isActive: true },
-  { id: "cd3", type: "email", label: "General", value: "info@deserttechnology.com.na", isActive: true },
+  { id: "cd3", type: "email", label: "General", value: "sales@desertechnam.com", isActive: true },
   { id: "cd4", type: "address", label: "Physical", value: "Windhoek, Namibia", isActive: true },
 ];
 

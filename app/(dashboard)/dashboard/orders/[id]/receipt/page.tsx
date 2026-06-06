@@ -15,6 +15,7 @@ import {
   FileText,
   MessageCircle,
   Copy,
+  Mail,
 } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
@@ -33,6 +34,7 @@ export default function OrderReceiptPage() {
   const order = useDashboardStore((s) => s.orders.find((o) => o.id === orderId));
   const payments = useDashboardStore((s) => s.payments);
   const addNotification = useDashboardStore((s) => s.addNotification);
+  const storeSettings = useDashboardStore((s) => s.settings);
 
   if (!order) {
     return (
@@ -92,6 +94,14 @@ export default function OrderReceiptPage() {
     window.open(`https://wa.me/send?text=${msg}`, "_blank");
   };
 
+  const handleSendEmail = () => {
+    const subject = encodeURIComponent(`Receipt for ${order.orderNumber} - ${storeSettings.storeName}`);
+    const body = encodeURIComponent(
+      `Hi ${order.customerName},\n\nPlease find your receipt for ${order.orderNumber}.\n\nTotal: ${formatCents(order.subtotalCents)}\n${isDepositPaid ? `Paid: ${formatCents(totalPaidCents)}, Balance due: ${formatCents(balanceCents)}` : isPaidInFull ? "Paid in full." : "Payment status: ${getStatusLabel(order.paymentStatus)}"}\n\nThank you for your business!\n${storeSettings.storeName}\n${storeSettings.email}`,
+    );
+    window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
+  };
+
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
       {/* Actions bar */}
@@ -103,34 +113,46 @@ export default function OrderReceiptPage() {
           <ArrowLeft className="h-4 w-4" />
           Order Details
         </Link>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleSendWhatsApp}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-whatsapp/20 px-3 py-2 text-xs font-medium text-whatsapp hover:bg-whatsapp hover:text-white transition-colors"
-          >
-            <MessageCircle className="h-3.5 w-3.5" />
-            WhatsApp
-          </button>
+        <div className="flex items-center gap-1.5">
+          {/* Send method: only show customer's preferred, or all if none selected */}
+          {(!order.preferredContact || order.preferredContact === "WhatsApp") && (
+            <button
+              onClick={handleSendWhatsApp}
+              title="Send via WhatsApp"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-whatsapp/20 text-whatsapp hover:bg-whatsapp hover:text-white transition-colors"
+            >
+              <MessageCircle className="h-4 w-4" />
+            </button>
+          )}
+          {(!order.preferredContact || order.preferredContact === "Email") && (
+            <button
+              onClick={handleSendEmail}
+              title="Send via Email"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-primary hover:border-primary/30 hover:bg-accent transition-colors"
+            >
+              <Mail className="h-4 w-4" />
+            </button>
+          )}
           <button
             onClick={handleCopyLink}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+            title="Copy link"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
-            <Copy className="h-3.5 w-3.5" />
-            Copy Link
+            <Copy className="h-4 w-4" />
           </button>
           <button
             onClick={handleDownloadPDF}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+            title="Download PDF"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
-            <Download className="h-3.5 w-3.5" />
-            PDF
+            <Download className="h-4 w-4" />
           </button>
           <button
             onClick={handlePrint}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+            title="Print"
+            className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
           >
-            <Printer className="h-3.5 w-3.5" />
-            Print
+            <Printer className="h-4 w-4" />
           </button>
         </div>
       </div>
@@ -323,7 +345,7 @@ export default function OrderReceiptPage() {
       {/* Footer */}
       <div className="text-center text-[10px] text-muted-foreground print:hidden">
         <p>Desert Technology Consultant &mdash; Windhoek, Namibia</p>
-        <p className="mt-0.5">info@deserttechnology.com.na &mdash; +264 85 277 5140</p>
+        <p className="mt-0.5">{storeSettings.email} &mdash; +264 85 277 5140</p>
       </div>
     </div>
   );

@@ -54,8 +54,8 @@ export default function DashboardPage() {
                 <Icon className={`h-4 w-4 ${stat.color}`} />
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-bold text-foreground tabular-nums truncate">{stat.value}</p>
-                <p className="text-[10px] text-muted-foreground truncate">{stat.label}</p>
+                <p className="text-2xl font-bold text-foreground tabular-nums truncate leading-none">{stat.value}</p>
+                <p className="text-[10px] text-muted-foreground truncate mt-1">{stat.label}</p>
               </div>
             </Link>
           );

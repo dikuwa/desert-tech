@@ -19,7 +19,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
 
-const STORE_EMAIL = process.env.NEXT_PUBLIC_STORE_EMAIL || "info@deserttechnology.com.na";
+const STORE_EMAIL = process.env.NEXT_PUBLIC_STORE_EMAIL || "sales@desertechnam.com";
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
 
 export default function StaffPage() {

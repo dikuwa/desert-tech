@@ -33,7 +33,7 @@ export function ReceiptEmail({
   totalAmount,
   storeName = "Desert Technology Consultant",
   storePhone = "+264 85 277 5140",
-  storeEmail = "info@deserttechnology.com.na",
+  storeEmail = "sales@desertechnam.com",
 }: ReceiptEmailProps) {
   const receiptUrl = `${baseUrl}/api/receipts/generate?orderId=${orderNumber}&view=1`;
 

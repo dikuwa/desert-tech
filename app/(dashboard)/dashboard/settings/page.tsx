@@ -266,7 +266,7 @@ export default function SettingsPage() {
                 <input
                   value={form.email}
                   onChange={(e) => updateField("email", e.target.value)}
-                  placeholder="info@deserttechnology.com.na"
+                  placeholder="sales@desertechnam.com"
                   className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
                 />
               </div>

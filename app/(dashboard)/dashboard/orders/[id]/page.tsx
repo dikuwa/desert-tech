@@ -140,8 +140,31 @@ export default function OrderDetailPage() {
   const deleteOrderFromStore = useDashboardStore((s) => s.deleteOrder);
   const addPayment = useDashboardStore((s) => s.addPayment);
   const addNotification = useDashboardStore((s) => s.addNotification);
+  const customers = useDashboardStore((s) => s.customers);
+  const addCustomer = useDashboardStore((s) => s.addCustomer);
+  const deleteCustomer = useDashboardStore((s) => s.deleteCustomer);
 
   if (!order) notFound();
+
+  const existingCustomer = customers.find(
+    (c) =>
+      c.fullName.toLowerCase() === order.customerName.toLowerCase() &&
+      c.phone === order.customerPhone,
+  );
+
+  const handleToggleCustomer = () => {
+    if (existingCustomer) {
+      deleteCustomer(existingCustomer.id);
+      toast.success(`${existingCustomer.fullName} removed from customers`);
+    } else {
+      addCustomer({
+        fullName: order.customerName.trim(),
+        phone: order.customerPhone.trim(),
+        preferredContact: order.preferredContact || "WhatsApp",
+      });
+      toast.success(`${order.customerName} added to customers`);
+    }
+  };
 
   const orderPayments = payments.filter((p) => p.orderNumber === order.orderNumber);
   const totalPaidCents = orderPayments.reduce((sum, p) => sum + p.amountCents, 0);
@@ -359,6 +382,21 @@ export default function OrderDetailPage() {
                     {order.customerPhone}
                   </a>
                 </div>
+              </div>
+              {/* Customer toggle */}
+              <div className="mt-4">
+                <button
+                  onClick={handleToggleCustomer}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors",
+                    existingCustomer
+                      ? "border-border text-muted-foreground hover:text-destructive hover:border-destructive/30"
+                      : "border-primary/20 text-primary hover:bg-primary hover:text-primary-foreground",
+                  )}
+                >
+                  <User className="h-3.5 w-3.5" />
+                  {existingCustomer ? "Remove from Customers" : "Save to Customers"}
+                </button>
               </div>
               {/* Quick contact buttons */}
               <div className="flex gap-2 mt-4">

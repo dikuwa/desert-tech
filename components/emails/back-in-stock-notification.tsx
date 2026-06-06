@@ -29,7 +29,7 @@ export function BackInStockNotification({
   productUrl,
   storeName = "Desert Technology Consultant",
   storePhone = "+264 85 277 5140",
-  storeEmail = "info@deserttechnology.com.na",
+  storeEmail = "sales@desertechnam.com",
 }: BackInStockNotificationProps) {
   return (
     <Html>
