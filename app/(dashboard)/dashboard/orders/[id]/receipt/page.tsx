@@ -135,14 +135,36 @@ export default function OrderReceiptPage() {
         </div>
       </div>
 
+      {/* Print-only styles */}
+      <style>{`
+        @media print {
+          @page { margin: 15mm; }
+          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .no-print { display: none !important; }
+          .print-only { display: block !important; }
+        }
+        .print-only { display: none; }
+      `}</style>
+
       {/* Receipt Card */}
       <div className="rounded-xl border border-border bg-card print:border-0 print:shadow-none">
-        {/* Header */}
+        {/* Header with Logo */}
         <div className="px-6 py-5 border-b border-border flex items-start justify-between">
-          <div>
-            <h2 className="text-base font-bold text-foreground">Desert Technology Consultant</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">Windhoek, Namibia</p>
-            <p className="text-xs text-muted-foreground">+264 85 277 5140</p>
+          <div className="flex items-start gap-3">
+            <img
+              src="/images/desertech-doc-logo.svg"
+              alt="Desert Technology"
+              className="h-12 w-auto object-contain mt-0.5"
+              onError={(e) => {
+                const target = e.currentTarget;
+                target.style.display = "none";
+              }}
+            />
+            <div>
+              <h2 className="text-base font-bold text-foreground">Desert Technology Consultant</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">Windhoek, Namibia</p>
+              <p className="text-xs text-muted-foreground">+264 85 277 5140</p>
+            </div>
           </div>
           <div className="text-right">
             <span className="inline-flex items-center rounded-md bg-primary px-2.5 py-1 text-[10px] font-bold text-primary-foreground tracking-wider">

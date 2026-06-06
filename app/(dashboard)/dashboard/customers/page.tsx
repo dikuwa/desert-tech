@@ -2,15 +2,16 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Search, Users, MessageCircle, Phone, Mail, ChevronLeft, ChevronRight, Plus, Pencil, Check, X, Trash2 } from "lucide-react";
+import { Search, Users, MessageCircle, Phone, Mail, ChevronLeft, ChevronRight, Plus, Pencil, Check, X, Trash2, ShoppingBag, Eye } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
-import { formatCents } from "@/lib/dashboard-data";
+import { formatCents, getStatusBadgeClass, getStatusLabel } from "@/lib/dashboard-data";
 import { cn } from "@/lib/utils";
 
 const ITEMS_PER_PAGE = 10;
 
 export default function CustomersPage() {
   const customers = useDashboardStore((s) => s.customers);
+  const orders = useDashboardStore((s) => s.orders);
   const addCustomer = useDashboardStore((s) => s.addCustomer);
   const updateCustomer = useDashboardStore((s) => s.updateCustomer);
   const deleteCustomer = useDashboardStore((s) => s.deleteCustomer);
@@ -19,6 +20,7 @@ export default function CustomersPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [showOrdersFor, setShowOrdersFor] = useState<string | null>(null);
   const [form, setForm] = useState({ fullName: "", phone: "", email: "", whatsapp: "", preferredContact: "WhatsApp" });
 
   const filtered = useMemo(() => {
@@ -159,7 +161,14 @@ export default function CustomersPage() {
                   <div className="text-xs">
                     <span className="font-semibold text-foreground">{customer.orderCount}</span> orders · <span className="font-semibold text-foreground">{formatCents(customer.totalSpentCents)}</span>
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setShowOrdersFor(showOrdersFor === customer.id ? null : customer.id)}
+                      className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                      title="View orders"
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                    </button>
                     {customer.whatsapp && (
                       <a href={`https://wa.me/${customer.whatsapp.replace(/[^0-9]/g, "")}`} target="_blank" rel="noopener noreferrer"
                         className="rounded-md p-1.5 text-whatsapp hover:bg-whatsapp/10 transition-colors"><MessageCircle className="h-3.5 w-3.5" /></a>
@@ -170,6 +179,51 @@ export default function CustomersPage() {
                     )}
                   </div>
                 </div>
+
+                {/* Order History */}
+                {showOrdersFor === customer.id && (
+                  <div className="mt-3 pt-3 border-t border-border space-y-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <ShoppingBag className="h-3 w-3" />
+                      Order History
+                    </p>
+                    {(() => {
+                      const customerOrders = orders.filter(
+                        (o) =>
+                          o.customerName.toLowerCase() === customer.fullName.toLowerCase() &&
+                          (o.customerPhone === customer.phone || !customer.phone),
+                      );
+                      if (customerOrders.length === 0) {
+                        return (
+                          <p className="text-xs text-muted-foreground">No orders found</p>
+                        );
+                      }
+                      return customerOrders.slice(0, 5).map((o) => (
+                        <Link
+                          key={o.id}
+                          href={`/dashboard/orders/${o.id}`}
+                          className="flex items-center justify-between rounded-lg bg-muted/30 px-3 py-2 text-xs hover:bg-muted/50 transition-colors"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-semibold text-primary">{o.orderNumber}</span>
+                            <span className={cn("inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium", getStatusBadgeClass(o.fulfillmentStatus))}>
+                              {getStatusLabel(o.fulfillmentStatus)}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <span>{formatCents(o.subtotalCents)}</span>
+                            <span>{new Date(o.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+                          </div>
+                        </Link>
+                      ));
+                    })()}
+                    {customer.orderCount > 5 && (
+                      <p className="text-[10px] text-muted-foreground text-center">
+                        +{customer.orderCount - 5} more order{customer.orderCount - 5 !== 1 ? "s" : ""}
+                      </p>
+                    )}
+                  </div>
+                )}
               </>
             )}
           </div>

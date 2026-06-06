@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -12,6 +12,8 @@ import {
   User,
   ShoppingBag,
   CreditCard,
+  Search,
+  Check,
 } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
@@ -38,10 +40,31 @@ const CONTACT_METHODS = ["WhatsApp", "Phone", "Email"] as const;
 export default function NewWalkinOrderPage() {
   const router = useRouter();
   const addOrder = useDashboardStore((s) => s.addOrder);
+  const customers = useDashboardStore((s) => s.customers);
 
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [preferredContact, setPreferredContact] = useState("WhatsApp");
+  const [showCustomerSearch, setShowCustomerSearch] = useState(false);
+  const customerInputRef = useRef<HTMLInputElement>(null);
+  const customerSearchRef = useRef<HTMLDivElement>(null);
+
+  const matchingCustomers = useMemo(() => {
+    if (!customerName.trim()) return [];
+    const q = customerName.toLowerCase();
+    return customers.filter(
+      (c) =>
+        c.fullName.toLowerCase().includes(q) ||
+        c.phone.includes(q),
+    ).slice(0, 8);
+  }, [customerName, customers]);
+
+  const selectCustomer = useCallback((c: typeof customers[0]) => {
+    setCustomerName(c.fullName);
+    setCustomerPhone(c.phone);
+    setPreferredContact(c.preferredContact);
+    setShowCustomerSearch(false);
+  }, []);
 
   const [items, setItems] = useState<LineItem[]>([
     { name: "", quantity: 1, unitPriceCents: 0 },
@@ -142,16 +165,53 @@ export default function NewWalkinOrderPage() {
             Customer Details
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="sm:col-span-2">
+            <div className="sm:col-span-2 relative" ref={customerSearchRef}>
               <label className="text-sm font-medium text-foreground">
                 Full Name <span className="text-destructive">*</span>
               </label>
-              <input
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                className="mt-1.5 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-                placeholder="Customer name"
-              />
+              <div className="relative mt-1.5">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  ref={customerInputRef}
+                  value={customerName}
+                  onChange={(e) => {
+                    setCustomerName(e.target.value);
+                    setShowCustomerSearch(true);
+                  }}
+                  onFocus={() => setShowCustomerSearch(true)}
+                  onBlur={() => setTimeout(() => setShowCustomerSearch(false), 200)}
+                  className="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  placeholder="Search existing customer or type new name"
+                />
+              </div>
+              {/* Customer search dropdown */}
+              {showCustomerSearch && matchingCustomers.length > 0 && (
+                <div className="absolute z-50 mt-1 w-full rounded-lg border border-border bg-card shadow-lg overflow-hidden">
+                  {matchingCustomers.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        selectCustomer(c);
+                      }}
+                      className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm hover:bg-muted transition-colors border-b border-border last:border-0"
+                    >
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-primary text-xs font-semibold">
+                        {c.fullName.split(" ").map(n => n[0]).join("").slice(0, 2)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-foreground">{c.fullName}</p>
+                        <p className="text-xs text-muted-foreground">{c.phone} &middot; {c.preferredContact}</p>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {c.orderCount} order{c.orderCount !== 1 ? "s" : ""}
+                      </div>
+                      <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <div>
               <label className="text-sm font-medium text-foreground">
