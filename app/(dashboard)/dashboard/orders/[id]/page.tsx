@@ -50,6 +50,7 @@ import {
 } from "@/components/ui/dialog";
 import { MoneyInput } from "@/components/ui/money-input";
 import { Label } from "@/components/ui/label";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { toast } from "sonner";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { motionTransition, statusVariants } from "@/lib/motion";
@@ -748,42 +749,27 @@ export default function OrderDetailPage() {
       </Dialog>
 
       {/* Confirmation Dialogs */}
-      <Dialog open={confirmAction !== null} onOpenChange={() => setConfirmAction(null)}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base">
-              <AlertTriangle className="h-4 w-4 text-warning" />
-              {confirmAction === "cancel" ? "Cancel Order" : confirmAction === "delete" ? "Delete Order" : "Restore Order"}
-            </DialogTitle>
-            <DialogDescription className="text-sm">
-              {confirmAction === "cancel" && `Are you sure you want to cancel ${order.orderNumber}? This can be undone by restoring the order.`}
-              {confirmAction === "delete" && `Are you sure you want to permanently delete ${order.orderNumber}? This action cannot be undone.`}
-              {confirmAction === "restore" && `Restore ${order.orderNumber}? The status will be reset to Not Contacted / Unpaid / Pending.`}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex gap-2 justify-end">
-            <button
-              onClick={() => setConfirmAction(null)}
-              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={confirmAction === "cancel" ? handleCancel : confirmAction === "delete" ? handleDelete : handleRestore}
-              className={cn(
-                "rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors",
-                confirmAction === "delete"
-                  ? "bg-destructive hover:bg-destructive/90"
-                  : confirmAction === "cancel"
-                    ? "bg-destructive hover:bg-destructive/90"
-                    : "bg-primary hover:bg-primary/90",
-              )}
-            >
-              {confirmAction === "cancel" ? "Cancel Order" : confirmAction === "delete" ? "Delete Order" : "Restore Order"}
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={confirmAction === "cancel"}
+        onOpenChange={() => setConfirmAction(null)}
+        title="Cancel this order?"
+        description={`The order ${order.orderNumber} will be marked as cancelled and may no longer be processed. This can be undone.`}
+        confirm={{ label: "Cancel Order", onClick: handleCancel, variant: "warning" }}
+      />
+      <ConfirmDialog
+        open={confirmAction === "delete"}
+        onOpenChange={() => setConfirmAction(null)}
+        title="Delete order?"
+        description={`This will permanently delete ${order.orderNumber} and all associated payment records. This action cannot be undone.`}
+        confirm={{ label: "Delete Order", onClick: handleDelete, variant: "danger" }}
+      />
+      <ConfirmDialog
+        open={confirmAction === "restore"}
+        onOpenChange={() => setConfirmAction(null)}
+        title="Restore this order?"
+        description={`The order ${order.orderNumber} will be restored. Status will be reset to Not Contacted / Unpaid / Pending.`}
+        confirm={{ label: "Restore Order", onClick: handleRestore }}
+      />
     </div>
   );
 }

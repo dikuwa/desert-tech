@@ -18,6 +18,9 @@ import {
 import { toast } from "sonner";
 import { useCart } from "@/lib/store/cart";
 import { formatNAD } from "@/lib/data";
+
+// Fulfillment options
+type FulfillmentMethod = "collection" | "courier";
 import { cn } from "@/lib/utils";
 import { useDashboardStore } from "@/lib/store/dashboard";
 
@@ -43,6 +46,14 @@ export default function CheckoutPage() {
   const { items, getSubtotal, clearCart } = useCart();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [fulfillmentMethod, setFulfillmentMethod] = useState<FulfillmentMethod>("collection");
+  const [shippingName, setShippingName] = useState("");
+  const [shippingPhone, setShippingPhone] = useState("");
+  const [shippingAddress, setShippingAddress] = useState("");
+  const [shippingCity, setShippingCity] = useState("");
+  const [shippingRegion, setShippingRegion] = useState("");
+  const [deliveryNotes, setDeliveryNotes] = useState("");
+  const [courierFeeCents, setCourierFeeCents] = useState(0);
 
   const settings = useDashboardStore((s) => s.settings);
   const contactDetails = useDashboardStore((s) => s.contactDetails);
@@ -95,6 +106,16 @@ export default function CheckoutPage() {
           email: data.email || undefined,
           preferredContact: data.preferredContact,
           notes: data.notes || undefined,
+          fulfillmentMethod,
+          courierFeeCents: fulfillmentMethod === "courier" ? courierFeeCents : 0,
+          shipping: fulfillmentMethod === "courier" ? {
+            recipientName: shippingName || data.fullName,
+            phone: shippingPhone || data.phone,
+            address: shippingAddress,
+            city: shippingCity,
+            region: shippingRegion,
+            deliveryNotes: deliveryNotes || undefined,
+          } : undefined,
           items: items.map((i) => ({
             productId: i.productId,
             name: i.name,
@@ -411,13 +432,20 @@ export default function CheckoutPage() {
                 <span className="text-muted-foreground">Subtotal</span>
                 <span className="font-semibold text-foreground">{formatNAD(subtotal)}</span>
               </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Collection</span>
-                <span className="font-semibold text-success">Free</span>
-              </div>
+              {fulfillmentMethod === "collection" ? (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Collection</span>
+                  <span className="font-semibold text-success">Free</span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Courier Fee</span>
+                  <span className="font-semibold text-foreground">{formatNAD(courierFeeCents)}</span>
+                </div>
+              )}
               <div className="border-t border-border pt-2 flex items-center justify-between">
                 <span className="text-base font-bold text-foreground">Total</span>
-                <span className="text-lg font-bold text-foreground">{formatNAD(subtotal)}</span>
+                <span className="text-lg font-bold text-foreground">{formatNAD(subtotal + courierFeeCents)}</span>
               </div>
             </div>
 

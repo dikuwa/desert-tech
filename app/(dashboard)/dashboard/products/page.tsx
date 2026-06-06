@@ -2,10 +2,11 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Search, Plus, Download, ChevronLeft, ChevronRight, Package, AlertTriangle, Pencil, Trash2, AlertCircle, Check } from "lucide-react";
+import { Search, Plus, Download, ChevronLeft, ChevronRight, Package, AlertTriangle, Pencil, Trash2 } from "lucide-react";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { formatCents, getStatusBadgeClass, getStatusLabel } from "@/lib/dashboard-data";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
 
 const ITEMS_PER_PAGE = 10;
@@ -15,6 +16,7 @@ export default function ProductsPage() {
   const [availFilter, setAvailFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [deleteDialogName, setDeleteDialogName] = useState("");
 
   const products = useDashboardStore((s) => s.products);
   const deleteProduct = useDashboardStore((s) => s.deleteProduct);
@@ -146,16 +148,12 @@ export default function ProductsPage() {
                     <Link href={`/dashboard/products/${product.id}/edit`} className="text-xs font-semibold text-primary hover:text-primary/80 flex items-center gap-1">
                       <Pencil className="h-3 w-3" /> Edit
                     </Link>
-                    {deleteConfirm === product.id ? (
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => handleDelete(product.id)} className="rounded-md p-1 text-success hover:bg-success-soft transition-colors" title="Confirm delete"><AlertCircle className="h-3.5 w-3.5" /></button>
-                        <button onClick={() => setDeleteConfirm(null)} className="rounded-md p-1 text-muted-foreground hover:bg-muted transition-colors" title="Cancel"><Trash2 className="h-3.5 w-3.5" /></button>
-                      </div>
-                    ) : (
-                      <button onClick={() => setDeleteConfirm(product.id)} className="rounded-md p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors" title="Delete">
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    )}
+                    <button
+                      onClick={() => { setDeleteConfirm(product.id); setDeleteDialogName(product.name); }}
+                      className="rounded-md p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors" title="Delete"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -183,6 +181,14 @@ export default function ProductsPage() {
           </button>
         </div>
       )}
+
+      <ConfirmDialog
+        open={deleteConfirm !== null}
+        onOpenChange={() => setDeleteConfirm(null)}
+        title="Delete product?"
+        description={`${deleteDialogName} will be permanently removed from the store. This action cannot be undone.`}
+        confirm={{ label: "Delete Product", onClick: () => deleteConfirm && handleDelete(deleteConfirm), variant: "danger" }}
+      />
     </div>
   );
 }

@@ -31,7 +31,7 @@ const adminNavItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/orders", label: "Orders", icon: ShoppingBag },
   { href: "/dashboard/products", label: "Products", icon: Package },
-  { href: "/dashboard/categories", label: "Categories", icon: FolderOpen },
+  { href: "/dashboard/categories", label: "Categories & Brands", icon: FolderOpen },
   { href: "/dashboard/promotions", label: "Promotions", icon: Megaphone },
   { href: "/dashboard/customers", label: "Customers", icon: Users },
   { href: "/dashboard/follow-ups", label: "Follow-ups", icon: CalendarClock },

@@ -25,7 +25,9 @@ const iconDataUri = `data:image/svg+xml;base64,${readFileSync(iconPath).toString
 
 const styles = StyleSheet.create({
   page: {
-    padding: 34,
+    padding: 26,
+    paddingTop: 22,
+    paddingBottom: 22,
     fontFamily: "Helvetica",
     fontSize: 9,
     color: colors.text,
@@ -33,16 +35,16 @@ const styles = StyleSheet.create({
   },
   document: {
     border: `1px solid ${colors.border}`,
-    borderRadius: 8,
+    borderRadius: 6,
   },
   section: {
-    paddingHorizontal: 22,
-    paddingVertical: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
     borderBottom: `1px solid ${colors.border}`,
   },
   header: {
-    paddingHorizontal: 22,
-    paddingVertical: 18,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
     borderBottom: `1px solid ${colors.border}`,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -119,7 +121,7 @@ const styles = StyleSheet.create({
   },
   paymentBoxLast: { marginRight: 0 },
   paymentValue: { fontSize: 13, fontWeight: "bold", marginTop: 4 },
-  footer: { paddingHorizontal: 22, paddingVertical: 13, textAlign: "center" },
+  footer: { paddingHorizontal: 20, paddingVertical: 10, textAlign: "center" },
   footerText: { fontSize: 7, color: colors.muted, marginBottom: 2 },
 });
 

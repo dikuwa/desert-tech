@@ -16,10 +16,10 @@ import type { ProductData } from "@/components/storefront/product-card";
 import {
   products as allProducts,
   categories,
-  ALL_BRANDS,
   ALL_CONDITIONS,
   filterProducts,
 } from "@/lib/data";
+import { useDashboardStore } from "@/lib/store/dashboard";
 
 const ALL_AVAILABILITY = [
   { value: "in_stock", label: "In Stock" },
@@ -39,7 +39,15 @@ const SORT_OPTIONS = [
 export default function ShopPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const managedBrands = useDashboardStore((s) => s.brands);
   const [selectedBrand, setSelectedBrand] = useState("all");
+
+  // Use managed active brands, fall back to all unique brands from products
+  const BRANDS = useMemo(() => {
+    const activeManagedBrands = managedBrands.filter(b => b.isActive).sort((a, b) => a.sortOrder - b.sortOrder).map(b => b.name);
+    if (activeManagedBrands.length > 0) return activeManagedBrands;
+    return [...new Set(allProducts.map(p => p.brand))].sort();
+  }, [managedBrands]);
   const [selectedAvailability, setSelectedAvailability] = useState("all");
   const [selectedCondition, setSelectedCondition] = useState("all");
   const [selectedSort, setSelectedSort] = useState("featured");
@@ -172,7 +180,7 @@ export default function ShopPage() {
             >
               All Brands
             </button>
-            {ALL_BRANDS.map((brand) => (
+            {BRANDS.map((brand) => (
               <button
                 key={brand}
                 onClick={() => { setSelectedBrand(brand); setCurrentPage(1); }}

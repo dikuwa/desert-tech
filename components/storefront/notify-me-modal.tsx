@@ -156,7 +156,7 @@ export function NotifyMeModal({
   return (
     <Dialog open={open} onOpenChange={(newOpen) => { setOpen(newOpen); if (!newOpen) setTimeout(resetForm, 300); }}>
       <DialogTrigger asChild>{trigger ?? defaultTrigger}</DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md !px-7 !pt-7 !pb-6">
         <AnimatePresence mode="wait" initial={false}>
         {submitted ? (
           <motion.div
@@ -186,29 +186,34 @@ export function NotifyMeModal({
             transition={motionTransition(reducedMotion)}
             className="space-y-4"
           >
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-xl">
+            <DialogHeader className="gap-1.5">
+              <DialogTitle className="flex items-center gap-2.5 text-lg">
                 <Bell className="h-5 w-5 text-primary" />
                 Notify Me
               </DialogTitle>
-              <DialogDescription className="text-base">
+              <DialogDescription className="text-sm text-muted-foreground mt-1">
                 Let us know when <span className="font-semibold text-foreground">{productName}</span> is back.
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 py-2">
+            <div className="h-px bg-border/60 -mx-7 mb-4" />
+
+            <div className="space-y-5">
               {/* Name */}
               <div className="space-y-1.5">
-                <Label htmlFor="customerName">Your Name *</Label>
+                <Label htmlFor="customerName" className="text-xs font-medium text-foreground">Your Name *</Label>
                 <Input
                   id="customerName"
                   value={customerName}
                   onChange={(e) => { setCustomerName(e.target.value); setErrors((prev) => ({ ...prev, customerName: undefined })); }}
                   placeholder="e.g. John Mwale"
-                  className={cn(errors.customerName && "border-destructive")}
+                  className={cn(
+                    "h-[50px] border-border/70 px-4 text-sm focus:border-primary focus:ring-0 rounded-xl",
+                    errors.customerName && "border-destructive"
+                  )}
                 />
                 {errors.customerName && (
-                  <p className="flex items-center gap-1 text-xs text-destructive">
+                  <p className="flex items-center gap-1 text-xs text-destructive mt-1">
                     <AlertCircle className="h-3 w-3" />
                     {errors.customerName}
                   </p>
@@ -217,31 +222,32 @@ export function NotifyMeModal({
 
               {/* Preferred Contact */}
               <div className="space-y-1.5">
-                <Label>Preferred Contact Methods *</Label>
-                <div className="flex flex-wrap gap-2">
-                  {(["WhatsApp", "Phone", "Email"] as ContactMethod[]).map((method) => (
+                <Label className="text-xs font-medium text-foreground">Preferred Contact Methods *</Label>
+                <div className="flex rounded-xl border border-border/70 overflow-hidden">
+                  {(["WhatsApp", "Phone", "Email"] as ContactMethod[]).map((method, idx) => (
                     <button
                       key={method}
                       type="button"
                       aria-pressed={preferredContact.includes(method)}
                       onClick={() => toggleContactMethod(method)}
                       className={cn(
-                        "rounded-lg border px-3 py-2 text-xs font-semibold transition-colors",
+                        "flex-1 px-4 py-2.5 text-xs font-semibold transition-colors text-center",
+                        idx > 0 && "border-l border-border/70",
                         preferredContact.includes(method)
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-border text-muted-foreground hover:bg-muted hover:text-foreground",
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-background text-muted-foreground hover:bg-muted hover:text-foreground",
                       )}
                     >
                       {method}
                     </button>
                   ))}
                 </div>
-                {errors.preferredContact && <p className="text-xs text-destructive">{errors.preferredContact}</p>}
+                {errors.preferredContact && <p className="text-xs text-destructive mt-1">{errors.preferredContact}</p>}
               </div>
 
               {preferredContact.map((method) => (
                 <div key={method} className="space-y-1.5">
-                  <Label htmlFor={`contact-${method}`}>
+                  <Label htmlFor={`contact-${method}`} className="text-xs font-medium text-foreground">
                     {method === "Email" ? "Email Address *" : `${method} Number *`}
                   </Label>
                   <Input
@@ -256,10 +262,13 @@ export function NotifyMeModal({
                       }));
                     }}
                     placeholder={method === "Email" ? "e.g. john@example.com" : "e.g. +264 81 234 5678"}
-                    className={cn(errors.contactValues?.[method] && "border-destructive")}
+                    className={cn(
+                      "h-[50px] border-border/70 px-4 text-sm focus:border-primary focus:ring-0 rounded-xl",
+                      errors.contactValues?.[method] && "border-destructive"
+                    )}
                   />
                   {errors.contactValues?.[method] && (
-                    <p className="flex items-center gap-1 text-xs text-destructive">
+                    <p className="flex items-center gap-1 text-xs text-destructive mt-1">
                       <AlertCircle className="h-3 w-3" />
                       {errors.contactValues[method]}
                     </p>
@@ -269,12 +278,12 @@ export function NotifyMeModal({
 
               {/* Urgency */}
               <div className="space-y-1.5">
-                <Label htmlFor="urgency">How urgent is this? *</Label>
+                <Label htmlFor="urgency" className="text-xs font-medium text-foreground">How urgent is this? *</Label>
                 <Select value={urgency} onValueChange={(v) => { setUrgency(v as Urgency); setErrors((prev) => ({ ...prev, urgency: undefined })); }}>
-                  <SelectTrigger id="urgency">
+                  <SelectTrigger id="urgency" className="h-[50px] border-border/70 px-4 text-sm rounded-xl focus:border-primary focus:ring-0">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-xl border-border/70">
                     <SelectItem value="ASAP">
                       ASAP — Need it soon
                     </SelectItem>
@@ -287,7 +296,7 @@ export function NotifyMeModal({
                   </SelectContent>
                 </Select>
                 {errors.urgency && (
-                  <p className="flex items-center gap-1 text-xs text-destructive">
+                  <p className="flex items-center gap-1 text-xs text-destructive mt-1">
                     <AlertCircle className="h-3 w-3" />
                     {errors.urgency}
                   </p>
@@ -296,14 +305,14 @@ export function NotifyMeModal({
 
               {/* Note */}
               <div className="space-y-1.5">
-                <Label htmlFor="note">Note (optional)</Label>
+                <Label htmlFor="note" className="text-xs font-medium text-foreground">Note (optional)</Label>
                 <textarea
                   id="note"
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   placeholder="Any specific model, colour, or storage preference?"
                   rows={3}
-                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+                  className="flex w-full rounded-xl border border-border/70 bg-background px-4 py-3 text-sm placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none resize-none"
                 />
               </div>
             </div>
@@ -312,7 +321,7 @@ export function NotifyMeModal({
               onClick={handleSubmit}
               disabled={submitting}
               data-testid="notify-submit"
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-md active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+              className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-md active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {submitting ? (
                 <>
@@ -326,6 +335,10 @@ export function NotifyMeModal({
                 </>
               )}
             </button>
+
+            <p className="mt-3 text-center text-[11px] text-muted-foreground/70">
+              We&apos;ll only use this to notify you about product availability.
+            </p>
           </motion.div>
         )}
         </AnimatePresence>

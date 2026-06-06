@@ -19,6 +19,8 @@ export default function EditProductPage() {
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
 
+  const brands = useDashboardStore((s) => s.brands);
+
   const [form, setForm] = useState(() => {
     if (!product) return null;
     return {
@@ -150,8 +152,16 @@ export default function EditProductPage() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground">Brand <span className="text-destructive">*</span></label>
-                  <input value={form.brand} onChange={e => updateField("brand", e.target.value)}
-                    className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" placeholder="e.g. Apple, Dell" />
+                  <Select value={form.brand} onValueChange={v => updateField("brand", v)}>
+                    <SelectTrigger className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/30">
+                      <SelectValue placeholder="Select a brand" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-border shadow-lg z-[80]">
+                      {brands.filter(b => b.isActive).sort((a, b) => a.sortOrder - b.sortOrder).map(br => (
+                        <SelectItem key={br.id} value={br.name} className="text-sm cursor-pointer focus:bg-accent">{br.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground">Category <span className="text-destructive">*</span></label>

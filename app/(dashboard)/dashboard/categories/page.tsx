@@ -1,12 +1,56 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { FolderOpen, Plus, Pencil, Check, X, Trash2 } from "lucide-react";
+import { FolderOpen, Plus, Pencil, Check, X, Trash2, Tag, Image as ImageIcon, Eye, EyeOff, Star } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import type { DashboardBrand } from "@/lib/dashboard-data";
 
-export default function CategoriesPage() {
+export default function CategoriesBrandsPage() {
+  const [activeTab, setActiveTab] = useState<"categories" | "brands">("categories");
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Categories &amp; Brands</h1>
+        <p className="text-sm text-muted-foreground mt-1">Manage product categories and brands</p>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 rounded-xl border border-border bg-card p-1 w-fit">
+        <button
+          onClick={() => setActiveTab("categories")}
+          className={cn(
+            "flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition-colors",
+            activeTab === "categories"
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <FolderOpen className="h-3.5 w-3.5" />
+          Categories
+        </button>
+        <button
+          onClick={() => setActiveTab("brands")}
+          className={cn(
+            "flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition-colors",
+            activeTab === "brands"
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <Tag className="h-3.5 w-3.5" />
+          Brands
+        </button>
+      </div>
+
+      {activeTab === "categories" ? <CategoriesSection /> : <BrandsSection />}
+    </div>
+  );
+}
+
+function CategoriesSection() {
   const categories = useDashboardStore((s) => s.categories);
   const addCategory = useDashboardStore((s) => s.addCategory);
   const updateCategory = useDashboardStore((s) => s.updateCategory);
@@ -43,20 +87,17 @@ export default function CategoriesPage() {
   const handleDelete = (id: string) => {
     deleteCategory(id);
     setDeleteConfirm(null);
+    toast.success("Category deleted");
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Categories</h1>
-          <p className="text-sm text-muted-foreground mt-1">{categories.length} categories</p>
-        </div>
-      </div>
-
-      <Link href="#" onClick={(e: React.MouseEvent) => { e.preventDefault(); setShowAdd(true); }} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors w-fit">
+    <div className="space-y-4">
+      <button
+        onClick={() => setShowAdd(true)}
+        className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors w-fit"
+      >
         <Plus className="h-3.5 w-3.5" /> Add Category
-      </Link>
+      </button>
 
       {showAdd && (
         <div className="rounded-xl border border-border bg-card p-5 space-y-3">
@@ -97,9 +138,7 @@ export default function CategoriesPage() {
                       <p className="text-xs text-muted-foreground">{cat.description}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <span className={cn("h-2 w-2 rounded-full", cat.isActive ? "bg-success" : "bg-gray-300")} />
-                  </div>
+                  <span className={cn("h-2 w-2 rounded-full", cat.isActive ? "bg-success" : "bg-gray-300")} />
                 </div>
                 <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
                   <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -123,6 +162,181 @@ export default function CategoriesPage() {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function BrandsSection() {
+  const brands = useDashboardStore((s) => s.brands);
+  const addBrand = useDashboardStore((s) => s.addBrand);
+  const updateBrand = useDashboardStore((s) => s.updateBrand);
+  const deleteBrand = useDashboardStore((s) => s.deleteBrand);
+  const toggleBrandActive = useDashboardStore((s) => s.toggleBrandActive);
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editSortOrder, setEditSortOrder] = useState(0);
+  const [editIsFeatured, setEditIsFeatured] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newDesc, setNewDesc] = useState("");
+  const [newSortOrder, setNewSortOrder] = useState(brands.length + 1);
+  const [newIsFeatured, setNewIsFeatured] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
+  const sortedBrands = [...brands].sort((a, b) => a.sortOrder - b.sortOrder);
+  const activeBrands = brands.filter((b) => b.isActive);
+
+  const startEdit = (br: DashboardBrand) => {
+    setEditingId(br.id);
+    setEditName(br.name);
+    setEditDescription(br.description);
+    setEditSortOrder(br.sortOrder);
+    setEditIsFeatured(br.isFeatured);
+  };
+
+  const saveEdit = (id: string) => {
+    updateBrand(id, { name: editName, description: editDescription, sortOrder: editSortOrder, isFeatured: editIsFeatured });
+    setEditingId(null);
+    toast.success("Brand updated");
+  };
+
+  const handleAdd = () => {
+    if (!newName.trim()) return;
+    addBrand({
+      name: newName.trim(),
+      description: newDesc.trim(),
+      isActive: true,
+      isFeatured: newIsFeatured,
+      sortOrder: newSortOrder,
+    });
+    setNewName("");
+    setNewDesc("");
+    setNewSortOrder(brands.length + 2);
+    setNewIsFeatured(false);
+    setShowAdd(false);
+    toast.success("Brand created");
+  };
+
+  const handleDelete = (id: string) => {
+    deleteBrand(id);
+    setDeleteConfirm(null);
+    toast.success("Brand deleted");
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">{activeBrands.length} active &middot; {brands.length} total</p>
+        <button
+          onClick={() => setShowAdd(true)}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+        >
+          <Plus className="h-3.5 w-3.5" /> Add Brand
+        </button>
+      </div>
+
+      {showAdd && (
+        <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+          <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Brand name *"
+            className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm font-semibold focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
+          <input value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="Description (optional)"
+            className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Sort Order</label>
+              <input type="number" value={newSortOrder} onChange={e => setNewSortOrder(parseInt(e.target.value) || 0)}
+                className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
+            </div>
+            <div className="flex items-end pb-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={newIsFeatured} onChange={e => setNewIsFeatured(e.target.checked)}
+                  className="h-4 w-4 rounded border-border text-primary focus:ring-primary" />
+                <span className="text-xs text-foreground">Featured</span>
+              </label>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={handleAdd} className="flex items-center gap-1 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground"><Check className="h-3 w-3" /> Create</button>
+            <button onClick={() => { setShowAdd(false); setNewName(""); setNewDesc(""); }} className="flex items-center gap-1 rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground"><X className="h-3 w-3" /> Cancel</button>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        {sortedBrands.map((br) => (
+          <div key={br.id} className={cn("rounded-xl border bg-card p-4 transition-all hover:shadow-sm", br.isActive ? "border-border" : "border-dashed border-gray-200 opacity-70")}>
+            {editingId === br.id ? (
+              <div className="space-y-3">
+                <input value={editName} onChange={e => setEditName(e.target.value)}
+                  className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm font-semibold focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                <input value={editDescription} onChange={e => setEditDescription(e.target.value)}
+                  className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Sort Order</label>
+                    <input type="number" value={editSortOrder} onChange={e => setEditSortOrder(parseInt(e.target.value) || 0)}
+                      className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                  </div>
+                  <div className="flex items-end pb-1">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={editIsFeatured} onChange={e => setEditIsFeatured(e.target.checked)}
+                        className="h-4 w-4 rounded border-border text-primary focus:ring-primary" />
+                      <span className="text-xs text-foreground">Featured</span>
+                    </label>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => saveEdit(br.id)} className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"><Check className="h-3 w-3" /> Save</button>
+                  <button onClick={() => setEditingId(null)} className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground"><X className="h-3 w-3" /> Cancel</button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-muted-foreground">
+                      <Tag className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <h3 className="text-sm font-semibold text-foreground truncate">{br.name}</h3>
+                        {br.isFeatured && <Star className="h-3 w-3 text-warning shrink-0" />}
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate">{br.description}</p>
+                    </div>
+                  </div>
+                  <span className={cn("h-2 w-2 rounded-full shrink-0 mt-2", br.isActive ? "bg-success" : "bg-gray-300")} />
+                </div>
+                <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
+                  <div className="text-xs text-muted-foreground">
+                    <span>Order: {br.sortOrder}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => startEdit(br)} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => toggleBrandActive(br.id)} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title={br.isActive ? "Deactivate" : "Activate"}>
+                      {br.isActive ? <X className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
+                    </button>
+                    {deleteConfirm === br.id ? (
+                      <button onClick={() => handleDelete(br.id)} className="rounded-md p-1.5 text-success hover:bg-success-soft transition-colors" title="Confirm delete"><Trash2 className="h-3.5 w-3.5" /></button>
+                    ) : (
+                      <button onClick={() => setDeleteConfirm(br.id)} className="rounded-md p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {brands.length === 0 && (
+        <div className="flex flex-col items-center py-16 text-center rounded-xl border border-dashed border-border">
+          <Tag className="h-10 w-10 text-muted-foreground/40 mb-3" />
+          <p className="text-sm font-medium text-muted-foreground">No brands yet</p>
+        </div>
+      )}
     </div>
   );
 }

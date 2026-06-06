@@ -7,6 +7,8 @@ import Link from "next/link";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { MoneyInput } from "@/components/ui/money-input";
 import { useDashboardStore } from "@/lib/store/dashboard";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -21,6 +23,7 @@ export default function NewProductPage() {
   const router = useRouter();
   const addProduct = useDashboardStore((s) => s.addProduct);
   const products = useDashboardStore((s) => s.products);
+  const brands = useDashboardStore((s) => s.brands);
   const [submitting, setSubmitting] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);    const [form, setForm] = useState({
@@ -150,7 +153,16 @@ export default function NewProductPage() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground">Brand <span className="text-destructive">*</span></label>
-                  <input value={form.brand} onChange={e => handleNameOrBrandChange("brand", e.target.value)} className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" placeholder="e.g. Apple, Dell" />
+                  <Select value={form.brand} onValueChange={v => handleNameOrBrandChange("brand", v)}>
+                    <SelectTrigger className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/30">
+                      <SelectValue placeholder="Select a brand" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-border shadow-lg z-[80]">
+                      {brands.filter(b => b.isActive).sort((a, b) => a.sortOrder - b.sortOrder).map(br => (
+                        <SelectItem key={br.id} value={br.name} className="text-sm cursor-pointer focus:bg-accent">{br.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground">Category <span className="text-destructive">*</span></label>

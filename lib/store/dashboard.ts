@@ -5,6 +5,7 @@ import {
   mockProducts as initialProducts,
   mockCustomers as initialCustomers,
   mockCategories as initialCategories,
+  mockBrands as initialBrands,
   mockPromotions as initialPromotions,
   mockStaff as initialStaff,
   mockFollowUps as initialFollowUps,
@@ -22,6 +23,7 @@ import type {
   DashboardProduct,
   DashboardCustomer,
   DashboardCategory,
+  DashboardBrand,
   DashboardPromotion,
   DashboardStaff,
   DashboardFollowUp,
@@ -46,6 +48,7 @@ let nextStaffId = 10;
 let nextFollowUpId = 10;
 let nextNotificationId = 10;
 let nextBackInStockId = 10;
+let nextBrandId = 14;
 let nextPaymentId = 10;
 let nextContactDetailId = 10;
 let nextBankDetailId = 10;
@@ -83,6 +86,13 @@ interface DashboardState {
   deleteCategory: (id: string) => void;
   reorderCategory: (id: string, newOrder: number) => void;
   toggleCategoryActive: (id: string) => void;
+
+  // Brands CRUD
+  brands: DashboardBrand[];
+  addBrand: (b: Omit<DashboardBrand, "id" | "slug">) => void;
+  updateBrand: (id: string, data: Partial<DashboardBrand>) => void;
+  deleteBrand: (id: string) => void;
+  toggleBrandActive: (id: string) => void;
 
   // Promotions CRUD
   addPromotion: (p: Omit<DashboardPromotion, "id" | "slug" | "productCount">) => void;
@@ -227,6 +237,7 @@ export const useDashboardStore = create<DashboardState>()(
       followUps: initialFollowUps,
       notifications: initialNotifications,
       quotations: initialQuotations,
+      brands: initialBrands,
       payments: initialPayments,
       contactDetails: defaultContactDetails,
       bankDetails: defaultBankDetails,
@@ -467,6 +478,31 @@ export const useDashboardStore = create<DashboardState>()(
         set((s) => ({
           categories: s.categories.map((c) =>
             c.id === id ? { ...c, isActive: !c.isActive } : c
+          ),
+        })),
+
+      // === Brands ===
+      addBrand: (b) => {
+        const id = `br${nextBrandId++}`;
+        const newBrand: DashboardBrand = {
+          ...b,
+          id,
+          slug: slugify(b.name),
+        };
+        set((s) => ({ brands: [...s.brands, newBrand] }));
+      },
+      updateBrand: (id, data) =>
+        set((s) => ({
+          brands: s.brands.map((br) => (br.id === id ? { ...br, ...data } : br)),
+        })),
+      deleteBrand: (id) =>
+        set((s) => ({
+          brands: s.brands.filter((br) => br.id !== id),
+        })),
+      toggleBrandActive: (id) =>
+        set((s) => ({
+          brands: s.brands.map((br) =>
+            br.id === id ? { ...br, isActive: !br.isActive } : br
           ),
         })),
 
