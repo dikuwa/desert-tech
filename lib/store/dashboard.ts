@@ -266,7 +266,8 @@ export const useDashboardStore = create<DashboardState>()(
       auditLogs: [],
 
       // === Settings ===
-      updateSettings: (data) =>
+      updateSettings: (data) => {
+        const changedFields = Object.keys(data).join(", ");
         set((s) => {
           const updatedSettings = { ...s.settings, ...data };
           // Sync settings fields back to contact details if they changed
@@ -289,7 +290,9 @@ export const useDashboardStore = create<DashboardState>()(
             }
           }
           return { settings: updatedSettings, contactDetails: updatedDetails };
-        }),
+        });
+        get().addAuditLog({ action: `Settings updated: ${changedFields}`, entityType: "settings", entityId: "store-settings", entityLabel: "Store Settings" });
+      },
 
       // === Contact Details ===
       moveContactDetail: (id, direction) =>
@@ -914,6 +917,7 @@ export const useDashboardStore = create<DashboardState>()(
           updatedAt: now,
         };
         set((s) => ({ quotations: [newQuotation, ...s.quotations] }));
+        get().addAuditLog({ action: "Quotation created", entityType: "quotation", entityId: id, entityLabel: quotationNumber });
         return newQuotation;
       },
       updateQuotation: (id, data) => {
@@ -951,19 +955,27 @@ export const useDashboardStore = create<DashboardState>()(
 
       // === Customers ===
       addCustomer: (c) => {
-        set((s) => ({
-          customers: [
-            {
-              ...c,
-              preferredContact: c.preferredContact || ["WhatsApp"],
-              id: `c${s.customers.length + 10}`,
-              orderCount: 0,
-              totalSpentCents: 0,
-              createdAt: new Date().toISOString().split("T")[0],
-            },
-            ...s.customers,
-          ],
-        }));
+        let newId = "";
+        let fullName = "";
+        set((s) => {
+          const id = `c${s.customers.length + 10}`;
+          newId = id;
+          fullName = c.fullName || c.email || id;
+          return {
+            customers: [
+              {
+                ...c,
+                preferredContact: c.preferredContact || ["WhatsApp"],
+                id,
+                orderCount: 0,
+                totalSpentCents: 0,
+                createdAt: new Date().toISOString().split("T")[0],
+              },
+              ...s.customers,
+            ],
+          };
+        });
+        get().addAuditLog({ action: "Customer created", entityType: "customer", entityId: newId, entityLabel: fullName });
       },
       updateCustomer: (id, data) => {
         const { customers } = get();

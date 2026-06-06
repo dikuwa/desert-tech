@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Search, Plus, Download, ChevronLeft, ChevronRight, Package, AlertTriangle, Pencil, Trash2 } from "lucide-react";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useDashboardStore } from "@/lib/store/dashboard";
@@ -12,12 +13,13 @@ import { cn } from "@/lib/utils";
 const ITEMS_PER_PAGE = 10;
 
 export default function ProductsPage() {
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => searchParams.get("sku") || "");
   const [availFilter, setAvailFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [deleteDialogName, setDeleteDialogName] = useState("");
 
+  const searchParams = useSearchParams();
   const products = useDashboardStore((s) => s.products);
   const deleteProduct = useDashboardStore((s) => s.deleteProduct);
   const updateProduct = useDashboardStore((s) => s.updateProduct);

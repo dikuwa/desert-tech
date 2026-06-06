@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { History, Search, ChevronLeft, ChevronRight, Clock, User, Tag } from "lucide-react";
+import { useState, useMemo, useCallback } from "react";
+import Link from "next/link";
+import { History, Search, ChevronLeft, ChevronRight, Clock, User, Copy, Check, ExternalLink } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +19,86 @@ const ENTITY_COLORS: Record<string, string> = {
   promotion: "bg-pink-100 text-pink-700 border-pink-200",
   settings: "bg-gray-100 text-gray-700 border-gray-200",
 };
+
+// Map entity types to detail pages for clickable links
+const ENTITY_ROUTES: Record<string, (entityId: string) => string> = {
+  order: (id) => `/dashboard/orders/${id}`,
+  quotation: (id) => `/dashboard/quotations/${id}`,
+  product: (id) => `/dashboard/products/${id}/edit`,
+  customer: () => `/dashboard/customers`,
+  payment: () => `/dashboard/payments`,
+  staff: () => `/dashboard/staff`,
+  category: () => `/dashboard/categories`,
+  promotion: () => `/dashboard/promotions`,
+  settings: () => `/dashboard/settings`,
+};
+
+function CopyButton({ text, label }: { text: string; label: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {}
+  }, [text]);
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground/60 hover:text-foreground hover:bg-muted transition-colors"
+      title={`Copy ${label}`}
+    >
+      {copied ? (
+        <>
+          <Check className="h-2.5 w-2.5 text-green-500" />
+          <span className="text-green-500">Copied</span>
+        </>
+      ) : (
+        <>
+          <Copy className="h-2.5 w-2.5" />
+          <span className="truncate max-w-[80px]">{text}</span>
+        </>
+      )}
+    </button>
+  );
+}
+
+function EntityLabel({ entry }: { entry: { entityType: string; entityId: string; entityLabel: string } }) {
+  const route = ENTITY_ROUTES[entry.entityType]?.(entry.entityId);
+
+  return (
+    <div className="md:w-52 min-w-0 space-y-0.5">
+      <div className="flex items-center gap-1.5">
+        {route ? (
+          <Link
+            href={route}
+            className="text-xs font-medium text-foreground hover:text-primary truncate flex items-center gap-1 transition-colors"
+            title={`View ${entry.entityType}: ${entry.entityLabel}`}
+          >
+            {entry.entityLabel}
+            <ExternalLink className="h-2.5 w-2.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </Link>
+        ) : (
+          <span className="text-xs font-medium text-foreground truncate">{entry.entityLabel}</span>
+        )}
+      </div>
+      <div className="flex items-center gap-2">
+        <CopyButton text={entry.entityId} label="Entity ID" />
+        {/* Quick link to search products by this entity label if it looks like a SKU */}
+        {(entry.entityType === "product" && entry.entityLabel.match(/DT-/)) && (
+          <Link
+            href={`/dashboard/products?sku=${encodeURIComponent(entry.entityLabel)}`}
+            className="text-[10px] text-primary/70 hover:text-primary font-mono underline underline-offset-2 transition-colors"
+          >
+            Find in Products
+          </Link>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function AuditLogPage() {
   const auditLogs = useDashboardStore((s) => s.auditLogs);
@@ -61,7 +142,7 @@ export default function AuditLogPage() {
           Audit Log
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          {auditLogs.length} total entries &middot; Tracked actions across orders, quotations, products, payments, and customers
+          {auditLogs.length} total entries &middot; Click entity labels to navigate &middot; Copy IDs with the copy button
         </p>
       </div>
 
@@ -72,7 +153,7 @@ export default function AuditLogPage() {
           <input
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search by action, entity, or staff member..."
+            placeholder="Search by action, entity, ID, or staff member..."
             className="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
           />
         </div>
@@ -117,7 +198,7 @@ export default function AuditLogPage() {
           <div className="hidden md:flex items-center gap-3 px-5 py-3 border-b border-border bg-muted/30 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             <span className="w-20">Entity</span>
             <span className="flex-1">Action</span>
-            <span className="w-44">Entity</span>
+            <span className="w-52">Entity</span>
             <span className="w-32">Staff</span>
             <span className="w-28 text-right">Timestamp</span>
           </div>
@@ -127,7 +208,7 @@ export default function AuditLogPage() {
             {paginated.map((entry) => (
               <div
                 key={entry.id}
-                className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 px-5 py-3.5 hover:bg-muted/20 transition-colors"
+                className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 px-5 py-3 hover:bg-muted/20 transition-colors group"
               >
                 {/* Entity type badge */}
                 <div className="md:w-20">
@@ -147,23 +228,18 @@ export default function AuditLogPage() {
                   )}
                 </div>
 
-                {/* Entity label */}
-                <div className="md:w-44 min-w-0">
-                  <p className="text-xs font-mono text-muted-foreground truncate" title={entry.entityLabel}>
-                    {entry.entityLabel}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground/60 font-mono">{entry.entityId}</p>
-                </div>
+                {/* Entity label — clickable with copy */}
+                <EntityLabel entry={entry} />
 
                 {/* Staff */}
                 <div className="md:w-32 flex items-center gap-1.5">
-                  <User className="h-3 w-3 text-muted-foreground" />
-                  <span className="text-xs text-foreground">{entry.performedBy}</span>
+                  <User className="h-3 w-3 text-muted-foreground shrink-0" />
+                  <span className="text-xs text-foreground truncate">{entry.performedBy}</span>
                 </div>
 
                 {/* Timestamp */}
                 <div className="md:w-28 text-right flex items-center justify-end gap-1.5">
-                  <Clock className="h-3 w-3 text-muted-foreground" />
+                  <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
                   <time className="text-xs text-muted-foreground whitespace-nowrap">
                     {new Date(entry.timestamp).toLocaleString("en-NA", {
                       month: "short",
