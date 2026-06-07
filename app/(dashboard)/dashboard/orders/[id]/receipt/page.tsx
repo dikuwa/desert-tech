@@ -252,6 +252,7 @@ export default function OrderReceiptPage() {
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .no-print { display: none !important; }
           .print-only { display: block !important; }
+          .document-item-row { break-inside: avoid; page-break-inside: avoid; }
         }
         .print-only { display: none; }
       `}</style>
@@ -334,7 +335,7 @@ export default function OrderReceiptPage() {
               ? order.items
               : [{ name: `${order.itemCount} item${order.itemCount !== 1 ? "s" : ""}`, quantity: order.itemCount, unitPriceCents: order.subtotalCents / order.itemCount, sku: undefined }]
             ).map((item, index) => (
-              <div key={`${item.name}-${index}`} className="flex items-center text-sm">
+              <div key={`${item.name}-${index}`} className="document-item-row flex items-center text-sm">
                 <span className="flex-[2] text-foreground">{item.name}</span>
                 <span className="w-24 text-center"><span className="text-[11px] font-mono text-muted-foreground">{item.sku || "—"}</span></span>
                 <span className="w-12 text-center text-muted-foreground">{item.quantity}</span>

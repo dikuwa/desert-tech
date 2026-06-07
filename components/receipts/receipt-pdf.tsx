@@ -255,7 +255,7 @@ export function ReceiptPDF({
               <Text style={[styles.headerText, styles.total]}>Total</Text>
             </View>
             {items.map((item, index) => (
-              <View key={`${item.name}-${index}`} style={styles.tableRow}>
+              <View key={`${item.name}-${index}`} style={styles.tableRow} wrap={false}>
                 <Text style={[styles.cell, styles.description]}>{item.name}</Text>
                 <Text style={[styles.cell, styles.sku, { fontSize: 7 }]}>{item.sku || "—"}</Text>
                 <Text style={[styles.cell, styles.qty]}>{item.quantity}</Text>

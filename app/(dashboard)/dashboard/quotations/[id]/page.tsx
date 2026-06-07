@@ -183,6 +183,7 @@ export default function QuotationDetailPage() {
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .no-print { display: none !important; }
           .print-only { display: block !important; }
+          .document-item-row { break-inside: avoid; page-break-inside: avoid; }
         }
         .print-only { display: none; }
       `}</style>
@@ -263,7 +264,7 @@ export default function QuotationDetailPage() {
             </div>
             {/* Items */}
             {quotation.items.map((item, idx) => (
-              <div key={idx} className="flex items-center text-sm py-1">
+              <div key={idx} className="document-item-row flex items-center text-sm py-1">
                 <span className="flex-[2] text-foreground">{item.name}</span>
                 <span className="w-24 text-center"><span className="text-[11px] font-mono text-muted-foreground">{item.sku || "—"}</span></span>
                 <span className="w-12 text-center text-muted-foreground">{item.quantity}</span>
