@@ -16,14 +16,18 @@ import { InvitationStatus, UserRole } from "@/lib/enums";
 import { Permissions, type Permission } from "@/lib/permissions";
 import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
 import { sendInvitationEmail } from "@/lib/email";
+import { sendInvitationWhatsApp } from "@/lib/whatsapp";
 
 // Validation schema for creating invitations
 const createInvitationSchema = z.object({
-  email: z.string().email("Valid email required"),
+  email: z.string().email("Valid email required").optional().or(z.literal("")),
   name: z.string().min(2, "Name must be at least 2 characters"),
   role: z.enum([UserRole.ADMIN, UserRole.STAFF]),
   permissions: z.array(z.enum(Object.values(Permissions) as [Permission, ...Permission[]])).optional(),
   note: z.string().optional(),
+  phone: z.string().max(50).optional(),
+}).refine((data) => data.email || data.phone, {
+  message: "Either email or phone number is required",
 });
 
 /**
@@ -134,7 +138,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { email, name, role, permissions, note } = result.data;
+    const { email: rawEmail, name, role, permissions, note, phone } = result.data;
+
+    // If no email provided but phone is, use a unique placeholder
+    const email = rawEmail || `wa-${(phone || "").replace(/[^\d]/g, "")}@invite.desertechnam.com`;
 
     if (role === UserRole.ADMIN && currentUser.role !== UserRole.OWNER) {
       return NextResponse.json(
@@ -180,7 +187,7 @@ export async function POST(req: NextRequest) {
       note,
     });
 
-    // Send invitation email
+    // Send invitation via email
     try {
       await sendInvitationEmail({
         to: email,
@@ -192,7 +199,16 @@ export async function POST(req: NextRequest) {
       });
     } catch (emailError) {
       console.error("[API] Failed to send invitation email:", emailError);
-      // Don't fail the request if email fails - admin can resend
+    }
+
+    // Send invitation via WhatsApp if phone provided
+    if (phone) {
+      try {
+        const phoneClean = phone.replace(/^\+/, "");
+        await sendInvitationWhatsApp(phoneClean, name, token, role, currentUser.name);
+      } catch (whatsappError) {
+        console.error("[API] Failed to send invitation WhatsApp:", whatsappError);
+      }
     }
 
     return NextResponse.json(

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Loader2, Mail, UserPlus, SwitchCamera } from "lucide-react";
+import { Check, Loader2, Mail, MessageCircle, UserPlus } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -180,8 +180,6 @@ export function CreateUserDialog({
   currentUserRole,
   onSuccess,
 }: CreateUserDialogProps) {
-  const [method, setMethod] = useState<"invite" | "create">("invite");
-
   // Common fields
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -253,8 +251,8 @@ export function CreateUserDialog({
     );
   };
 
-  // Handle invite by email
-  const handleInvite = async (event: React.FormEvent) => {
+  // Handle invite by email (with optional WhatsApp)
+  const handleEmailInvite = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);
     setError(null);
@@ -276,7 +274,51 @@ export function CreateUserDialog({
       if (!response.ok) throw new Error(data.error || "Failed to send invitation");
 
       setSuccess(true);
-      setSuccessMessage(`Invitation sent to ${email}`);
+      const sentVia = phone.trim() ? "via Email & WhatsApp" : "via Email";
+      setSuccessMessage(`Invitation sent to ${name} ${sentVia}`);
+      onSuccess?.();
+      setTimeout(() => {
+        reset();
+        onOpenChange(false);
+      }, 1500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to send invitation");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle invite by WhatsApp (with optional email)
+  const handleWhatsAppInvite = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    if (!phone.trim()) {
+      setError("Phone number is required for WhatsApp invitation");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/invitations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          email: email.trim() ? email.toLowerCase().trim() : undefined,
+          role,
+          permissions: selectedPermissions,
+          jobTitle: jobTitle.trim() || undefined,
+          phone: phone.trim(),
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Failed to send invitation");
+
+      setSuccess(true);
+      const sentVia = email.trim() ? "via WhatsApp & Email" : "via WhatsApp";
+      setSuccessMessage(`Invitation sent to ${name} ${sentVia}`);
       onSuccess?.();
       setTimeout(() => {
         reset();
@@ -332,6 +374,81 @@ export function CreateUserDialog({
     }
   };
 
+  // Common permission section rendered in all tabs
+  const PermissionsSection = () => (
+    <div className="space-y-3 border-t border-border pt-4">
+      <div className="flex items-center justify-between">
+        <Label className="text-sm font-semibold">Permissions</Label>
+        <span className="text-xs text-muted-foreground">
+          {selectedPermissions.length} selected
+        </span>
+      </div>
+      <p className="text-xs text-muted-foreground -mt-1">
+        Permissions are based on the selected role template. Toggle individual permissions below.
+      </p>
+
+      <div className="max-h-48 space-y-2 overflow-y-auto pr-1">
+        {PERMISSION_GROUPS.map((group) => {
+          // Hide Users/Payments/Finance groups if current user isn't OWNER
+          const sensitiveGroups = ["Users", "Payments", "Audit Log"];
+          if (
+            currentUserRole !== UserRole.OWNER &&
+            sensitiveGroups.includes(group.label) &&
+            role !== UserRole.OWNER
+          ) {
+            const visiblePerms = group.permissions.filter((p) =>
+              DEFAULT_ROLE_PERMISSIONS[role]?.includes(p.key)
+            );
+            if (visiblePerms.length === 0) return null;
+            return (
+              <div key={group.label} className="rounded-lg border border-border bg-muted/20 p-3">
+                <p className="text-xs font-medium text-muted-foreground mb-2">{group.label}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {visiblePerms.map((perm) => (
+                    <button
+                      key={perm.key}
+                      type="button"
+                      disabled
+                      className="rounded-md bg-muted px-2 py-1 text-[11px] font-medium text-muted-foreground cursor-not-allowed"
+                    >
+                      {perm.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <div key={group.label} className="rounded-lg border border-border bg-muted/20 p-3">
+              <p className="text-xs font-medium text-muted-foreground mb-2">{group.label}</p>
+              <div className="flex flex-wrap gap-1.5">
+                {group.permissions.map((perm) => {
+                  const isSelected = selectedPermissions.includes(perm.key);
+                  return (
+                    <button
+                      key={perm.key}
+                      type="button"
+                      onClick={() => togglePermission(perm.key)}
+                      className={`rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
+                        isSelected
+                          ? "bg-primary/10 text-primary border border-primary/20"
+                          : "bg-muted text-muted-foreground hover:text-foreground hover:bg-accent border border-transparent"
+                      }`}
+                    >
+                      {isSelected && <Check className="inline h-3 w-3 mr-0.5" />}
+                      {perm.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
   return (
     <Dialog
       open={open}
@@ -355,119 +472,268 @@ export function CreateUserDialog({
           </div>
         ) : (
           <>
-            {/* Method toggle */}
-            <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 p-1">
-              <button
-                type="button"
-                onClick={() => setMethod("invite")}
-                className={`flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-all ${
-                  method === "invite"
-                    ? "bg-card text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Mail className="h-4 w-4" />
-                Invite by Email
-              </button>
-              <button
-                type="button"
-                onClick={() => setMethod("create")}
-                className={`flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-all ${
-                  method === "create"
-                    ? "bg-card text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <UserPlus className="h-4 w-4" />
-                Create Account
-              </button>
-            </div>
-
             {error && (
               <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
                 {error}
               </div>
             )}
 
-            <form
-              onSubmit={method === "invite" ? handleInvite : handleCreate}
-              className="space-y-4"
-            >
-              {/* Basic Info */}
-              <div className="space-y-2">
-                <Label htmlFor="user-name">Full Name</Label>
-                <Input
-                  id="user-name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. John Doe"
-                  required
-                />
-              </div>
+            <Tabs defaultValue="email" className="w-full">
+              <TabsList className="w-full grid grid-cols-3">
+                <TabsTrigger value="email" className="gap-1.5">
+                  <Mail className="h-3.5 w-3.5" />
+                  Email
+                </TabsTrigger>
+                <TabsTrigger value="whatsapp" className="gap-1.5">
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  WhatsApp
+                </TabsTrigger>
+                <TabsTrigger value="account" className="gap-1.5">
+                  <UserPlus className="h-3.5 w-3.5" />
+                  Account
+                </TabsTrigger>
+              </TabsList>
 
-              <div className="space-y-2">
-                <Label htmlFor="user-email">Email Address</Label>
-                <Input
-                  id="user-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="e.g. john@company.com"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="user-job-title">Job Title (optional)</Label>
-                  <Input
-                    id="user-job-title"
-                    value={jobTitle}
-                    onChange={(e) => setJobTitle(e.target.value)}
-                    placeholder="e.g. Sales Associate"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="user-phone">Phone (optional)</Label>
-                  <Input
-                    id="user-phone"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="e.g. +264 81 123 4567"
-                  />
-                </div>
-              </div>
-
-              {/* Role */}
-              <div className="space-y-2">
-                <Label>Role</Label>
-                <Select
-                  value={role}
-                  onValueChange={(r) => handleRoleChange(r as UserRole)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={UserRole.STAFF}>Staff</SelectItem>
-                    <SelectItem value={UserRole.ADMIN}>Admin</SelectItem>
-                    {currentUserRole === UserRole.OWNER && (
-                      <SelectItem value={UserRole.OWNER}>Owner</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Role determines the default permission template. Permissions can be customized below.
-                </p>
-              </div>
-
-              {/* Conditional password fields for Create method */}
-              {method === "create" && (
-                <>
+              {/* ─── EMAIL TAB ─── */}
+              <TabsContent value="email">
+                <form onSubmit={handleEmailInvite} className="space-y-4 pt-2">
+                  <p className="text-xs text-muted-foreground">
+                    Send an invitation link to the user&apos;s email address. They will create their own password.
+                  </p>
                   <div className="space-y-2">
-                    <Label htmlFor="user-password">Temporary Password</Label>
+                    <Label htmlFor="email-name">Full Name</Label>
                     <Input
-                      id="user-password"
+                      id="email-name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="e.g. John Doe"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email-address">Email Address</Label>
+                    <Input
+                      id="email-address"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="e.g. john@company.com"
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="email-job-title">Job Title</Label>
+                      <Input
+                        id="email-job-title"
+                        value={jobTitle}
+                        onChange={(e) => setJobTitle(e.target.value)}
+                        placeholder="e.g. Sales Associate"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email-phone">Phone (optional)</Label>
+                      <Input
+                        id="email-phone"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="e.g. +264 81 123 4567"
+                      />
+                      <p className="text-[10px] text-muted-foreground">Also sends invite via WhatsApp</p>
+                    </div>
+                  </div>
+
+                  {/* Role */}
+                  <div className="space-y-2">
+                    <Label>Role</Label>
+                    <Select
+                      value={role}
+                      onValueChange={(r) => handleRoleChange(r as UserRole)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={UserRole.STAFF}>Staff</SelectItem>
+                        <SelectItem value={UserRole.ADMIN}>Admin</SelectItem>
+                        {currentUserRole === UserRole.OWNER && (
+                          <SelectItem value={UserRole.OWNER}>Owner</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <PermissionsSection />
+
+                  <div className="flex justify-end gap-2 pt-2 border-t border-border">
+                    <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={loading}>
+                      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Send Invite
+                    </Button>
+                  </div>
+                </form>
+              </TabsContent>
+
+              {/* ─── WHATSAPP TAB ─── */}
+              <TabsContent value="whatsapp">
+                <form onSubmit={handleWhatsAppInvite} className="space-y-4 pt-2">
+                  <p className="text-xs text-muted-foreground">
+                    Send an invitation link via WhatsApp. The user will receive the link on their phone.
+                  </p>
+                  <div className="space-y-2">
+                    <Label htmlFor="wa-name">Full Name</Label>
+                    <Input
+                      id="wa-name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="e.g. John Doe"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="wa-phone">Phone Number</Label>
+                    <Input
+                      id="wa-phone"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="e.g. +264 81 123 4567"
+                      required
+                    />
+                    <p className="text-[10px] text-muted-foreground">The invitation link will be sent here</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="wa-email">Email (optional)</Label>
+                    <Input
+                      id="wa-email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="e.g. john@company.com"
+                    />
+                    <p className="text-[10px] text-muted-foreground">Also sends an email invitation if provided</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="wa-job-title">Job Title</Label>
+                      <Input
+                        id="wa-job-title"
+                        value={jobTitle}
+                        onChange={(e) => setJobTitle(e.target.value)}
+                        placeholder="e.g. Sales Associate"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Role */}
+                  <div className="space-y-2">
+                    <Label>Role</Label>
+                    <Select
+                      value={role}
+                      onValueChange={(r) => handleRoleChange(r as UserRole)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={UserRole.STAFF}>Staff</SelectItem>
+                        <SelectItem value={UserRole.ADMIN}>Admin</SelectItem>
+                        {currentUserRole === UserRole.OWNER && (
+                          <SelectItem value={UserRole.OWNER}>Owner</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <PermissionsSection />
+
+                  <div className="flex justify-end gap-2 pt-2 border-t border-border">
+                    <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={loading}>
+                      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Send via WhatsApp
+                    </Button>
+                  </div>
+                </form>
+              </TabsContent>
+
+              {/* ─── ACCOUNT TAB ─── */}
+              <TabsContent value="account">
+                <form onSubmit={handleCreate} className="space-y-4 pt-2">
+                  <p className="text-xs text-muted-foreground">
+                    Create a ready-to-use account with a temporary password.
+                  </p>
+                  <div className="space-y-2">
+                    <Label htmlFor="create-name">Full Name</Label>
+                    <Input
+                      id="create-name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="e.g. John Doe"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="create-email">Email Address</Label>
+                    <Input
+                      id="create-email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="e.g. john@company.com"
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="create-job-title">Job Title</Label>
+                      <Input
+                        id="create-job-title"
+                        value={jobTitle}
+                        onChange={(e) => setJobTitle(e.target.value)}
+                        placeholder="e.g. Sales Associate"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="create-phone">Phone</Label>
+                      <Input
+                        id="create-phone"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="e.g. +264 81 123 4567"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Role */}
+                  <div className="space-y-2">
+                    <Label>Role</Label>
+                    <Select
+                      value={role}
+                      onValueChange={(r) => handleRoleChange(r as UserRole)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={UserRole.STAFF}>Staff</SelectItem>
+                        <SelectItem value={UserRole.ADMIN}>Admin</SelectItem>
+                        {currentUserRole === UserRole.OWNER && (
+                          <SelectItem value={UserRole.OWNER}>Owner</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Password fields */}
+                  <div className="space-y-2">
+                    <Label htmlFor="create-password">Temporary Password</Label>
+                    <Input
+                      id="create-password"
                       type="password"
                       minLength={10}
                       value={password}
@@ -477,9 +743,9 @@ export function CreateUserDialog({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="user-confirm-password">Confirm Temporary Password</Label>
+                    <Label htmlFor="create-confirm-password">Confirm Password</Label>
                     <Input
-                      id="user-confirm-password"
+                      id="create-confirm-password"
                       type="password"
                       minLength={10}
                       value={confirmPassword}
@@ -491,93 +757,21 @@ export function CreateUserDialog({
                       The user will be required to change this password on first login.
                     </p>
                   </div>
-                </>
-              )}
 
-              {/* Permissions */}
-              <div className="space-y-3 border-t border-border pt-4">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm font-semibold">Permissions</Label>
-                  <span className="text-xs text-muted-foreground">
-                    {selectedPermissions.length} selected
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground -mt-1">
-                  Permissions are based on the selected role template. Toggle individual permissions below.
-                </p>
+                  <PermissionsSection />
 
-                <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
-                  {PERMISSION_GROUPS.map((group) => {
-                    // Hide Users/Payments/Finance groups if current user isn't OWNER
-                    const sensitiveGroups = ["Users", "Payments", "Audit Log"];
-                    if (
-                      currentUserRole !== UserRole.OWNER &&
-                      sensitiveGroups.includes(group.label) &&
-                      role !== UserRole.OWNER
-                    ) {
-                      const visiblePerms = group.permissions.filter((p) =>
-                        DEFAULT_ROLE_PERMISSIONS[role]?.includes(p.key)
-                      );
-                      if (visiblePerms.length === 0) return null;
-                      return (
-                        <div key={group.label} className="rounded-lg border border-border bg-muted/20 p-3">
-                          <p className="text-xs font-medium text-muted-foreground mb-2">{group.label}</p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {visiblePerms.map((perm) => (
-                              <button
-                                key={perm.key}
-                                type="button"
-                                disabled
-                                className="rounded-md bg-muted px-2 py-1 text-[11px] font-medium text-muted-foreground cursor-not-allowed"
-                              >
-                                {perm.label}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div key={group.label} className="rounded-lg border border-border bg-muted/20 p-3">
-                        <p className="text-xs font-medium text-muted-foreground mb-2">{group.label}</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {group.permissions.map((perm) => {
-                            const isSelected = selectedPermissions.includes(perm.key);
-                            return (
-                              <button
-                                key={perm.key}
-                                type="button"
-                                onClick={() => togglePermission(perm.key)}
-                                className={`rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
-                                  isSelected
-                                    ? "bg-primary/10 text-primary border border-primary/20"
-                                    : "bg-muted text-muted-foreground hover:text-foreground hover:bg-accent border border-transparent"
-                                }`}
-                              >
-                                {isSelected && <Check className="inline h-3 w-3 mr-0.5" />}
-                                {perm.label}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex justify-end gap-2 pt-2 border-t border-border">
-                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={loading}>
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {method === "invite" ? "Send Invitation" : "Create Account"}
-                </Button>
-              </div>
-            </form>
+                  <div className="flex justify-end gap-2 pt-2 border-t border-border">
+                    <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={loading}>
+                      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Create Account
+                    </Button>
+                  </div>
+                </form>
+              </TabsContent>
+            </Tabs>
           </>
         )}
       </DialogContent>
