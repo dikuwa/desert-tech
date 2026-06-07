@@ -14,7 +14,7 @@ import {
   Copy,
 } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
-import { formatCents, getStatusBadgeClass, getStatusLabel } from "@/lib/dashboard-data";
+import { computePaymentFields, formatCents, getStatusBadgeClass, getStatusLabel } from "@/lib/dashboard-data";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -32,6 +32,7 @@ export default function ReceiptsPage() {
 
   const addNotification = useDashboardStore((s) => s.addNotification);
   const storeOrders = useDashboardStore((s) => s.orders);
+  const payments = useDashboardStore((s) => s.payments);
 
   // Receipts from paid/deposit orders
   const paidOrders = storeOrders.filter(
@@ -60,12 +61,54 @@ export default function ReceiptsPage() {
   const handleDownloadPDF = async (orderNumber: string) => {
     setDownloading(orderNumber);
     try {
+      const order = paidOrders.find((item) => item.orderNumber === orderNumber);
+      if (!order) throw new Error("Order not found");
+      const orderPayments = payments.filter((payment) => payment.orderNumber === order.orderNumber);
+      const { totalPaidCents, balanceDueCents } = computePaymentFields(
+        order.subtotalCents,
+        order.paymentStatus,
+        orderPayments,
+        { fulfillmentMethod: order.fulfillmentMethod, courierFeeCents: order.courierFeeCents },
+      );
       const res = await fetch("/api/receipts/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId: orderNumber }),
+        body: JSON.stringify({
+          orderId: orderNumber,
+          orderSnapshot: {
+            orderNumber: order.orderNumber,
+            customerName: order.customerName,
+            customerPhone: order.customerPhone,
+            items: order.items?.length
+              ? order.items.map((item) => ({
+                  name: item.name,
+                  quantity: item.quantity,
+                  unitPrice: item.unitPriceCents,
+                  total: item.unitPriceCents * item.quantity,
+                  sku: item.sku,
+                }))
+              : Array.from({ length: order.itemCount }, (_, index) => {
+                  const unitPrice = Math.round(order.subtotalCents / order.itemCount);
+                  const total = index === order.itemCount - 1
+                    ? order.subtotalCents - unitPrice * (order.itemCount - 1)
+                    : unitPrice;
+                  return { name: `Product ${index + 1}`, quantity: 1, unitPrice: total, total };
+                }),
+            subtotalCents: order.subtotalCents,
+            paymentStatus: order.paymentStatus,
+            totalPaidCents,
+            balanceDueCents,
+            createdAt: order.createdAt,
+            fulfillmentMethod: order.fulfillmentMethod,
+            courierFeeCents: order.courierFeeCents,
+            shipping: order.shipping,
+          },
+        }),
       });
-      if (!res.ok) throw new Error("Failed to generate");
+      if (!res.ok) {
+        const error = await res.json().catch(() => null);
+        throw new Error(error?.error || "Failed to generate");
+      }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -75,6 +118,7 @@ export default function ReceiptsPage() {
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Download failed:", err);
+      toast.error("Failed to download PDF");
     } finally {
       setDownloading(null);
     }

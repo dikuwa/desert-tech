@@ -3,24 +3,15 @@ import path from "node:path";
 
 // Register Space Grotesk — the same font used by the website, for consistent branding
 // Font files downloaded from Google Fonts into public/fonts/
-const FONT_FAMILY: string = (() => {
-  try {
-    const fontRegular = path.join(process.cwd(), "public", "fonts", "SpaceGrotesk-Regular.ttf");
-    const fontBold = path.join(process.cwd(), "public", "fonts", "SpaceGrotesk-Bold.ttf");
-    Font.register({
-      family: "SpaceGrotesk",
-      fonts: [
-        { src: fontRegular, fontWeight: "normal" },
-        { src: fontBold, fontWeight: "bold" },
-      ],
-    });
-    return "SpaceGrotesk";
-  } catch {
-    // Fall back to Helvetica if Space Grotesk can't be loaded
-    console.warn("[PDF] Space Grotesk not available, using Helvetica");
-    return "Helvetica";
-  }
-})();
+const fontRegular = path.join(process.cwd(), "public", "fonts", "SpaceGrotesk-Regular.ttf");
+const fontBold = path.join(process.cwd(), "public", "fonts", "SpaceGrotesk-Bold.ttf");
+Font.register({
+  family: "SpaceGrotesk",
+  fonts: [
+    { src: fontRegular, fontWeight: "normal" },
+    { src: fontBold, fontWeight: "bold" },
+  ],
+});
 
 const colors = {
   primary: "#f68923",
@@ -37,13 +28,10 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 16,
     paddingBottom: 14,
-    fontFamily: FONT_FAMILY,
+    fontFamily: "SpaceGrotesk",
     fontSize: 8.5,
     color: colors.text,
     backgroundColor: "#ffffff",
-  },
-  fallbackPage: {
-    fontFamily: "Helvetica",
   },
   document: {
     border: `1 solid ${colors.border}`,
@@ -170,7 +158,6 @@ export interface ReceiptPDFProps {
     deliveryNotes?: string;
   };
   logoSrc?: string | null;
-  useFallbackFont?: boolean;
 }
 
 function formatCurrency(cents: number): string {
@@ -201,7 +188,6 @@ export function ReceiptPDF({
   courierFeeCents,
   shipping,
   logoSrc,
-  useFallbackFont = false,
 }: ReceiptPDFProps) {
   const statusLabel = paymentLabel(paymentStatus);
   const settled = paymentStatus === "PaidInFull" || paymentStatus === "Paid";
@@ -210,7 +196,7 @@ export function ReceiptPDF({
 
   return (
     <Document>
-      <Page size="A4" style={[styles.page, useFallbackFont ? styles.fallbackPage : {}]}>
+      <Page size="A4" style={styles.page}>
         <View style={styles.document}>
           <View style={styles.header}>
             <View style={styles.brand}>
@@ -271,7 +257,7 @@ export function ReceiptPDF({
             {items.map((item, index) => (
               <View key={`${item.name}-${index}`} style={styles.tableRow}>
                 <Text style={[styles.cell, styles.description]}>{item.name}</Text>
-                <Text style={[styles.cell, styles.sku, { fontFamily: "Courier", fontSize: 7 }]}>{item.sku || "—"}</Text>
+                <Text style={[styles.cell, styles.sku, { fontSize: 7 }]}>{item.sku || "—"}</Text>
                 <Text style={[styles.cell, styles.qty]}>{item.quantity}</Text>
                 <Text style={[styles.cell, styles.price]}>{formatCurrency(item.unitPrice)}</Text>
                 <Text style={[styles.cell, styles.total]}>{formatCurrency(item.total)}</Text>

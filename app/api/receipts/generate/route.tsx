@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { renderToStream } from "@react-pdf/renderer";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { z } from "zod";
 import { ReceiptPDF, type ReceiptPDFProps } from "@/components/receipts/receipt-pdf";
 
 // Order data store (same in-memory store used by /api/orders)
@@ -18,6 +19,34 @@ import { useDashboardStore } from "@/lib/store/dashboard";
 import { addReceipt } from "@/lib/receipt-store";
 import { uploadFile } from "@/lib/storage";
 import { computePaymentFields } from "@/lib/dashboard-data";
+
+const orderSnapshotSchema = z.object({
+  orderNumber: z.string().min(1),
+  customerName: z.string().min(1),
+  customerPhone: z.string().min(1),
+  items: z.array(z.object({
+    name: z.string().min(1),
+    quantity: z.number().int().positive(),
+    unitPrice: z.number().int().nonnegative(),
+    total: z.number().int().nonnegative(),
+    sku: z.string().optional(),
+  })).min(1),
+  subtotalCents: z.number().int().nonnegative(),
+  paymentStatus: z.string().min(1),
+  totalPaidCents: z.number().int().nonnegative(),
+  balanceDueCents: z.number().int().nonnegative(),
+  createdAt: z.string().min(1),
+  fulfillmentMethod: z.enum(["collection", "courier"]).optional(),
+  courierFeeCents: z.number().int().nonnegative().optional(),
+  shipping: z.object({
+    recipientName: z.string(),
+    phone: z.string(),
+    address: z.string(),
+    city: z.string(),
+    region: z.string(),
+    deliveryNotes: z.string().optional(),
+  }).optional(),
+});
 
 function loadPdfLogo(): string | null {
   try {
@@ -39,9 +68,9 @@ async function streamToBuffer(stream: Awaited<ReturnType<typeof renderToStream>>
   return Buffer.concat(chunks);
 }
 
-async function renderReceiptBuffer(props: ReceiptPDFProps, logoSrc: string | null, useFallbackFont = false) {
+async function renderReceiptBuffer(props: ReceiptPDFProps, logoSrc: string | null) {
   const stream = await renderToStream(
-    <ReceiptPDF {...props} logoSrc={logoSrc} useFallbackFont={useFallbackFont} />,
+    <ReceiptPDF {...props} logoSrc={logoSrc} />,
   );
   return streamToBuffer(stream);
 }
@@ -128,7 +157,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "orderId is required" }, { status: 400 });
     }
 
-    const order = findOrder(orderId);
+    const snapshotResult = orderSnapshotSchema.safeParse(body.orderSnapshot);
+    const order = findOrder(orderId) ?? (snapshotResult.success ? snapshotResult.data : null);
     if (!order) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
@@ -162,7 +192,7 @@ export async function POST(request: NextRequest) {
       pdfBuffer = await renderReceiptBuffer(receiptProps, loadPdfLogo());
     } catch (error) {
       console.error("[PDF] Receipt assets failed; retrying with text branding", error);
-      pdfBuffer = await renderReceiptBuffer(receiptProps, null, true);
+      pdfBuffer = await renderReceiptBuffer(receiptProps, null);
     }
 
     const isView = body.view === true || body.view === "true" || body.view === 1;

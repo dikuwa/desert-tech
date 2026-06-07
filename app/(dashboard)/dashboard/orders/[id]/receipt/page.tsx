@@ -76,9 +76,42 @@ export default function OrderReceiptPage() {
       const res = await fetch("/api/receipts/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId: order.id }),
+        body: JSON.stringify({
+          orderId: order.id,
+          orderSnapshot: {
+            orderNumber: order.orderNumber,
+            customerName: order.customerName,
+            customerPhone: order.customerPhone,
+            items: order.items?.length
+              ? order.items.map((item) => ({
+                  name: item.name,
+                  quantity: item.quantity,
+                  unitPrice: item.unitPriceCents,
+                  total: item.unitPriceCents * item.quantity,
+                  sku: item.sku,
+                }))
+              : Array.from({ length: order.itemCount }, (_, index) => {
+                  const unitPrice = Math.round(order.subtotalCents / order.itemCount);
+                  const total = index === order.itemCount - 1
+                    ? order.subtotalCents - unitPrice * (order.itemCount - 1)
+                    : unitPrice;
+                  return { name: `Product ${index + 1}`, quantity: 1, unitPrice: total, total };
+                }),
+            subtotalCents: order.subtotalCents,
+            paymentStatus: order.paymentStatus,
+            totalPaidCents,
+            balanceDueCents: balanceCents,
+            createdAt: order.createdAt,
+            fulfillmentMethod: order.fulfillmentMethod,
+            courierFeeCents: order.courierFeeCents,
+            shipping: order.shipping,
+          },
+        }),
       });
-      if (!res.ok) throw new Error("Failed to generate");
+      if (!res.ok) {
+        const error = await res.json().catch(() => null);
+        throw new Error(error?.error || "Failed to generate");
+      }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -88,6 +121,7 @@ export default function OrderReceiptPage() {
       URL.revokeObjectURL(url);
       toast.success("Receipt PDF downloaded");
     } catch (err) {
+      console.error("Receipt PDF download failed:", err);
       toast.error("Failed to generate PDF");
     } finally {
       setDownloadingPdf(false);
