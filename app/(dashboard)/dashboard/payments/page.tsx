@@ -1,10 +1,17 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Wallet, ChevronLeft, ChevronRight, Calendar, Filter } from "lucide-react";
+import { Wallet, ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { formatCents, getStatusBadgeClass } from "@/lib/dashboard-data";
 import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -97,27 +104,39 @@ export default function PaymentsPage() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5">
           <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-          <select value={datePreset} onChange={e => { setDatePreset(e.target.value); setCurrentPage(1); }}
-            className="h-9 rounded-lg border border-border bg-card px-3 text-xs font-medium focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30">
-            {datePresets.map(p => (
-              <option key={p.label} value={p.label}>{p.label}</option>
-            ))}
-          </select>
+          <Select value={datePreset} onValueChange={(v) => { setDatePreset(v); setCurrentPage(1); }}>
+            <SelectTrigger className="h-8 w-[130px] text-xs font-medium border-0 bg-transparent shadow-none focus:ring-0 px-0">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {datePresets.map(p => (
+                <SelectItem key={p.label} value={p.label}>{p.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <select value={methodFilter} onChange={e => { setMethodFilter(e.target.value); setCurrentPage(1); }}
-          className="h-9 rounded-lg border border-border bg-card px-3 text-xs font-medium focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30">
-          <option value="All">All Methods</option>
-          {methods.filter(m => m !== "All").map(m => (
-            <option key={m} value={m}>{m}</option>
-          ))}
-        </select>
-        <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1); }}
-          className="h-9 rounded-lg border border-border bg-card px-3 text-xs font-medium focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30">
-          <option value="All">All Statuses</option>
-          <option value="Confirmed">Confirmed</option>
-          <option value="Pending">Pending</option>
-          <option value="Failed">Failed</option>
-        </select>
+        <Select value={methodFilter} onValueChange={(v) => { setMethodFilter(v); setCurrentPage(1); }}>
+          <SelectTrigger className="h-9 w-[140px] text-xs font-medium">
+            <SelectValue placeholder="All Methods" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="All">All Methods</SelectItem>
+            {methods.filter(m => m !== "All").map(m => (
+              <SelectItem key={m} value={m}>{m}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setCurrentPage(1); }}>
+          <SelectTrigger className="h-9 w-[140px] text-xs font-medium">
+            <SelectValue placeholder="All Statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="All">All Statuses</SelectItem>
+            <SelectItem value="Confirmed">Confirmed</SelectItem>
+            <SelectItem value="Pending">Pending</SelectItem>
+            <SelectItem value="Failed">Failed</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Summary Cards */}

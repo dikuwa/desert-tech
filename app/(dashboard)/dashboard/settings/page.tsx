@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Save,
   Building2,
@@ -26,6 +26,16 @@ import {
   ArrowUp,
   ArrowDown,
   LockKeyhole,
+  User,
+  Shield,
+  Smartphone,
+  KeyRound,
+  History,
+  Monitor,
+  LogOut,
+  QrCode,
+  Copy,
+  AlertCircle,
 } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn, decodeHTMLEntities } from "@/lib/utils";
@@ -37,6 +47,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 export default function SettingsPage() {
   const settings = useDashboardStore((s) => s.settings);
@@ -57,9 +68,44 @@ export default function SettingsPage() {
   const moveContactDetail = useDashboardStore((s) => s.moveContactDetail);
   const moveBankDetail = useDashboardStore((s) => s.moveBankDetail);
 
+  const [userSession, setUserSession] = useState<{
+    name: string;
+    email: string;
+    role: string;
+    status: string;
+    jobTitle?: string;
+    phone?: string;
+    twoFactorEnabled?: boolean;
+    lastActiveAt?: string;
+    createdAt?: string;
+  } | null>(null);
+  const [sessionLoading, setSessionLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/auth/get-session")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data?.user) {
+          setUserSession({
+            name: data.user.name || "User",
+            email: data.user.email || "",
+            role: data.user.role || "STAFF",
+            status: data.user.status || "ACTIVE",
+            jobTitle: data.user.jobTitle || undefined,
+            phone: data.user.phone || undefined,
+            twoFactorEnabled: data.user.twoFactorEnabled || false,
+            lastActiveAt: data.user.lastActiveAt || undefined,
+            createdAt: data.user.createdAt || undefined,
+          });
+        }
+      })
+      .catch(() => {})
+      .finally(() => setSessionLoading(false));
+  }, []);
+
   const [saved, setSaved] = useState(false);
   const [form, setForm] = useState(settings);
-  const [activeTab, setActiveTab] = useState<"store" | "hero" | "contact" | "banking" | "payment-methods" | "security">("store");
+  const [activeTab, setActiveTab] = useState<"store" | "hero" | "contact" | "banking" | "payment-methods" | "security" | "account">("store");
   const [uploading, setUploading] = useState(false);
   const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
   const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
@@ -218,6 +264,7 @@ export default function SettingsPage() {
     { id: "banking" as const, label: "Banking", icon: CreditCard },
     { id: "payment-methods" as const, label: "Payments", icon: Banknote },
     { id: "security" as const, label: "Security", icon: LockKeyhole },
+    { id: "account" as const, label: "Account", icon: User },
   ];
 
   return (
@@ -257,60 +304,13 @@ export default function SettingsPage() {
             <div className="flex items-center gap-2 border-b border-border pb-3">
               <LockKeyhole className="h-5 w-5 text-primary" />
               <div>
-                <h2 className="text-base font-semibold text-foreground">Change Password</h2>
-                <p className="text-xs text-muted-foreground">Update your own dashboard password.</p>
+                <h2 className="text-base font-semibold text-foreground">Security Settings</h2>
+                <p className="text-xs text-muted-foreground">Password and security updates are now in the Account tab.</p>
               </div>
             </div>
-            <form onSubmit={handlePasswordChange} className="space-y-4">
-              {passwordMessage && (
-                <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-foreground">
-                  {passwordMessage}
-                </div>
-              )}
-              <div>
-                <label className="text-sm font-medium text-foreground">Current Password</label>
-                <input
-                  type="password"
-                  autoComplete="current-password"
-                  value={passwordForm.currentPassword}
-                  onChange={(e) => setPasswordForm((form) => ({ ...form, currentPassword: e.target.value }))}
-                  className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-                  required
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground">New Password</label>
-                <input
-                  type="password"
-                  autoComplete="new-password"
-                  minLength={10}
-                  value={passwordForm.newPassword}
-                  onChange={(e) => setPasswordForm((form) => ({ ...form, newPassword: e.target.value }))}
-                  className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-                  required
-                />
-                <p className="mt-1 text-xs text-muted-foreground">Use at least 10 characters.</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground">Confirm New Password</label>
-                <input
-                  type="password"
-                  autoComplete="new-password"
-                  minLength={10}
-                  value={passwordForm.confirmPassword}
-                  onChange={(e) => setPasswordForm((form) => ({ ...form, confirmPassword: e.target.value }))}
-                  className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={passwordSaving}
-                className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
-              >
-                {passwordSaving ? "Changing Password..." : "Change Password"}
-              </button>
-            </form>
+            <p className="text-sm text-muted-foreground">
+              Go to the <strong>Account</strong> tab to change your password, manage two-factor authentication, view active sessions, and see recent activity.
+            </p>
           </div>
         )}
 
@@ -876,6 +876,207 @@ export default function SettingsPage() {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* === ACCOUNT TAB === */}
+        {activeTab === "account" && (
+          <div className="space-y-6">
+            {/* Profile Card */}
+            <div className="rounded-xl border border-border bg-card p-6 space-y-5">
+              <div className="flex items-center gap-2 border-b border-border pb-3">
+                <User className="h-5 w-5 text-primary" />
+                <div>
+                  <h2 className="text-base font-semibold text-foreground">Profile</h2>
+                  <p className="text-xs text-muted-foreground">Your personal account details</p>
+                </div>
+              </div>
+              {sessionLoading ? (
+                <div className="flex items-center gap-5 animate-pulse">
+                  <div className="h-16 w-16 rounded-full bg-muted" />
+                  <div className="space-y-3 flex-1">
+                    <div className="h-4 w-32 bg-muted rounded" />
+                    <div className="h-3 w-48 bg-muted rounded" />
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-start gap-5">
+                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-2xl font-bold">
+                    {(userSession?.name || "U")
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                      .toUpperCase()
+                      .slice(0, 2)}
+                  </div>
+                  <div className="space-y-3 flex-1">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="text-xs font-medium text-foreground">Full Name</label>
+                        <p className="mt-1 text-sm text-foreground">{userSession?.name || "—"}</p>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-foreground">Email</label>
+                        <p className="mt-1 text-sm text-foreground">{userSession?.email || "—"}</p>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-foreground">Role</label>
+                        <Badge variant="outline" className="mt-1 bg-primary/10 text-primary border-primary/20 text-[10px] font-bold px-1.5 py-0">
+                          {userSession?.role || "—"}
+                        </Badge>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-foreground">Status</label>
+                        <Badge variant="outline" className="mt-1 bg-success/10 text-success border-success/20 text-[10px] font-bold px-1.5 py-0">
+                          {userSession?.status || "—"}
+                        </Badge>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-foreground">Job Title</label>
+                        <p className="mt-1 text-sm text-muted-foreground">{userSession?.jobTitle || "—"}</p>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-foreground">Phone</label>
+                        <p className="mt-1 text-sm text-muted-foreground">{userSession?.phone || "—"}</p>
+                      </div>
+                    </div>
+                    {userSession?.createdAt && (
+                      <p className="text-xs text-muted-foreground">
+                        Joined: {new Date(userSession.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Security Card */}
+            <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+              <div className="flex items-center gap-2 border-b border-border pb-3">
+                <Shield className="h-5 w-5 text-primary" />
+                <h2 className="text-base font-semibold text-foreground">Security</h2>
+              </div>
+
+              {/* Password Change - existing form */}
+              <form onSubmit={handlePasswordChange} className="space-y-4">
+                {passwordMessage && (
+                  <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-foreground">
+                    {passwordMessage}
+                  </div>
+                )}
+                <div>
+                  <label className="text-sm font-medium text-foreground">Current Password</label>
+                  <input
+                    type="password"
+                    autoComplete="current-password"
+                    value={passwordForm.currentPassword}
+                    onChange={(e) => setPasswordForm((form) => ({ ...form, currentPassword: e.target.value }))}
+                    className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    required
+                  />
+                </div>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-foreground">New Password</label>
+                    <input
+                      type="password"
+                      autoComplete="new-password"
+                      minLength={10}
+                      value={passwordForm.newPassword}
+                      onChange={(e) => setPasswordForm((form) => ({ ...form, newPassword: e.target.value }))}
+                      className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground">Confirm New Password</label>
+                    <input
+                      type="password"
+                      autoComplete="new-password"
+                      minLength={10}
+                      value={passwordForm.confirmPassword}
+                      onChange={(e) => setPasswordForm((form) => ({ ...form, confirmPassword: e.target.value }))}
+                      className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                      required
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">Use at least 10 characters.</p>
+                <button
+                  type="submit"
+                  disabled={passwordSaving}
+                  className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+                >
+                  {passwordSaving ? "Changing Password..." : "Change Password"}
+                </button>
+              </form>
+
+              {/* 2FA Management */}
+              <div className="border-t border-border pt-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Smartphone className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">Two-Factor Authentication</p>
+                      <p className="text-xs text-muted-foreground">Add an extra layer of security</p>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className={userSession?.twoFactorEnabled ? "bg-success/10 text-success border-success/20 text-[10px] font-bold" : "bg-muted text-muted-foreground text-[10px] font-bold"}>
+                    {userSession?.twoFactorEnabled ? "Enabled" : "Not Enabled"}
+                  </Badge>
+                </div>
+              </div>
+
+              {userSession?.lastActiveAt && (
+                <p className="text-xs text-muted-foreground border-t border-border pt-3">
+                  Last active: {new Date(userSession.lastActiveAt).toLocaleString()}
+                </p>
+              )}
+            </div>
+
+            {/* Active Sessions Card */}
+            <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+              <div className="flex items-center justify-between border-b border-border pb-3">
+                <div className="flex items-center gap-2">
+                  <Monitor className="h-5 w-5 text-primary" />
+                  <h2 className="text-base font-semibold text-foreground">Active Sessions</h2>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3">
+                  <div className="flex items-center gap-3">
+                    <Monitor className="h-4 w-4 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Current session</p>
+                      <p className="text-xs text-muted-foreground">Active now</p>
+                    </div>
+                  </div>
+                  <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px]">Current</Badge>
+                </div>
+              </div>
+              <button className="text-xs text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1">
+                <LogOut className="h-3 w-3" />
+                Sign out of all devices
+              </button>
+            </div>
+
+            {/* Recent Activity Card */}
+            <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+              <div className="flex items-center gap-2 border-b border-border pb-3">
+                <History className="h-5 w-5 text-primary" />
+                <h2 className="text-base font-semibold text-foreground">Recent Activity</h2>
+              </div>
+              <div className="space-y-3">
+                {[
+                  { action: "Sign in", timestamp: "Just now" },
+                ].map((event, i) => (
+                  <div key={i} className="flex items-center justify-between py-1">
+                    <p className="text-sm text-foreground">{event.action}</p>
+                    <p className="text-xs text-muted-foreground">{event.timestamp}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}

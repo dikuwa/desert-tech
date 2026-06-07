@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ShoppingBag, Users, Bell, CalendarClock, AlertTriangle, ArrowRight, TrendingUp } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { formatCents } from "@/lib/dashboard-data";
+import { Permissions } from "@/lib/permissions";
 
 export default function DashboardPage() {
   const orders = useDashboardStore((s) => s.orders);
@@ -29,11 +30,13 @@ export default function DashboardPage() {
   const pendingFollowUps = followUps.filter((f) => f.status === "Pending");
   const unreadNotifications = notifications.filter((n) => !n.isRead);
 
-  // Financial permission check: Owner always sees, Admin/Staff needs granted permission
-  const isOwner = userRole === "Admin" && staffPermissions.includes("all");
-  const hasFinancialAccess = isOwner || staffPermissions.some(
-    (p) => p === "payments:view" || p === "dashboard:view_financial_summary"
-  );
+  // Financial permission check
+  // Real permission system: check for PAYMENTS_VIEW or DASHBOARD_VIEW_FINANCIAL_SUMMARY
+  // Fallback for mock/legacy data: Admin with "all" permissions
+  const hasFinancialAccess =
+    staffPermissions.includes(Permissions.PAYMENTS_VIEW) ||
+    staffPermissions.includes(Permissions.DASHBOARD_VIEW_FINANCIAL_SUMMARY) ||
+    (userRole === "Admin" && staffPermissions.includes("all"));
 
   const stats = [
     { label: "New Orders", value: pendingOrders.length, icon: ShoppingBag, color: "text-primary", bg: "bg-accent", href: "/dashboard/orders" },
