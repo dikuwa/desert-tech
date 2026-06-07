@@ -4,8 +4,6 @@ import {
   mockOrders as initialOrders,
   mockProducts as initialProducts,
   mockCustomers as initialCustomers,
-  mockCategories as initialCategories,
-  mockBrands as initialBrands,
   mockPromotions as initialPromotions,
   mockStaff as initialStaff,
   mockFollowUps as initialFollowUps,
@@ -85,6 +83,7 @@ interface DashboardState {
   addCategory: (c: Omit<DashboardCategory, "id" | "slug" | "productCount">) => void;
   updateCategory: (id: string, data: Partial<DashboardCategory>) => void;
   deleteCategory: (id: string) => void;
+  syncCategories: (categories: DashboardCategory[]) => void;
   reorderCategory: (id: string, newOrder: number) => void;
   toggleCategoryActive: (id: string) => void;
 
@@ -93,6 +92,7 @@ interface DashboardState {
   addBrand: (b: Omit<DashboardBrand, "id" | "slug">) => void;
   updateBrand: (id: string, data: Partial<DashboardBrand>) => void;
   deleteBrand: (id: string) => void;
+  syncBrands: (brands: DashboardBrand[]) => void;
   toggleBrandActive: (id: string) => void;
 
   // Promotions CRUD
@@ -247,13 +247,13 @@ export const useDashboardStore = create<DashboardState>()(
       orders: initialOrders,
       products: initialProducts,
       customers: initialCustomers,
-      categories: initialCategories,
+      categories: [],
       promotions: initialPromotions,
       staff: initialStaff,
       followUps: initialFollowUps,
       notifications: initialNotifications,
       quotations: initialQuotations,
-      brands: initialBrands,
+      brands: [],
       payments: initialPayments,
       contactDetails: defaultContactDetails,
       bankDetails: defaultBankDetails,
@@ -526,6 +526,7 @@ export const useDashboardStore = create<DashboardState>()(
       },
 
       // === Categories ===
+      syncCategories: (categories) => set({ categories }),
       addCategory: (c) => {
         const id = `cat${nextCategoryId++}`;
         const newCat: DashboardCategory = {
@@ -558,6 +559,7 @@ export const useDashboardStore = create<DashboardState>()(
         })),
 
       // === Brands ===
+      syncBrands: (brands) => set({ brands }),
       addBrand: (b) => {
         const id = `br${nextBrandId++}`;
         const newBrand: DashboardBrand = {
@@ -1056,4 +1058,3 @@ export const useDashboardStore = create<DashboardState>()(
     },
   ),
 );
-

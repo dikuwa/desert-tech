@@ -278,17 +278,6 @@ export const mockCustomers: DashboardCustomer[] = [
   { id: "c6", fullName: "Grace Kambonde", phone: "+264 81 789 0123", whatsapp: "+264 81 789 0123", email: "grace@example.com", preferredContact: ["WhatsApp"], orderCount: 1, totalSpentCents: parseHumanToCents("45999"), lastOrderDate: "2026-06-02", createdAt: "2026-06-02" },
 ];
 
-export const mockCategories: DashboardCategory[] = [
-  { id: "cat1", name: "Apple", slug: "apple", description: "MacBooks, iPads, iPhones", productCount: 12, isActive: true, sortOrder: 1 },
-  { id: "cat2", name: "Windows", slug: "windows", description: "Dell, HP, Lenovo", productCount: 15, isActive: true, sortOrder: 2 },
-  { id: "cat3", name: "Gaming", slug: "gaming", description: "Gaming desktops and laptops", productCount: 8, isActive: true, sortOrder: 3 },
-  { id: "cat4", name: "CCTV & Security", slug: "cctv", description: "Cameras and security systems", productCount: 20, isActive: true, sortOrder: 4 },
-  { id: "cat5", name: "Networking", slug: "networking", description: "Routers, switches, WiFi", productCount: 18, isActive: true, sortOrder: 5 },
-  { id: "cat6", name: "Phones & Tablets", slug: "phones", description: "Smartphones and tablets", productCount: 10, isActive: true, sortOrder: 6 },
-  { id: "cat7", name: "Accessories", slug: "accessories", description: "Headsets, mice, keyboards", productCount: 25, isActive: true, sortOrder: 7 },
-  { id: "cat8", name: "POS Systems", slug: "pos", description: "POS hardware and peripherals", productCount: 6, isActive: true, sortOrder: 8 },
-];
-
 export const mockPromotions: DashboardPromotion[] = [
   { id: "pr1", title: "Gaming Setup Bundle", slug: "gaming-bundle", description: "Complete gaming rig bundle", imageUrl: "https://images.unsplash.com/photo-1593640408182-31c70c8268f5?w=900&h=500&fit=crop", discountLabel: "Save up to N$ 2,000", placement: "HomeHero", isActive: true, startsAt: "2026-05-01", endsAt: "2026-06-30", productCount: 5 },
   { id: "pr2", title: "Back to School Special", slug: "back-to-school", description: "Student discounts on laptops", imageUrl: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=900&h=500&fit=crop", discountLabel: "Up to 15% off", placement: "FeaturedSection", isActive: true, startsAt: "2026-05-15", endsAt: "2026-07-15", productCount: 8 },
@@ -388,22 +377,6 @@ export const mockQuotations: DashboardQuotation[] = [
   { id: "qtn1", quotationNumber: "QTN-A1B2C3", customerName: "John Mwale", customerPhone: "+264 81 123 4567", preferredContact: ["WhatsApp"], items: [{ name: 'MacBook Air 15" M3', sku: "DT-APP-0001", quantity: 1, unitPriceCents: parseHumanToCents("18999") }, { name: "Logitech MX Master 3S", sku: "DT-ACC-0001", quantity: 1, unitPriceCents: parseHumanToCents("1599") }], subtotalCents: parseHumanToCents("20598"), notes: "Valid for 14 days. Delivery within 3 business days.", status: "Draft", createdAt: "2026-06-03T09:00:00Z", updatedAt: "2026-06-03T09:00:00Z" },
   { id: "qtn2", quotationNumber: "QTN-D4E5F6", customerName: "Maria Shikongo", customerPhone: "+264 85 234 5678", preferredContact: ["Phone"], items: [{ name: "Dell XPS 16", sku: "DT-LAP-0001", quantity: 1, unitPriceCents: parseHumanToCents("25999") }], subtotalCents: parseHumanToCents("25999"), notes: "Price includes setup and data migration. Payment via bank transfer.", status: "Sent", createdAt: "2026-06-02T14:00:00Z", updatedAt: "2026-06-03T10:00:00Z" },
   { id: "qtn3", quotationNumber: "QTN-G7H8I9", customerName: "Petrus Nangolo", customerPhone: "+264 81 345 6789", preferredContact: ["WhatsApp", "Email"], items: [{ name: "Gaming PC Ryzen 7", sku: "DT-GAME-0001", quantity: 1, unitPriceCents: parseHumanToCents("21999") }], subtotalCents: parseHumanToCents("21999"), status: "Accepted", createdAt: "2026-06-01T11:00:00Z", updatedAt: "2026-06-02T09:30:00Z" },
-];
-
-export const mockBrands: DashboardBrand[] = [
-  { id: "br1", name: "Apple", slug: "apple", description: "MacBooks, iPads, iPhones", isActive: true, isFeatured: true, sortOrder: 1 },
-  { id: "br2", name: "Dell", slug: "dell", description: "Laptops, monitors, and workstations", isActive: true, isFeatured: true, sortOrder: 2 },
-  { id: "br3", name: "HP", slug: "hp", description: "Laptops, printers, and desktops", isActive: true, isFeatured: false, sortOrder: 3 },
-  { id: "br4", name: "Lenovo", slug: "lenovo", description: "ThinkPad and IdeaPad laptops", isActive: true, isFeatured: false, sortOrder: 4 },
-  { id: "br5", name: "ASUS", slug: "asus", description: "Gaming laptops and components", isActive: true, isFeatured: false, sortOrder: 5 },
-  { id: "br6", name: "Samsung", slug: "samsung", description: "Phones, tablets, and monitors", isActive: true, isFeatured: false, sortOrder: 6 },
-  { id: "br7", name: "Hikvision", slug: "hikvision", description: "CCTV and security systems", isActive: true, isFeatured: false, sortOrder: 7 },
-  { id: "br8", name: "Logitech", slug: "logitech", description: "Peripherals and accessories", isActive: true, isFeatured: false, sortOrder: 8 },
-  { id: "br9", name: "Ubiquiti", slug: "ubiquiti", description: "Networking equipment", isActive: true, isFeatured: false, sortOrder: 9 },
-  { id: "br10", name: "Sony", slug: "sony", description: "Audio and electronics", isActive: true, isFeatured: false, sortOrder: 10 },
-  { id: "br11", name: "TP-Link", slug: "tplink", description: "Networking and smart home", isActive: true, isFeatured: false, sortOrder: 11 },
-  { id: "br12", name: "Dahua", slug: "dahua", description: "CCTV and security", isActive: true, isFeatured: false, sortOrder: 12 },
-  { id: "br13", name: "Custom Build", slug: "custom-build", description: "Built-to-order systems", isActive: true, isFeatured: false, sortOrder: 13 },
 ];
 
 export const mockPayments: DashboardPayment[] = [

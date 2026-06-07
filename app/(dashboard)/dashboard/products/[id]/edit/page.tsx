@@ -23,6 +23,7 @@ export default function EditProductPage() {
   const [uploading, setUploading] = useState(false);
 
   const brands = useDashboardStore((s) => s.brands);
+  const categories = useDashboardStore((s) => s.categories);
 
   const [form, setForm] = useState(() => {
     if (!product) return null;
@@ -210,8 +211,8 @@ export default function EditProductPage() {
                       <SelectValue placeholder="Category" />
                     </SelectTrigger>
                     <SelectContent className="bg-card border-border shadow-lg z-[80]">
-                      {["Apple", "Windows", "Gaming", "CCTV & Security", "Networking", "Phones & Tablets", "Accessories", "POS Systems"].map(cat => (
-                        <SelectItem key={cat} value={cat} className="text-sm cursor-pointer focus:bg-accent">{cat}</SelectItem>
+                      {categories.filter((category) => category.isActive).sort((a, b) => a.sortOrder - b.sortOrder).map(category => (
+                        <SelectItem key={category.id} value={category.name} className="text-sm cursor-pointer focus:bg-accent">{category.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

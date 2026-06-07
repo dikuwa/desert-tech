@@ -16,6 +16,7 @@ export default function NewProductPage() {
   const syncProducts = useDashboardStore((s) => s.syncProducts);
   const products = useDashboardStore((s) => s.products);
   const brands = useDashboardStore((s) => s.brands);
+  const categories = useDashboardStore((s) => s.categories);
   const [submitting, setSubmitting] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [selectedImage, setSelectedImage] = useState(0);
@@ -163,14 +164,9 @@ export default function NewProductPage() {
                       <SelectValue placeholder="Category" />
                     </SelectTrigger>
                     <SelectContent className="bg-card border-border shadow-lg z-[80]">
-                      <SelectItem value="Apple" className="text-sm cursor-pointer focus:bg-accent">Apple</SelectItem>
-                      <SelectItem value="Windows" className="text-sm cursor-pointer focus:bg-accent">Windows</SelectItem>
-                      <SelectItem value="Gaming" className="text-sm cursor-pointer focus:bg-accent">Gaming</SelectItem>
-                      <SelectItem value="CCTV & Security" className="text-sm cursor-pointer focus:bg-accent">CCTV & Security</SelectItem>
-                      <SelectItem value="Networking" className="text-sm cursor-pointer focus:bg-accent">Networking</SelectItem>
-                      <SelectItem value="Phones & Tablets" className="text-sm cursor-pointer focus:bg-accent">Phones & Tablets</SelectItem>
-                      <SelectItem value="Accessories" className="text-sm cursor-pointer focus:bg-accent">Accessories</SelectItem>
-                      <SelectItem value="POS Systems" className="text-sm cursor-pointer focus:bg-accent">POS Systems</SelectItem>
+                      {categories.filter((category) => category.isActive).sort((a, b) => a.sortOrder - b.sortOrder).map((category) => (
+                        <SelectItem key={category.id} value={category.name} className="text-sm cursor-pointer focus:bg-accent">{category.name}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

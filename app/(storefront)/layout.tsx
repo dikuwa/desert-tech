@@ -3,6 +3,7 @@ import { StorefrontFooter } from "@/components/storefront/footer";
 import { MobileStickyCTA } from "@/components/storefront/mobile-cta";
 import { MobileDrawer } from "@/components/storefront/mobile-drawer";
 import { ProductSync } from "@/components/product-sync";
+import { CatalogSync } from "@/components/catalog-sync";
 
 export default function StorefrontLayout({
   children,
@@ -12,6 +13,7 @@ export default function StorefrontLayout({
   return (
     <>
       <ProductSync />
+      <CatalogSync />
       <StorefrontHeader />
       <main className="flex-1">{children}</main>
       <StorefrontFooter />

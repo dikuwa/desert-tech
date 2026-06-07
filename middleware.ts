@@ -33,6 +33,7 @@ const publicApiMethods: Record<string, string[]> = {
   "/api/back-in-stock-requests": ["POST"],
   "/api/documents/token": ["GET"],
   "/api/products": ["GET"],
+  "/api/catalog": ["GET"],
 };
 
 function isPublicPath(pathname: string): boolean {

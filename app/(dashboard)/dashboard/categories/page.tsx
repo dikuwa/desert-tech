@@ -9,6 +9,17 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import type { DashboardBrand } from "@/lib/dashboard-data";
 
+async function saveCatalog(categories: unknown[], brands: unknown[]) {
+  const response = await fetch("/api/catalog", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ categories, brands }),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || "Could not save catalog.");
+  return data;
+}
+
 export default function CategoriesBrandsPage() {
   const searchParams = useSearchParams();
   const requestedTab = searchParams.get("tab");
@@ -68,6 +79,9 @@ function CategoriesSection() {
   const updateCategory = useDashboardStore((s) => s.updateCategory);
   const deleteCategory = useDashboardStore((s) => s.deleteCategory);
   const toggleCategoryActive = useDashboardStore((s) => s.toggleCategoryActive);
+  const brands = useDashboardStore((s) => s.brands);
+  const syncCategories = useDashboardStore((s) => s.syncCategories);
+  const syncBrands = useDashboardStore((s) => s.syncBrands);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
@@ -83,23 +97,62 @@ function CategoriesSection() {
     setEditDescription(cat.description);
   };
 
-  const saveEdit = (id: string) => {
-    updateCategory(id, { name: editName, description: editDescription });
-    setEditingId(null);
+  const saveEdit = async (id: string) => {
+    try {
+      const next = categories.map((cat) => cat.id === id ? { ...cat, name: editName, description: editDescription } : cat);
+      const data = await saveCatalog(next, brands);
+      syncCategories(data.categories);
+      syncBrands(data.brands);
+      setEditingId(null);
+      toast.success("Category updated");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not update category.");
+    }
   };
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!newName.trim()) return;
-    addCategory({ name: newName.trim(), description: newDesc.trim(), isActive: true, sortOrder: categories.length + 1 });
-    setNewName("");
-    setNewDesc("");
-    setShowAdd(false);
+    try {
+      const next = [...categories, { name: newName.trim(), description: newDesc.trim(), isActive: true, sortOrder: categories.length + 1 }];
+      const data = await saveCatalog(next, brands);
+      syncCategories(data.categories);
+      syncBrands(data.brands);
+      setNewName("");
+      setNewDesc("");
+      setShowAdd(false);
+      toast.success("Category created");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not create category.");
+    }
   };
 
-  const handleDelete = (id: string) => {
-    deleteCategory(id);
-    setDeleteConfirm(null);
-    toast.success("Category deleted");
+  const handleDelete = async (id: string) => {
+    try {
+      const response = await fetch(`/api/catalog/categories/${id}`, { method: "DELETE" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not delete category.");
+      deleteCategory(id);
+      setDeleteConfirm(null);
+      toast.success("Category deleted");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not delete category.");
+    }
+  };
+
+  const handleToggle = async (id: string) => {
+    const category = categories.find((item) => item.id === id);
+    if (!category) return;
+    try {
+      const response = await fetch(`/api/catalog/categories/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: !category.isActive }),
+      });
+      if (!response.ok) throw new Error("Could not update category.");
+      toggleCategoryActive(id);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not update category.");
+    }
   };
 
   return (
@@ -163,7 +216,7 @@ function CategoriesSection() {
                   </div>
                   <div className="flex items-center gap-1">
                     <button onClick={() => startEdit(cat)} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"><Pencil className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => toggleCategoryActive(cat.id)} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                    <button onClick={() => handleToggle(cat.id)} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
                       {cat.isActive ? <X className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
                     </button>
                     {deleteConfirm === cat.id ? (
@@ -189,6 +242,9 @@ function BrandsSection() {
   const updateBrand = useDashboardStore((s) => s.updateBrand);
   const deleteBrand = useDashboardStore((s) => s.deleteBrand);
   const toggleBrandActive = useDashboardStore((s) => s.toggleBrandActive);
+  const categories = useDashboardStore((s) => s.categories);
+  const syncCategories = useDashboardStore((s) => s.syncCategories);
+  const syncBrands = useDashboardStore((s) => s.syncBrands);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
@@ -213,33 +269,70 @@ function BrandsSection() {
     setEditIsFeatured(br.isFeatured);
   };
 
-  const saveEdit = (id: string) => {
-    updateBrand(id, { name: editName, description: editDescription, sortOrder: editSortOrder, isFeatured: editIsFeatured });
-    setEditingId(null);
-    toast.success("Brand updated");
+  const saveEdit = async (id: string) => {
+    try {
+      const next = brands.map((brand) => brand.id === id ? { ...brand, name: editName, description: editDescription, sortOrder: editSortOrder, isFeatured: editIsFeatured } : brand);
+      const data = await saveCatalog(categories, next);
+      syncCategories(data.categories);
+      syncBrands(data.brands);
+      setEditingId(null);
+      toast.success("Brand updated");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not update brand.");
+    }
   };
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!newName.trim()) return;
-    addBrand({
+    const newBrand = {
       name: newName.trim(),
       description: newDesc.trim(),
       isActive: true,
       isFeatured: newIsFeatured,
       sortOrder: newSortOrder,
-    });
-    setNewName("");
-    setNewDesc("");
-    setNewSortOrder(brands.length + 2);
-    setNewIsFeatured(false);
-    setShowAdd(false);
-    toast.success("Brand created");
+    };
+    try {
+      const data = await saveCatalog(categories, [...brands, newBrand]);
+      syncCategories(data.categories);
+      syncBrands(data.brands);
+      setNewName("");
+      setNewDesc("");
+      setNewSortOrder(brands.length + 2);
+      setNewIsFeatured(false);
+      setShowAdd(false);
+      toast.success("Brand created");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not create brand.");
+    }
   };
 
-  const handleDelete = (id: string) => {
-    deleteBrand(id);
-    setDeleteConfirm(null);
-    toast.success("Brand deleted");
+  const handleDelete = async (id: string) => {
+    try {
+      const response = await fetch(`/api/catalog/brands/${id}`, { method: "DELETE" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not delete brand.");
+      deleteBrand(id);
+      setDeleteConfirm(null);
+      toast.success("Brand deleted");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not delete brand.");
+    }
+  };
+
+  const handleToggle = async (id: string) => {
+    const brand = brands.find((item) => item.id === id);
+    if (!brand) return;
+    try {
+      const response = await fetch(`/api/catalog/brands/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: !brand.isActive }),
+      });
+      if (!response.ok) throw new Error("Could not update brand.");
+      toggleBrandActive(id);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not update brand.");
+    }
   };
 
   return (
@@ -333,7 +426,7 @@ function BrandsSection() {
                   </div>
                   <div className="flex items-center gap-1">
                     <button onClick={() => startEdit(br)} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => toggleBrandActive(br.id)} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title={br.isActive ? "Deactivate" : "Activate"}>
+                    <button onClick={() => handleToggle(br.id)} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title={br.isActive ? "Deactivate" : "Activate"}>
                       {br.isActive ? <X className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
                     </button>
                     {deleteConfirm === br.id ? (

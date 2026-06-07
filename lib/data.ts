@@ -1,4 +1,4 @@
-import type { DashboardProduct } from "@/lib/dashboard-data";
+import type { DashboardCategory, DashboardProduct } from "@/lib/dashboard-data";
 
 export interface ProductData {
   id: string;
@@ -491,6 +491,16 @@ export function mergeProducts(dashboardProducts: DashboardProduct[]): ProductDat
   const merged = products.filter((p) => !dashboardSlugs.has(p.slug));
   // Append dashboard products at the beginning (newest first)
   return [...mapped, ...merged];
+}
+
+export function dashboardCategoryToCategoryData(category: DashboardCategory): CategoryData {
+  return {
+    id: category.id,
+    name: category.name,
+    slug: category.slug,
+    description: category.description,
+    productCount: category.productCount,
+  };
 }
 
 export function formatNAD(cents: number): string {

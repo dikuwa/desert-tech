@@ -14,7 +14,7 @@ import {
 import { ProductCard } from "@/components/storefront/product-card";
 import type { ProductData } from "@/components/storefront/product-card";
 import {
-  categories,
+  dashboardCategoryToCategoryData,
   ALL_CONDITIONS,
   filterProducts,
   mergeProducts,
@@ -41,11 +41,16 @@ export default function ShopPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const managedBrands = useDashboardStore((s) => s.brands);
+  const managedCategories = useDashboardStore((s) => s.categories);
   const dashboardProducts = useDashboardStore((s) => s.products);
   const [selectedBrand, setSelectedBrand] = useState("all");
 
   // Merge static products with dashboard-created products
   const allProducts = useMemo(() => mergeProducts(dashboardProducts), [dashboardProducts]);
+  const categories = useMemo(
+    () => managedCategories.filter((category) => category.isActive).sort((a, b) => a.sortOrder - b.sortOrder).map(dashboardCategoryToCategoryData),
+    [managedCategories],
+  );
 
   // Use managed active brands, fall back to all unique brands from products
   const BRANDS = useMemo(() => {

@@ -3,6 +3,7 @@ import { DashboardNotificationPoller } from "@/components/dashboard/notification
 import { requireAuth } from "@/lib/auth-server";
 import { redirect } from "next/navigation";
 import { ProductSync } from "@/components/product-sync";
+import { CatalogSync } from "@/components/catalog-sync";
 
 export default async function DashboardLayout({
   children,
@@ -20,6 +21,7 @@ export default async function DashboardLayout({
     <div className="dashboard-shell flex min-h-screen">
       <DashboardNotificationPoller />
       <ProductSync />
+      <CatalogSync importLocal />
       <DashboardSidebar
         user={{
           name: user.name,

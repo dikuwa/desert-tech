@@ -18,7 +18,6 @@ import {
   dashboardProductToProductData,
   getProductBySlug,
   formatNAD,
-  categories,
   mergeProducts,
   type ProductData,
 } from "@/lib/data";

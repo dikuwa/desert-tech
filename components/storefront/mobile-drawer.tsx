@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { useMobileMenu } from "@/lib/store/mobile-menu";
 import { useCart } from "@/lib/store/cart";
 import { searchProducts, formatNAD } from "@/lib/data";
+import { useDashboardStore } from "@/lib/store/dashboard";
 
 const navIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   "/": Home,
@@ -45,17 +46,6 @@ const categoryIcons: Record<string, React.ComponentType<{ className?: string }>>
   "Auto Services": Wrench,
 };
 
-const categories = [
-  { href: "/shop", label: "All Products" },
-  { href: "/shop?category=apple", label: "Apple" },
-  { href: "/shop?category=windows", label: "Windows" },
-  { href: "/shop?category=gaming", label: "Gaming" },
-  { href: "/shop?category=cctv", label: "CCTV & Security" },
-  { href: "/shop?category=pos", label: "POS Systems" },
-  { href: "/shop?category=accessories", label: "Accessories" },
-  { href: "/shop?category=mechanics", label: "Auto Services" },
-];
-
 const navLinks = [
   { href: "/", label: "Home" },
   { href: "/shop", label: "Shop" },
@@ -69,6 +59,14 @@ export function MobileDrawer() {
   const { isOpen, close } = useMobileMenu();
   const { getItemCount } = useCart();
   const itemCount = getItemCount();
+  const managedCategories = useDashboardStore((state) => state.categories);
+  const categories = [
+    { href: "/shop", label: "All Products" },
+    ...managedCategories
+      .filter((category) => category.isActive)
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((category) => ({ href: `/shop?category=${category.slug}`, label: category.name })),
+  ];
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => { setHydrated(true); }, []);
   const [searchQuery, setSearchQuery] = useState("");

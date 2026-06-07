@@ -24,20 +24,6 @@ import { useDashboardStore } from "@/lib/store/dashboard";
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
 const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
 
-const categories = [
-  { href: "/shop", label: "All Products" },
-  { href: "/shop?category=apple", label: "Apple" },
-  { href: "/shop?category=windows", label: "Windows" },
-  { href: "/shop?category=gaming", label: "Gaming" },
-  { href: "/shop?category=cctv", label: "CCTV & Security" },
-  { href: "/shop?category=pos", label: "POS Systems" },
-  { href: "/shop?category=accessories", label: "Accessories" },
-  { href: "/shop?category=mechanics", label: "Auto Services" },
-  { href: "/promotions", label: "Promotions" },
-  { href: "/services", label: "Services" },
-  { href: "/contact", label: "Contact" },
-];
-
 const navLinks = [
   { href: "/", label: "Home" },
   { href: "/shop", label: "Shop" },
@@ -52,6 +38,17 @@ export function StorefrontHeader() {
   const contactDetails = useDashboardStore((s) => s.contactDetails);
   const paymentMethods = useDashboardStore((s) => s.paymentMethods);
   const bankDetails = useDashboardStore((s) => s.bankDetails);
+  const managedCategories = useDashboardStore((s) => s.categories);
+  const categories = [
+    { href: "/shop", label: "All Products" },
+    ...managedCategories
+      .filter((category) => category.isActive)
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((category) => ({ href: `/shop?category=${category.slug}`, label: category.name })),
+    { href: "/promotions", label: "Promotions" },
+    { href: "/services", label: "Services" },
+    { href: "/contact", label: "Contact" },
+  ];
   const whatsapp = settings.whatsapp || WHATSAPP_NUMBER;
   const phone = settings.phone || PHONE_NUMBER;
   const activePayments = paymentMethods.filter((p) => p.isActive);
