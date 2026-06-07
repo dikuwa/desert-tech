@@ -295,15 +295,15 @@ export default function SettingsPage() {
   const storeManagementTabs: TabId[] = ["store", "hero", "contact", "banking", "payment-methods"];
   const personalTabs: TabId[] = ["security", "account"];
   const allTabs: { id: TabId; label: string; icon: any }[] = [
+    { id: "account", label: "Account", icon: User },
+    { id: "security", label: "Security", icon: Shield },
     { id: "store", label: "Store", icon: Building2 },
     { id: "hero", label: "Hero", icon: ImageIcon },
     { id: "contact", label: "Contact", icon: Phone },
     { id: "banking", label: "Banking", icon: CreditCard },
     { id: "payment-methods", label: "Payments", icon: Banknote },
-    { id: "security", label: "Security", icon: LockKeyhole },
-    { id: "account", label: "Account", icon: User },
   ];
-  const [activeTab, setActiveTab] = useState<TabId>("store");
+  const [activeTab, setActiveTab] = useState<TabId>("account");
   const tabs = allTabs.filter((tab) => {
     // Staff: only personal tabs
     if (userRole === "STAFF") return personalTabs.includes(tab.id);
@@ -361,18 +361,270 @@ export default function SettingsPage() {
       </div>
 
       <div className="grid gap-6">
+        {/* === SECURITY TAB (2FA Management) === */}
         {activeTab === "security" && (
-          <div className="max-w-xl rounded-xl border border-border bg-card p-6 space-y-5">
+          <div className="rounded-xl border border-border bg-card p-6 space-y-4">
             <div className="flex items-center gap-2 border-b border-border pb-3">
-              <LockKeyhole className="h-5 w-5 text-primary" />
-              <div>
-                <h2 className="text-base font-semibold text-foreground">Security Settings</h2>
-                <p className="text-xs text-muted-foreground">Password and security updates are now in the Account tab.</p>
+              <Shield className="h-5 w-5 text-primary" />
+              <h2 className="text-base font-semibold text-foreground">Security</h2>
+            </div>
+
+            {/* 2FA Management */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Smartphone className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Two-Factor Authentication</p>
+                    <p className="text-xs text-muted-foreground">Add an extra layer of security to your account</p>
+                  </div>
+                </div>
+                <Badge variant="outline" className={userSession?.twoFactorEnabled ? "bg-success/10 text-success border-success/20 text-[10px] font-bold" : "bg-muted text-muted-foreground text-[10px] font-bold"}>
+                  {userSession?.twoFactorEnabled ? "Enabled" : "Not Enabled"}
+                </Badge>
+              </div>
+
+              {tfaMessage && (
+                <p className="text-xs text-muted-foreground">{tfaMessage}</p>
+              )}
+
+              {/* Password confirmation step before enabling 2FA */}
+              {tfaState.step === "password" && (
+                <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+                  <p className="text-sm font-medium text-foreground">Confirm your password to enable 2FA</p>
+                  <input
+                    type="password"
+                    autoComplete="current-password"
+                    value={tfaPassword}
+                    onChange={(e) => setTfaPassword(e.target.value)}
+                    placeholder="Enter your current password"
+                    className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  />
+                  {tfaState.error && (
+                    <p className="text-xs text-destructive">{tfaState.error}</p>
+                  )}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={async () => {
+                        if (!tfaPassword) return;
+                        setTfaState((s) => ({ ...s, saving: true, error: undefined }));
+                        try {
+                          const res = await fetch("/api/auth/two-factor/enable", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ password: tfaPassword }),
+                          });
+                          if (!res.ok) {
+                            const data = await res.json();
+                            throw new Error(data.message || data.error || "Failed to enable 2FA");
+                          }
+                          const data = await res.json();
+                          setTfaState({
+                            step: "setup",
+                            qrCode: data.totpQR || data.qrCode || data.data?.totpQR || "",
+                            secret: data.secret || data.data?.secret || "",
+                            backupCodes: data.backupCodes || data.data?.backupCodes || [],
+                          });
+                          setTfaCode("");
+                          setTfaPassword("");
+                        } catch (err) {
+                          setTfaState((s) => ({ ...s, saving: false, error: err instanceof Error ? err.message : "Failed" }));
+                        }
+                      }}
+                      disabled={!tfaPassword || tfaState.saving}
+                      className="h-9 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                    >
+                      {tfaState.saving ? "Setting up..." : "Continue"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setTfaState({ step: "idle" });
+                        setTfaPassword("");
+                        setTfaCode("");
+                      }}
+                      className="h-9 rounded-lg border border-border px-4 text-xs font-semibold text-foreground hover:bg-muted"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* 2FA setup flow — QR code + backup codes + TOTP verify */}
+              {tfaState.step === "setup" && (
+                <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
+                  <p className="text-sm font-medium text-foreground">Scan this QR code with your authenticator app</p>
+                  {tfaState.qrCode && (
+                    <div className="flex justify-center">
+                      <img src={tfaState.qrCode} alt="TOTP QR Code" className="h-40 w-40 rounded-lg border border-border" />
+                    </div>
+                  )}
+                  {tfaState.secret && (
+                    <div>
+                      <p className="text-xs font-medium text-foreground mb-1">Or enter this secret manually:</p>
+                      <div className="flex items-center gap-2">
+                        <code className="flex-1 rounded border border-border bg-background px-2 py-1 text-[11px] font-mono select-all">{tfaState.secret}</code>
+                        <button
+                          onClick={() => navigator.clipboard.writeText(tfaState.secret!)}
+                          className="rounded-md border border-border px-2 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted"
+                        >
+                          <Copy className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {tfaState.backupCodes && tfaState.backupCodes.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-foreground mb-1">
+                        Backup codes — save these safely. Each code can be used once.
+                      </p>
+                      <div className="grid grid-cols-2 gap-1">
+                        {tfaState.backupCodes.map((code, i) => (
+                          <code key={i} className="rounded border border-border bg-background px-2 py-0.5 text-[10px] font-mono">
+                            {code}
+                          </code>
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => navigator.clipboard.writeText(tfaState.backupCodes!.join("\n"))}
+                        className="mt-1 text-[11px] text-primary hover:text-primary/80"
+                      >
+                        <Copy className="inline h-3 w-3 mr-1" />
+                        Copy all codes
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Verify TOTP code to complete setup */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-foreground">Verify by entering a code from your authenticator app:</p>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        value={tfaCode}
+                        onChange={(e) => setTfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                        placeholder="000000"
+                        className="h-9 w-28 rounded-lg border border-border bg-background px-3 text-sm font-mono text-center tracking-widest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                        maxLength={6}
+                      />
+                      <button
+                        onClick={async () => {
+                          if (tfaCode.length < 6) return;
+                          setTfaState((s) => ({ ...s, saving: true, error: undefined }));
+                          try {
+                            const res = await fetch("/api/auth/two-factor/verify", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ code: tfaCode }),
+                            });
+                            if (!res.ok) {
+                              const data = await res.json();
+                              throw new Error(data.message || data.error || "Verification failed");
+                            }
+                            setTfaState({ step: "done" });
+                            setTfaMessage("Two-factor authentication has been enabled.");
+                            // Refresh session data
+                            const sessionRes = await fetch("/api/auth/get-session");
+                            if (sessionRes.ok) {
+                              const sessionData = await sessionRes.json();
+                              if (sessionData?.user) {
+                                setUserSession((prev) => prev ? { ...prev, twoFactorEnabled: true } : prev);
+                              }
+                            }
+                          } catch (err) {
+                            setTfaState((s) => ({ ...s, error: err instanceof Error ? err.message : "Verification failed", saving: false }));
+                          }
+                        }}
+                        disabled={tfaCode.length < 6 || tfaState.saving}
+                        className="h-9 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {tfaState.saving ? "Verifying..." : "Verify & Enable"}
+                      </button>
+                    </div>
+                    {tfaState.error && (
+                      <p className="text-xs text-destructive">{tfaState.error}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {tfaState.step === "done" && (
+                <p className="text-xs text-success">2FA is now active on your account.</p>
+              )}
+
+              {/* Action buttons */}
+              <div className="flex gap-2">
+                {!userSession?.twoFactorEnabled && tfaState.step === "idle" && (
+                  <button
+                    onClick={() => {
+                      setTfaState({ step: "password" });
+                      setTfaPassword("");
+                      setTfaCode("");
+                      setTfaMessage(null);
+                    }}
+                    className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                  >
+                    <QrCode className="mr-1.5 h-3.5 w-3.5 inline" />
+                    Enable 2FA
+                  </button>
+                )}
+                {userSession?.twoFactorEnabled && (
+                  <>
+                    <button
+                      onClick={() => setDisable2FAOpen(true)}
+                      className="rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
+                    >
+                      <ShieldOff className="mr-1.5 h-3.5 w-3.5 inline" />
+                      Disable 2FA
+                    </button>
+                    <AlertDialog open={disable2FAOpen} onOpenChange={setDisable2FAOpen}>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Disable Two-Factor Authentication?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will reduce the security of your account. You will no longer need
+                            a verification code from your authenticator app when signing in.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel disabled={disabling2FA}>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            disabled={disabling2FA}
+                            onClick={async (e) => {
+                              e.preventDefault();
+                              setDisabling2FA(true);
+                              try {
+                                const res = await fetch("/api/auth/two-factor/disable", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                });
+                                if (!res.ok) {
+                                  const data = await res.json();
+                                  throw new Error(data.message || data.error || "Failed to disable 2FA");
+                                }
+                                setTfaState({ step: "idle" });
+                                toast.success("Two-factor authentication has been disabled.");
+                                setUserSession((prev) => prev ? { ...prev, twoFactorEnabled: false } : prev);
+                                setDisable2FAOpen(false);
+                              } catch (err) {
+                                toast.error(err instanceof Error ? err.message : "Failed to disable 2FA");
+                              } finally {
+                                setDisabling2FA(false);
+                              }
+                            }}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            {disabling2FA ? "Disabling..." : "Yes, Disable"}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </>
+                )}
               </div>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Go to the <strong>Account</strong> tab to change your password, manage two-factor authentication, view active sessions, and see recent activity.
-            </p>
           </div>
         )}
 
@@ -942,7 +1194,7 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* === ACCOUNT TAB === */}
+        {/* === ACCOUNT TAB (Profile, Password, Sessions, Activity) === */}
         {activeTab === "account" && (
           <div className="space-y-6">
             {/* Profile Card */}
@@ -1008,19 +1260,23 @@ export default function SettingsPage() {
                         Joined: {new Date(userSession.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                       </p>
                     )}
+                    {userSession?.lastActiveAt && (
+                      <p className="text-xs text-muted-foreground">
+                        Last active: {new Date(userSession.lastActiveAt).toLocaleString()}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Security Card */}
+            {/* Password Change */}
             <div className="rounded-xl border border-border bg-card p-6 space-y-4">
               <div className="flex items-center gap-2 border-b border-border pb-3">
-                <Shield className="h-5 w-5 text-primary" />
-                <h2 className="text-base font-semibold text-foreground">Security</h2>
+                <KeyRound className="h-5 w-5 text-primary" />
+                <h2 className="text-base font-semibold text-foreground">Password</h2>
               </div>
 
-              {/* Password Change - existing form */}
               <form onSubmit={handlePasswordChange} className="space-y-4">
                 {passwordMessage && (
                   <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-foreground">
@@ -1073,269 +1329,6 @@ export default function SettingsPage() {
                   {passwordSaving ? "Changing Password..." : "Change Password"}
                 </button>
               </form>
-
-              {/* 2FA Management */}
-              <div className="border-t border-border pt-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Smartphone className="h-5 w-5 text-primary" />
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">Two-Factor Authentication</p>
-                      <p className="text-xs text-muted-foreground">Add an extra layer of security</p>
-                    </div>
-                  </div>
-                  <Badge variant="outline" className={userSession?.twoFactorEnabled ? "bg-success/10 text-success border-success/20 text-[10px] font-bold" : "bg-muted text-muted-foreground text-[10px] font-bold"}>
-                    {userSession?.twoFactorEnabled ? "Enabled" : "Not Enabled"}
-                  </Badge>
-                </div>
-
-                {tfaMessage && (
-                  <p className="text-xs text-muted-foreground">{tfaMessage}</p>
-                )}
-
-                {/* Password confirmation step before enabling 2FA */}
-                {tfaState.step === "password" && (
-                  <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
-                    <p className="text-sm font-medium text-foreground">Confirm your password to enable 2FA</p>
-                    <input
-                      type="password"
-                      autoComplete="current-password"
-                      value={tfaPassword}
-                      onChange={(e) => setTfaPassword(e.target.value)}
-                      placeholder="Enter your current password"
-                      className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-                    />
-                    {tfaState.error && (
-                      <p className="text-xs text-destructive">{tfaState.error}</p>
-                    )}
-                    <div className="flex gap-2">
-                      <button
-                        onClick={async () => {
-                          if (!tfaPassword) return;
-                          setTfaState((s) => ({ ...s, saving: true, error: undefined }));
-                          try {
-                            const res = await fetch("/api/auth/two-factor/enable", {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ password: tfaPassword }),
-                            });
-                            if (!res.ok) {
-                              const data = await res.json();
-                              throw new Error(data.message || data.error || "Failed to enable 2FA");
-                            }
-                            const data = await res.json();
-                            setTfaState({
-                              step: "setup",
-                              qrCode: data.totpQR || data.qrCode || data.data?.totpQR || "",
-                              secret: data.secret || data.data?.secret || "",
-                              backupCodes: data.backupCodes || data.data?.backupCodes || [],
-                            });
-                            setTfaCode("");
-                            setTfaPassword("");
-                          } catch (err) {
-                            setTfaState((s) => ({ ...s, saving: false, error: err instanceof Error ? err.message : "Failed" }));
-                          }
-                        }}
-                        disabled={!tfaPassword || tfaState.saving}
-                        className="h-9 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-                      >
-                        {tfaState.saving ? "Setting up..." : "Continue"}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setTfaState({ step: "idle" });
-                          setTfaPassword("");
-                          setTfaCode("");
-                        }}
-                        className="h-9 rounded-lg border border-border px-4 text-xs font-semibold text-foreground hover:bg-muted"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* 2FA setup flow — QR code + backup codes + TOTP verify */}
-                {tfaState.step === "setup" && (
-                  <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
-                    <p className="text-sm font-medium text-foreground">Scan this QR code with your authenticator app</p>
-                    {tfaState.qrCode && (
-                      <div className="flex justify-center">
-                        <img src={tfaState.qrCode} alt="TOTP QR Code" className="h-40 w-40 rounded-lg border border-border" />
-                      </div>
-                    )}
-                    {tfaState.secret && (
-                      <div>
-                        <p className="text-xs font-medium text-foreground mb-1">Or enter this secret manually:</p>
-                        <div className="flex items-center gap-2">
-                          <code className="flex-1 rounded border border-border bg-background px-2 py-1 text-[11px] font-mono select-all">{tfaState.secret}</code>
-                          <button
-                            onClick={() => navigator.clipboard.writeText(tfaState.secret!)}
-                            className="rounded-md border border-border px-2 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted"
-                          >
-                            <Copy className="h-3 w-3" />
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                    {tfaState.backupCodes && tfaState.backupCodes.length > 0 && (
-                      <div>
-                        <p className="text-xs font-medium text-foreground mb-1">
-                          Backup codes — save these safely. Each code can be used once.
-                        </p>
-                        <div className="grid grid-cols-2 gap-1">
-                          {tfaState.backupCodes.map((code, i) => (
-                            <code key={i} className="rounded border border-border bg-background px-2 py-0.5 text-[10px] font-mono">
-                              {code}
-                            </code>
-                          ))}
-                        </div>
-                        <button
-                          onClick={() => navigator.clipboard.writeText(tfaState.backupCodes!.join("\n"))}
-                          className="mt-1 text-[11px] text-primary hover:text-primary/80"
-                        >
-                          <Copy className="inline h-3 w-3 mr-1" />
-                          Copy all codes
-                        </button>
-                      </div>
-                    )}
-
-                    {/* Verify TOTP code to complete setup */}
-                    <div className="space-y-2">
-                      <p className="text-xs font-medium text-foreground">Verify by entering a code from your authenticator app:</p>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          autoComplete="one-time-code"
-                          value={tfaCode}
-                          onChange={(e) => setTfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                          placeholder="000000"
-                          className="h-9 w-28 rounded-lg border border-border bg-background px-3 text-sm font-mono text-center tracking-widest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-                          maxLength={6}
-                        />
-                        <button
-                          onClick={async () => {
-                            if (tfaCode.length < 6) return;
-                            setTfaState((s) => ({ ...s, saving: true, error: undefined }));
-                            try {
-                              const res = await fetch("/api/auth/two-factor/verify", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ code: tfaCode }),
-                              });
-                              if (!res.ok) {
-                                const data = await res.json();
-                                throw new Error(data.message || data.error || "Verification failed");
-                              }
-                              setTfaState({ step: "done" });
-                              setTfaMessage("Two-factor authentication has been enabled.");
-                              // Refresh session data
-                              const sessionRes = await fetch("/api/auth/get-session");
-                              if (sessionRes.ok) {
-                                const sessionData = await sessionRes.json();
-                                if (sessionData?.user) {
-                                  setUserSession((prev) => prev ? { ...prev, twoFactorEnabled: true } : prev);
-                                }
-                              }
-                            } catch (err) {
-                              setTfaState((s) => ({ ...s, error: err instanceof Error ? err.message : "Verification failed", saving: false }));
-                            }
-                          }}
-                          disabled={tfaCode.length < 6 || tfaState.saving}
-                          className="h-9 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {tfaState.saving ? "Verifying..." : "Verify & Enable"}
-                        </button>
-                      </div>
-                      {tfaState.error && (
-                        <p className="text-xs text-destructive">{tfaState.error}</p>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {tfaState.step === "done" && (
-                  <p className="text-xs text-success">2FA is now active on your account.</p>
-                )}
-
-                {/* Action buttons */}
-                <div className="flex gap-2">
-                  {!userSession?.twoFactorEnabled && tfaState.step === "idle" && (
-                    <button
-                      onClick={() => {
-                        setTfaState({ step: "password" });
-                        setTfaPassword("");
-                        setTfaCode("");
-                        setTfaMessage(null);
-                      }}
-                      className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-                    >
-                      <QrCode className="mr-1.5 h-3.5 w-3.5 inline" />
-                      Enable 2FA
-                    </button>
-                  )}
-                  {userSession?.twoFactorEnabled && (
-                    <>
-                      <button
-                        onClick={() => setDisable2FAOpen(true)}
-                        className="rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
-                      >
-                        <ShieldOff className="mr-1.5 h-3.5 w-3.5 inline" />
-                        Disable 2FA
-                      </button>
-                      <AlertDialog open={disable2FAOpen} onOpenChange={setDisable2FAOpen}>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Disable Two-Factor Authentication?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This will reduce the security of your account. You will no longer need
-                              a verification code from your authenticator app when signing in.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel disabled={disabling2FA}>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              disabled={disabling2FA}
-                              onClick={async (e) => {
-                                e.preventDefault();
-                                setDisabling2FA(true);
-                                try {
-                                  const res = await fetch("/api/auth/two-factor/disable", {
-                                    method: "POST",
-                                    headers: { "Content-Type": "application/json" },
-                                  });
-                                  if (!res.ok) {
-                                    const data = await res.json();
-                                    throw new Error(data.message || data.error || "Failed to disable 2FA");
-                                  }
-                                  setTfaState({ step: "idle" });
-                                  toast.success("Two-factor authentication has been disabled.");
-                                  setUserSession((prev) => prev ? { ...prev, twoFactorEnabled: false } : prev);
-                                  setDisable2FAOpen(false);
-                                } catch (err) {
-                                  toast.error(err instanceof Error ? err.message : "Failed to disable 2FA");
-                                } finally {
-                                  setDisabling2FA(false);
-                                }
-                              }}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            >
-                              {disabling2FA ? "Disabling..." : "Yes, Disable"}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {userSession?.lastActiveAt && (
-                <p className="text-xs text-muted-foreground border-t border-border pt-3">
-                  Last active: {new Date(userSession.lastActiveAt).toLocaleString()}
-                </p>
-              )}
             </div>
 
             {/* Active Sessions Card */}
