@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CalendarClock, CheckCircle2, MessageCircle, Phone, Mail, ChevronLeft, ChevronRight } from "lucide-react";
+import { FadeIn } from "@/components/ui/fade-in";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { getStatusBadgeClass } from "@/lib/dashboard-data";
 import { cn } from "@/lib/utils";
@@ -36,8 +37,9 @@ export default function FollowUpsPage() {
       </div>
 
       <div className="space-y-3">
-        {paginated.map(f => (
-          <div key={f.id} className={cn("rounded-xl border bg-card p-4 transition-all hover:shadow-sm", f.status === "Done" && "opacity-60")}>
+        {paginated.map((f, i) => (
+          <FadeIn key={f.id} delay={i * 0.03}>
+          <div className={cn("rounded-xl border bg-card p-4 transition-all hover:shadow-sm", f.status === "Done" && "opacity-60")}>
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-3">
                 <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg",
@@ -66,6 +68,7 @@ export default function FollowUpsPage() {
               )}
             </div>
           </div>
+          </FadeIn>
         ))}
       </div>
 

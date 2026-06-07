@@ -13,6 +13,7 @@ import { useState, useRef } from "react";import {
   Upload,
 } from "lucide-react";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { FadeIn } from "@/components/ui/fade-in";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -189,8 +190,9 @@ export default function DashboardPromotionsPage() {
       )}
 
       <div className="grid gap-4">
-        {promotions.map(promo => (
-          <div key={promo.id} className={cn("rounded-xl border bg-card p-5 transition-all hover:shadow-sm", !promo.isActive && "opacity-60")}>
+        {promotions.map((promo, i) => (
+          <FadeIn key={promo.id} delay={i * 0.03}>
+          <div className={cn("rounded-xl border bg-card p-5 transition-all hover:shadow-sm", !promo.isActive && "opacity-60")}>
             {editId === promo.id ? (
               <div className="space-y-3">
                 <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
@@ -300,6 +302,7 @@ export default function DashboardPromotionsPage() {
               </div>
             )}
           </div>
+          </FadeIn>
         ))}
       </div>
 

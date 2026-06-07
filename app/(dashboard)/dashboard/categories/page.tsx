@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { FolderOpen, Plus, Pencil, Check, X, Trash2, Tag, Image as ImageIcon, Eye, EyeOff, Star } from "lucide-react";
+import { FadeIn } from "@/components/ui/fade-in";
 import { useSearchParams } from "next/navigation";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
@@ -127,8 +128,9 @@ function CategoriesSection() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {categories.map((cat) => (
-          <div key={cat.id} className="rounded-xl border border-border bg-card p-5 transition-all hover:shadow-sm">
+        {categories.map((cat, i) => (
+          <FadeIn key={cat.id} delay={i * 0.03}>
+          <div className="rounded-xl border border-border bg-card p-5 transition-all hover:shadow-sm">
             {editingId === cat.id ? (
               <div className="space-y-3">
                 <input value={editName} onChange={e => setEditName(e.target.value)}
@@ -174,6 +176,7 @@ function CategoriesSection() {
               </>
             )}
           </div>
+          </FadeIn>
         ))}
       </div>
     </div>
@@ -279,8 +282,9 @@ function BrandsSection() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        {sortedBrands.map((br) => (
-          <div key={br.id} className={cn("rounded-xl border bg-card p-4 transition-all hover:shadow-sm", br.isActive ? "border-border" : "border-dashed border-gray-200 opacity-70")}>
+        {sortedBrands.map((br, i) => (
+          <FadeIn key={br.id} delay={i * 0.03}>
+          <div className={cn("rounded-xl border bg-card p-4 transition-all hover:shadow-sm", br.isActive ? "border-border" : "border-dashed border-gray-200 opacity-70")}>
             {editingId === br.id ? (
               <div className="space-y-3">
                 <input value={editName} onChange={e => setEditName(e.target.value)}
@@ -342,6 +346,7 @@ function BrandsSection() {
               </>
             )}
           </div>
+          </FadeIn>
         ))}
       </div>
 

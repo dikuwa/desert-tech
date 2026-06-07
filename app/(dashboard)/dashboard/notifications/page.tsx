@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Bell, CheckCheck, Trash2, ChevronLeft, ChevronRight, ShoppingBag, Wallet, AlertTriangle, CalendarClock } from "lucide-react";
+import { FadeIn } from "@/components/ui/fade-in";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
 
@@ -79,11 +80,11 @@ export default function NotificationsPage() {
       </div>
 
       <div className="space-y-3">
-        {paginated.map(n => {
+        {paginated.map((n, i) => {
           const TypeIcon = getTypeIcon(n.type);
           return (
+            <FadeIn key={n.id} delay={i * 0.03}>
             <div
-              key={n.id}
               className={cn(
                 "rounded-xl border p-4 transition-all cursor-pointer hover:shadow-sm group",
                 n.isRead
@@ -120,6 +121,7 @@ export default function NotificationsPage() {
                 </button>
               </div>
             </div>
+          </FadeIn>
           );
         })}
       </div>

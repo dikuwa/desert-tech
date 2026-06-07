@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Wallet, ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { FadeIn } from "@/components/ui/fade-in";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { formatCents, getStatusBadgeClass } from "@/lib/dashboard-data";
 import { cn } from "@/lib/utils";
@@ -141,7 +142,7 @@ export default function PaymentsPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {datePresets.slice(0, 4).map(preset => {
+        {datePresets.slice(0, 4).map((preset) => {
           const cutoff = preset.days > 0 ? new Date(Date.now() - preset.days * 86400000) : new Date(0);
           const sum = payments
             .filter(p => p.status === "Confirmed" && new Date(p.recordedAt) >= cutoff)
@@ -164,6 +165,7 @@ export default function PaymentsPage() {
         })}
       </div>
 
+      <FadeIn delay={0.15}>
       <div className="rounded-xl border border-border bg-card overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -198,6 +200,7 @@ export default function PaymentsPage() {
           </div>
         )}
       </div>
+      </FadeIn>
 
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2">

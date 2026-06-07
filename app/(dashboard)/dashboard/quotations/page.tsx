@@ -13,6 +13,7 @@ import {
   Trash2,
   MoreHorizontal,
 } from "lucide-react";
+import { FadeIn } from "@/components/ui/fade-in";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
 import { formatCents, getStatusBadgeClass, getStatusLabel } from "@/lib/dashboard-data";
@@ -105,9 +106,9 @@ export default function QuotationsPage() {
         </div>
       ) : (
         <div className="space-y-2">
-          {filtered.map((qt) => (
+          {filtered.map((qt, i) => (
+            <FadeIn key={qt.id} delay={i * 0.03}>
             <div
-              key={qt.id}
               className="rounded-xl border border-border bg-card p-4 hover:shadow-sm transition-all"
             >
               <div className="flex items-start justify-between">
@@ -181,6 +182,7 @@ export default function QuotationsPage() {
                 </div>
               </div>
             </div>
+            </FadeIn>
           ))}
         </div>
       )}

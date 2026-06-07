@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { FadeIn } from "@/components/ui/fade-in";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
 import type {
@@ -304,6 +305,7 @@ export default function BackInStockPage() {
       </div>
 
       {/* Table */}
+      <FadeIn delay={0.1}>
       <div className="overflow-hidden rounded-xl border border-border bg-card">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -464,6 +466,7 @@ export default function BackInStockPage() {
           </table>
         </div>
       </div>
+      </FadeIn>
 
       {/* Pagination */}
       {totalPages > 1 && (

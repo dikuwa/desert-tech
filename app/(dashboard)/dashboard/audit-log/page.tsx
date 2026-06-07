@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { History, Search, ChevronLeft, ChevronRight, Clock, User, Copy, Check, ExternalLink, Download } from "lucide-react";
+import { FadeIn } from "@/components/ui/fade-in";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
 
@@ -268,9 +269,9 @@ export default function AuditLogPage() {
 
           {/* Table rows */}
           <div className="divide-y divide-border">
-            {paginated.map((entry) => (
+            {paginated.map((entry, i) => (
+              <FadeIn key={entry.id} delay={i * 0.02}>
               <div
-                key={entry.id}
                 className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 px-5 py-3 hover:bg-muted/20 transition-colors group"
               >
                 {/* Entity type badge */}
@@ -313,6 +314,7 @@ export default function AuditLogPage() {
                   </time>
                 </div>
               </div>
+              </FadeIn>
             ))}
           </div>
         </div>
