@@ -52,6 +52,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 // ============== PERMISSION GROUPS (reused from create-user-dialog) ==============
 
@@ -315,7 +316,7 @@ function QuickPermissionEditor({
 export function StaffList({ staff, currentUserRole, onUpdate }: StaffListProps) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<{
-    type: "suspend" | "activate" | "disable" | "revoke-sessions" | "delete";
+    type: "suspend" | "activate" | "disable" | "reactivate" | "unlock" | "revoke-sessions" | "delete";
     member: StaffMember;
   } | null>(null);
   const [editingPermissions, setEditingPermissions] = useState<StaffMember | null>(null);
@@ -327,6 +328,24 @@ export function StaffList({ staff, currentUserRole, onUpdate }: StaffListProps) 
   // ============== SEPARATE PILL STYLING ==============
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  /** Status dot indicator */
+  const getStatusDot = (status: UserStatus) => {
+    const colors: Record<UserStatus, string> = {
+      [UserStatus.ACTIVE]: "bg-emerald-500",
+      [UserStatus.INVITED]: "bg-amber-500",
+      [UserStatus.SUSPENDED]: "bg-red-500",
+      [UserStatus.DISABLED]: "bg-muted-foreground/40",
+      [UserStatus.LOCKED]: "bg-red-500",
+      [UserStatus.DELETED]: "bg-muted-foreground/30",
+    };
+    return (
+      <span
+        className={`inline-block h-2 w-2 rounded-full ${colors[status] || "bg-muted-foreground/40"}`}
+        title={status}
+      />
+    );
+  };
 
   /** Role pill — e.g. "OWNER" */
   const getRolePill = (role: UserRole) => {
@@ -374,9 +393,10 @@ export function StaffList({ staff, currentUserRole, onUpdate }: StaffListProps) 
         throw new Error(data.error || "Failed to update status");
       }
       onUpdate();
+      toast.success("Status updated successfully");
     } catch (error) {
       console.error("Failed to update status:", error);
-      alert(error instanceof Error ? error.message : "Failed to update status");
+      toast.error(error instanceof Error ? error.message : "Failed to update status");
     } finally {
       setLoadingId(null);
       setConfirmAction(null);
@@ -391,11 +411,11 @@ export function StaffList({ staff, currentUserRole, onUpdate }: StaffListProps) 
         const data = await res.json();
         throw new Error(data.error || "Failed to revoke sessions");
       }
-      alert("All sessions revoked successfully");
+      toast.success("All sessions revoked successfully");
       onUpdate();
     } catch (error) {
       console.error("Failed to revoke sessions:", error);
-      alert(error instanceof Error ? error.message : "Failed to revoke sessions");
+      toast.error(error instanceof Error ? error.message : "Failed to revoke sessions");
     } finally {
       setLoadingId(null);
       setConfirmAction(null);
@@ -411,9 +431,10 @@ export function StaffList({ staff, currentUserRole, onUpdate }: StaffListProps) 
         throw new Error(data.error || "Failed to delete user");
       }
       onUpdate();
+      toast.success("Account deleted");
     } catch (error) {
       console.error("Failed to delete user:", error);
-      alert(error instanceof Error ? error.message : "Failed to delete user");
+      toast.error(error instanceof Error ? error.message : "Failed to delete user");
     } finally {
       setLoadingId(null);
       setConfirmAction(null);
@@ -428,10 +449,10 @@ export function StaffList({ staff, currentUserRole, onUpdate }: StaffListProps) 
         const data = await res.json();
         throw new Error(data.error || "Failed to send password reset");
       }
-      alert("Password reset email sent");
+      toast.success("Password reset sent via email & WhatsApp");
     } catch (error) {
       console.error("Failed to send password reset:", error);
-      alert(error instanceof Error ? error.message : "Failed to send password reset");
+      toast.error(error instanceof Error ? error.message : "Failed to send password reset");
     } finally {
       setLoadingId(null);
     }
@@ -449,11 +470,11 @@ export function StaffList({ staff, currentUserRole, onUpdate }: StaffListProps) 
         const data = await res.json();
         throw new Error(data.error || "Failed to require password change");
       }
-      alert("User will be required to change password on next login");
+      toast.success("User will be required to change password on next login");
       onUpdate();
     } catch (error) {
       console.error("Failed to require password change:", error);
-      alert(error instanceof Error ? error.message : "Failed to require password change");
+      toast.error(error instanceof Error ? error.message : "Failed to require password change");
     } finally {
       setLoadingId(null);
     }
@@ -467,11 +488,11 @@ export function StaffList({ staff, currentUserRole, onUpdate }: StaffListProps) 
         const data = await res.json();
         throw new Error(data.error || "Failed to reset 2FA");
       }
-      alert("Two-factor authentication has been reset");
+      toast.success("Two-factor authentication has been reset");
       onUpdate();
     } catch (error) {
       console.error("Failed to reset 2FA:", error);
-      alert(error instanceof Error ? error.message : "Failed to reset 2FA");
+      toast.error(error instanceof Error ? error.message : "Failed to reset 2FA");
     } finally {
       setLoadingId(null);
     }
@@ -554,12 +575,15 @@ export function StaffList({ staff, currentUserRole, onUpdate }: StaffListProps) 
           >
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-primary font-bold text-lg">
+                <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-primary font-bold text-lg">
                   {member.name
                     .split(" ")
                     .map((n) => n[0])
                     .join("")
                     .toUpperCase()}
+                  <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 border-card bg-card">
+                    {getStatusDot(member.status)}
+                  </span>
                 </div>
 
                 <div>
@@ -678,11 +702,21 @@ export function StaffList({ staff, currentUserRole, onUpdate }: StaffListProps) 
 
                     {member.status === UserStatus.DISABLED && (
                       <DropdownMenuItem
-                        onClick={() => handleStatusChange(member.id, UserStatus.ACTIVE)}
+                        onClick={() => setConfirmAction({ type: "reactivate", member })}
                         className="text-success"
                       >
                         <Shield className="mr-2 h-4 w-4" />
                         Reactivate
+                      </DropdownMenuItem>
+                    )}
+
+                    {member.status === UserStatus.LOCKED && (
+                      <DropdownMenuItem
+                        onClick={() => setConfirmAction({ type: "unlock", member })}
+                        className="text-success"
+                      >
+                        <Shield className="mr-2 h-4 w-4" />
+                        Unlock Account
                       </DropdownMenuItem>
                     )}
 
@@ -743,6 +777,8 @@ export function StaffList({ staff, currentUserRole, onUpdate }: StaffListProps) 
               {confirmAction?.type === "suspend" && "Suspend Account"}
               {confirmAction?.type === "activate" && "Activate Account"}
               {confirmAction?.type === "disable" && "Disable Account"}
+              {confirmAction?.type === "reactivate" && "Reactivate Account"}
+              {confirmAction?.type === "unlock" && "Unlock Account"}
               {confirmAction?.type === "revoke-sessions" && "Revoke All Sessions"}
               {confirmAction?.type === "delete" && "Delete Account"}
             </AlertDialogTitle>
@@ -753,6 +789,10 @@ export function StaffList({ staff, currentUserRole, onUpdate }: StaffListProps) 
                 `Are you sure you want to activate ${confirmAction.member.name}'s account?`}
               {confirmAction?.type === "disable" &&
                 `Are you sure you want to disable ${confirmAction.member.name}'s account? They will lose all dashboard access.`}
+              {confirmAction?.type === "reactivate" &&
+                `Are you sure you want to reactivate ${confirmAction.member.name}'s account? They will regain access to the dashboard.`}
+              {confirmAction?.type === "unlock" &&
+                `${confirmAction.member.name}'s account has been locked due to failed sign-in attempts. Are you sure you want to unlock it? They will be able to sign in again.`}
               {confirmAction?.type === "revoke-sessions" &&
                 `Revoke all active sessions for ${confirmAction.member.name}? They will be logged out of all devices.`}
               {confirmAction?.type === "delete" &&
@@ -773,7 +813,9 @@ export function StaffList({ staff, currentUserRole, onUpdate }: StaffListProps) 
                     confirmAction.member.id,
                     confirmAction.type === "suspend"
                       ? UserStatus.SUSPENDED
-                      : confirmAction.type === "activate"
+                      : confirmAction.type === "activate" ||
+                        confirmAction.type === "reactivate" ||
+                        confirmAction.type === "unlock"
                       ? UserStatus.ACTIVE
                       : UserStatus.DISABLED
                   );
