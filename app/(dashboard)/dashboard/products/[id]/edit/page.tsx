@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft, Save, ImagePlus, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { MoneyInput } from "@/components/ui/money-input";
 import { useDashboardStore } from "@/lib/store/dashboard";
+import { generateProductSku } from "@/lib/product-sku";
 import { toast } from "sonner";
 
 export default function EditProductPage() {
@@ -34,15 +35,33 @@ export default function EditProductPage() {
       stockQuantity: product.stockQuantity,
       reorderLimit: product.lowStockThreshold,
       description: product.description || "",
-      sku: product.sku || "",
+      sku: product.sku || generateProductSku(product.category, products),
+      skuWasManuallyEdited: false,
       warranty: product.warranty || "",
       isFeatured: product.isFeatured,
       priceWas: product.compareAtPriceCents || 0,
     };
   });
 
-  const updateField = (field: string, value: any) =>
-    setForm(prev => prev ? { ...prev, [field]: value } : prev);
+  useEffect(() => {
+    setForm((prev) => {
+      if (!prev || prev.skuWasManuallyEdited || product?.sku) return prev;
+      return { ...prev, sku: generateProductSku(prev.category, products) };
+    });
+  }, [product?.sku, products]);
+
+  const updateField = (field: string, value: string | boolean | number) =>
+    setForm(prev => {
+      if (!prev) return prev;
+      const updated = { ...prev, [field]: value };
+      if (field === "category" && typeof value === "string" && !prev.skuWasManuallyEdited) {
+        updated.sku = generateProductSku(
+          value,
+          products.filter((existing) => existing.id !== product?.id),
+        );
+      }
+      return updated;
+    });
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -95,6 +114,10 @@ export default function EditProductPage() {
 
   const onSubmit = async () => {
     if (!form.name.trim()) return;
+    if (form.sku && products.some(p => p.id !== product.id && p.sku?.toLowerCase() === form.sku.toLowerCase())) {
+      toast.error(`SKU "${form.sku}" already exists. Please use a unique SKU.`);
+      return;
+    }
     setSubmitting(true);
     const stockWasUnavailable = product.availability === "OutOfStock" || product.stockQuantity <= 0;
     const stockIsAvailable = form.stockQuantity > 0;
@@ -235,8 +258,13 @@ export default function EditProductPage() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground">SKU</label>
-                  <input value={form.sku} onChange={e => updateField("sku", e.target.value)}
-                    className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" placeholder="DT-001" />
+                  <input value={form.sku} onChange={e => setForm(prev => prev ? {
+                    ...prev,
+                    sku: e.target.value,
+                    skuWasManuallyEdited: true,
+                  } : prev)}
+                    className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" placeholder="DT-APP-0001" />
+                  <p className="mt-1 text-[10px] text-muted-foreground">Auto-generated from category. Edit to set manually.</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground">Warranty</label>

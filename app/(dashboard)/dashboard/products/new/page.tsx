@@ -1,43 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, ImagePlus, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { MoneyInput } from "@/components/ui/money-input";
 import { useDashboardStore } from "@/lib/store/dashboard";
+import { generateProductSku } from "@/lib/product-sku";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-
-const CATEGORY_SKU_CODES: Record<string, string> = {
-  "Apple": "APP",
-  "Windows": "LAP",
-  "Gaming": "GAME",
-  "CCTV & Security": "CCTV",
-  "POS Systems": "POS",
-  "Accessories": "ACC",
-  "Phones & Tablets": "PHT",
-  "Networking": "NET",
-  "Auto Services": "AUTO",
-};
-
-function generateSKU(category: string, existingProducts: { sku?: string }[]): string {
-  const code = CATEGORY_SKU_CODES[category] || "GEN";
-  // Find the highest sequence number for this category code
-  let maxSeq = 0;
-  for (const p of existingProducts) {
-    if (p.sku) {
-      const match = p.sku.match(new RegExp(`^DT-${code}-(\\d+)$`));
-      if (match) {
-        const seq = parseInt(match[1], 10);
-        if (seq > maxSeq) maxSeq = seq;
-      }
-    }
-  }
-  const nextSeq = String(maxSeq + 1).padStart(4, "0");
-  return `DT-${code}-${nextSeq}`;
-}
 
 export default function NewProductPage() {
   const router = useRouter();
@@ -50,16 +22,22 @@ export default function NewProductPage() {
   const [uploading, setUploading] = useState(false);    const [form, setForm] = useState({
     name: "", brand: "", category: "Apple", condition: "New" as const,
     priceCents: 0, stockQuantity: 0, reorderLimit: 5,
-    description: "", sku: "", skuWasManuallyEdited: false, warranty: "", isFeatured: false,
+    description: "", sku: generateProductSku("Apple", products), skuWasManuallyEdited: false, warranty: "", isFeatured: false,
     priceWas: 0,
   });
+
+  useEffect(() => {
+    setForm((prev) => prev.skuWasManuallyEdited
+      ? prev
+      : { ...prev, sku: generateProductSku(prev.category, products) });
+  }, [products]);
 
   const updateField = (field: string, value: string | boolean | number) => {
     setForm(prev => {
       const updated = { ...prev, [field]: value };
       // Auto-generate SKU when category changes and SKU hasn't been manually edited
       if (field === "category" && typeof value === "string" && !prev.skuWasManuallyEdited) {
-        updated.sku = generateSKU(value, products);
+        updated.sku = generateProductSku(value, products);
       }
       return updated;
     });
@@ -108,7 +86,7 @@ export default function NewProductPage() {
   const onSubmit = async () => {
     if (!form.name.trim() || !form.brand.trim() || !form.priceCents) return;
     // Validate SKU uniqueness
-    if (form.sku && products.some(p => p.sku === form.sku)) {
+    if (form.sku && products.some(p => p.sku?.toLowerCase() === form.sku.toLowerCase())) {
       toast.error(`SKU "${form.sku}" already exists. Please use a unique SKU.`);
       return;
     }
