@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Plus, Users, UserX, AlertCircle, Loader2 } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { Plus, Users, UserX, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CreateUserDialog } from "@/components/staff/create-user-dialog";
 import { StaffList } from "@/components/staff/staff-list";
@@ -36,15 +36,13 @@ export default function StaffPage() {
   const router = useRouter();
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [currentUserRole, setCurrentUserRole] = useState<UserRole>(UserRole.STAFF);
   const [hasManagePermission, setHasManagePermission] = useState(false);
 
-  const fetchStaff = async () => {
+  const fetchStaff = useCallback(async () => {
     try {
-      setLoading(true);
       const [staffRes, invitationsRes] = await Promise.all([
         fetch("/api/staff"),
         fetch("/api/invitations?status=PENDING&limit=50"),
@@ -74,10 +72,8 @@ export default function StaffPage() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load staff");
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [router]);
 
   const checkPermissions = async () => {
     try {
@@ -103,7 +99,7 @@ export default function StaffPage() {
   useEffect(() => {
     fetchStaff();
     checkPermissions();
-  }, []);
+  }, [fetchStaff]);
 
   const activeCount = staff.filter((s) => s.status === UserStatus.ACTIVE).length;
   const disabledCount = staff.filter((s) => s.status === UserStatus.DISABLED).length;
@@ -173,19 +169,12 @@ export default function StaffPage() {
         </div>
       )}
 
-      {/* Loading */}
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-primary/60" />
-        </div>
-      ) : (
-        <StaffList
-          staff={staff}
-          pendingInvitations={pendingInvitations}
-          currentUserRole={currentUserRole}
-          onUpdate={fetchStaff}
-        />
-      )}
+      <StaffList
+        staff={staff}
+        pendingInvitations={pendingInvitations}
+        currentUserRole={currentUserRole}
+        onUpdate={fetchStaff}
+      />
 
       <CreateUserDialog
         open={createUserOpen}
