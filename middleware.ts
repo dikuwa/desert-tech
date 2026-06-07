@@ -82,7 +82,9 @@ export default async function middleware(req: NextRequest) {
   }
 
   // Check for session cookie
-  const sessionCookie = req.cookies.get("better-auth.session_token");
+  const sessionCookie =
+    req.cookies.get("__Secure-better-auth.session_token") ??
+    req.cookies.get("better-auth.session_token");
 
   // Protect dashboard routes
   if (pathname.startsWith("/dashboard") || pathname.startsWith("/api/")) {
