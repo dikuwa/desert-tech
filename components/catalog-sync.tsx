@@ -61,7 +61,6 @@ export function CatalogSync({ importLocal = false }: { importLocal?: boolean }) 
         body: JSON.stringify({
           categories: changedCategories,
           brands: changedBrands,
-          replaceBrands: true,
         }),
       } : undefined);
       if (!response.ok) return;
