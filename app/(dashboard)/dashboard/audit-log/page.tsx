@@ -35,7 +35,7 @@ const ENTITY_ROUTES: Record<string, (entityId: string) => string> = {
   promotion: () => `/dashboard/promotions`,
   settings: () => `/dashboard/settings`,
   backinstock: () => `/dashboard/back-in-stock`,
-  brand: () => `/dashboard/categories`,
+  brand: (id) => `/dashboard/brands/${id}`,
   notification: () => `/dashboard/notifications`,
 };
 
@@ -110,14 +110,23 @@ export default function AuditLogPage() {
   const auditLogs = useDashboardStore((s) => s.auditLogs);
   const [search, setSearch] = useState("");
   const [entityFilter, setEntityFilter] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
   const entityTypes = ["all", "order", "quotation", "product", "payment", "customer", "staff", "category", "promotion", "brand", "backinstock", "notification", "settings"];
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
+    const fromMs = dateFrom ? new Date(dateFrom).getTime() : 0;
+    const toMs = dateTo ? new Date(dateTo + "T23:59:59").getTime() : Infinity;
+
     return auditLogs.filter((entry) => {
       if (entityFilter !== "all" && entry.entityType !== entityFilter) return false;
+      if (fromMs || toMs < Infinity) {
+        const ts = new Date(entry.timestamp).getTime();
+        if (ts < fromMs || ts > toMs) return false;
+      }
       if (!q) return true;
       return (
         entry.action.toLowerCase().includes(q) ||
@@ -126,7 +135,7 @@ export default function AuditLogPage() {
         entry.entityId.toLowerCase().includes(q)
       );
     });
-  }, [auditLogs, search, entityFilter]);
+  }, [auditLogs, search, entityFilter, dateFrom, dateTo]);
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginated = filtered.slice(
@@ -193,24 +202,42 @@ export default function AuditLogPage() {
             className="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
           />
         </div>
-        <div className="flex gap-1.5 overflow-x-auto flex-wrap">
-          {entityTypes.map((type) => (
-            <button
-              key={type}
-              onClick={() => { setEntityFilter(type); setCurrentPage(1); }}
-              className={cn(
-                "rounded-lg px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors border",
-                entityFilter === type
-                  ? type === "all"
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : `${ENTITY_COLORS[type]} border-current`
-                  : "bg-muted text-muted-foreground border-border hover:bg-muted/80 hover:text-foreground",
-              )}
-            >
-              {type === "all" ? "All" : type.charAt(0).toUpperCase() + type.slice(1)}
-            </button>
-          ))}
+        <div className="flex gap-2 overflow-x-auto flex-wrap">
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => { setDateFrom(e.target.value); setCurrentPage(1); }}
+            className="h-10 rounded-lg border border-border bg-background px-3 text-xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+            title="From date"
+          />
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => { setDateTo(e.target.value); setCurrentPage(1); }}
+            className="h-10 rounded-lg border border-border bg-background px-3 text-xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+            title="To date"
+          />
         </div>
+      </div>
+
+      {/* Entity type filters */}
+      <div className="flex gap-1.5 overflow-x-auto flex-wrap">
+        {entityTypes.map((type) => (
+          <button
+            key={type}
+            onClick={() => { setEntityFilter(type); setCurrentPage(1); }}
+            className={cn(
+              "rounded-lg px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors border",
+              entityFilter === type
+                ? type === "all"
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : `${ENTITY_COLORS[type]} border-current`
+                : "bg-muted text-muted-foreground border-border hover:bg-muted/80 hover:text-foreground",
+            )}
+          >
+            {type === "all" ? "All" : type.charAt(0).toUpperCase() + type.slice(1)}
+          </button>
+        ))}
       </div>
 
       {/* Audit log table */}

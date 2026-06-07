@@ -64,12 +64,14 @@ export default function OrderReceiptPage() {
 
   const [customerLink, setCustomerLink] = useState<string | null>(null);
   const [generatingLink, setGeneratingLink] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   const handlePrint = () => {
     window.print();
   };
 
   const handleDownloadPDF = async () => {
+    setDownloadingPdf(true);
     try {
       const res = await fetch("/api/receipts/generate", {
         method: "POST",
@@ -87,6 +89,8 @@ export default function OrderReceiptPage() {
       toast.success("Receipt PDF downloaded");
     } catch (err) {
       toast.error("Failed to generate PDF");
+    } finally {
+      setDownloadingPdf(false);
     }
   };
 
@@ -187,10 +191,15 @@ export default function OrderReceiptPage() {
           </button>
           <button
             onClick={handleDownloadPDF}
+            disabled={downloadingPdf}
             title="Download PDF"
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50"
           >
-            <Download className="h-4 w-4" />
+            {downloadingPdf ? (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
           </button>
           <button
             onClick={handlePrint}

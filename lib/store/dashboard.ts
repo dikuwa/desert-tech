@@ -382,14 +382,22 @@ export const useDashboardStore = create<DashboardState>()(
         })),
 
       // === Staff ===
-      updateStaff: (id, data) =>
+      updateStaff: (id, data) => {
+        const { staff } = get();
+        const member = staff.find((m) => m.id === id);
         set((s) => ({
           staff: s.staff.map((m) => (m.id === id ? { ...m, ...data } : m)),
-        })),
-      updateStaffRole: (id, role) =>
+        }));
+        if (member) get().addAuditLog({ action: "Staff updated", entityType: "staff", entityId: id, entityLabel: member.name });
+      },
+      updateStaffRole: (id, role) => {
+        const { staff } = get();
+        const member = staff.find((m) => m.id === id);
         set((s) => ({
           staff: s.staff.map((m) => (m.id === id ? { ...m, role } : m)),
-        })),
+        }));
+        if (member) get().addAuditLog({ action: `Staff role: ${role}`, entityType: "staff", entityId: id, entityLabel: member.name });
+      },
 
       // === Audit Log ===
       addAuditLog: (entry) => {
@@ -811,6 +819,7 @@ export const useDashboardStore = create<DashboardState>()(
       // === Staff ===
       addStaff: (s) => {
         const id = `s${nextStaffId++}`;
+        const newName = s.name || "New Staff";
         set((state) => ({
           staff: [
             {
@@ -821,13 +830,18 @@ export const useDashboardStore = create<DashboardState>()(
             ...state.staff,
           ],
         }));
+        get().addAuditLog({ action: "Staff created", entityType: "staff", entityId: id, entityLabel: newName });
       },
-      toggleStaffActive: (id) =>
+      toggleStaffActive: (id) => {
+        const { staff } = get();
+        const member = staff.find((m) => m.id === id);
         set((s) => ({
           staff: s.staff.map((m) =>
             m.id === id ? { ...m, isActive: !m.isActive } : m
           ),
-        })),
+        }));
+        if (member) get().addAuditLog({ action: `Staff ${member.isActive ? "deactivated" : "activated"}`, entityType: "staff", entityId: id, entityLabel: member.name });
+      },
 
       // === Notifications ===
       markNotificationRead: (id) =>
