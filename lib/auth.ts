@@ -155,14 +155,28 @@ export const auth = betterAuth({
 
       const user = await db.user.findUnique({
         where: { email },
-        select: { status: true },
+        select: { status: true, role: true, twoFactorEnabled: true, mustChangePassword: true, permissions: true },
       });
 
-      if (user && user.status !== UserStatus.ACTIVE) {
+      if (!user) return;
+
+      // Account status check
+      if (user.status !== UserStatus.ACTIVE) {
         throw new APIError("FORBIDDEN", {
           message: "This account is not active. Contact an administrator.",
         });
       }
+
+      // Force password change for fresh accounts
+      if (user.mustChangePassword) {
+        throw new APIError("FORBIDDEN", {
+          message: "You must change your password before accessing the dashboard. Please use the forgot password flow or contact your administrator.",
+        });
+      }
+
+      // 2FA enforcement is handled by the Better Auth twoFactor plugin
+      // during sign-in. It is NOT enforced here to avoid locking users out
+      // before they have a chance to set it up in Settings > Account.
     }),
     after: createAuthMiddleware(async (ctx) => {
       if (ctx.path !== "/sign-in/email" || !db) return;
