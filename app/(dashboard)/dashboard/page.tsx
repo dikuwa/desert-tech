@@ -33,7 +33,6 @@ export default function DashboardPage() {
   const customers = useDashboardStore((s) => s.customers);
   const notifications = useDashboardStore((s) => s.notifications);
   const followUps = useDashboardStore((s) => s.followUps);
-  const userRole = useDashboardStore((s) => s.userRole);
   const staffPermissions = useDashboardStore((s) => {
     const currentUser = s.currentUser;
     const member = s.staff.find((m) => m.name === currentUser);
@@ -51,11 +50,14 @@ export default function DashboardPage() {
   const pendingFollowUps = followUps.filter((f) => f.status === "Pending");
   const unreadNotifications = notifications.filter((n) => !n.isRead);
 
-  // Financial permission check
+  // Financial permission check — uses session role for accurate gating
+  const userSessionRole = profile?.role;
   const hasFinancialAccess =
-    staffPermissions.includes(Permissions.PAYMENTS_VIEW) ||
-    staffPermissions.includes(Permissions.DASHBOARD_VIEW_FINANCIAL_SUMMARY) ||
-    (userRole === "Admin" && staffPermissions.includes("all"));
+    userSessionRole === "OWNER" ||
+    (userSessionRole !== "STAFF" && userSessionRole !== "" && (
+      staffPermissions.includes(Permissions.PAYMENTS_VIEW) ||
+      staffPermissions.includes(Permissions.DASHBOARD_VIEW_FINANCIAL_SUMMARY)
+    ));
 
   const stats = [
     { label: "New Orders", value: pendingOrders.length, icon: ShoppingBag, color: "text-primary", bg: "bg-accent", href: "/dashboard/orders" },

@@ -41,6 +41,7 @@ import {
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn, decodeHTMLEntities } from "@/lib/utils";
 import type { BankDetail, ContactDetail, PaymentMethod } from "@/lib/dashboard-data";
+import { Permissions } from "@/lib/permissions";
 import {
   Select,
   SelectContent,
@@ -88,6 +89,7 @@ export default function SettingsPage() {
     jobTitle?: string;
     phone?: string;
     twoFactorEnabled?: boolean;
+    permissions?: string[];
     lastActiveAt?: string;
     createdAt?: string;
   } | null>(null);
@@ -106,6 +108,7 @@ export default function SettingsPage() {
             jobTitle: data.user.jobTitle || undefined,
             phone: data.user.phone || undefined,
             twoFactorEnabled: data.user.twoFactorEnabled || false,
+            permissions: data.user.permissions || [],
             lastActiveAt: data.user.lastActiveAt || undefined,
             createdAt: data.user.createdAt || undefined,
           });
@@ -117,7 +120,7 @@ export default function SettingsPage() {
 
   const [saved, setSaved] = useState(false);
   const [form, setForm] = useState(settings);
-  const [activeTab, setActiveTab] = useState<"store" | "hero" | "contact" | "banking" | "payment-methods" | "security" | "account">("store");
+
   const [uploading, setUploading] = useState(false);
   const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
   const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
@@ -282,15 +285,44 @@ export default function SettingsPage() {
     setShowPaymentForm(true);
   };
 
-  const tabs = [
-    { id: "store" as const, label: "Store", icon: Building2 },
-    { id: "hero" as const, label: "Hero", icon: ImageIcon },
-    { id: "contact" as const, label: "Contact", icon: Phone },
-    { id: "banking" as const, label: "Banking", icon: CreditCard },
-    { id: "payment-methods" as const, label: "Payments", icon: Banknote },
-    { id: "security" as const, label: "Security", icon: LockKeyhole },
-    { id: "account" as const, label: "Account", icon: User },
+  // Determine which tabs to show based on role
+  // OWNER: all tabs
+  // ADMIN: store management tabs only if SETTINGS_UPDATE permission is granted
+  // STAFF: only Account and Security (no store management)
+  const userRole = userSession?.role;
+  const userPermissions = userSession?.permissions ?? [];
+  type TabId = "store" | "hero" | "contact" | "banking" | "payment-methods" | "security" | "account";
+  const storeManagementTabs: TabId[] = ["store", "hero", "contact", "banking", "payment-methods"];
+  const personalTabs: TabId[] = ["security", "account"];
+  const allTabs: { id: TabId; label: string; icon: any }[] = [
+    { id: "store", label: "Store", icon: Building2 },
+    { id: "hero", label: "Hero", icon: ImageIcon },
+    { id: "contact", label: "Contact", icon: Phone },
+    { id: "banking", label: "Banking", icon: CreditCard },
+    { id: "payment-methods", label: "Payments", icon: Banknote },
+    { id: "security", label: "Security", icon: LockKeyhole },
+    { id: "account", label: "Account", icon: User },
   ];
+  const [activeTab, setActiveTab] = useState<TabId>("store");
+  const tabs = allTabs.filter((tab) => {
+    // Staff: only personal tabs
+    if (userRole === "STAFF") return personalTabs.includes(tab.id);
+    // Admin: store tabs only if they have SETTINGS_UPDATE permission
+    if (userRole === "ADMIN" && storeManagementTabs.includes(tab.id)) {
+      // Owner grants store access by assigning SETTINGS_UPDATE to the Admin
+      return userPermissions.includes(Permissions.SETTINGS_UPDATE);
+    }
+    // OWNER & everyone else: all tabs
+    return true;
+  });
+
+  // If active tab is filtered out, switch to first available tab
+  useEffect(() => {
+    if (!userSession) return;
+    if (tabs.length > 0 && !tabs.find((t) => t.id === activeTab)) {
+      setActiveTab(tabs[0].id);
+    }
+  }, [userSession?.role, userSession?.permissions, activeTab]);
 
   return (
     <div className="space-y-6">
@@ -303,7 +335,12 @@ export default function SettingsPage() {
 
       {/* Tab Navigation */}
       <div className="flex flex-wrap gap-1 rounded-xl border border-border bg-card p-1">
-        {tabs.map((tab) => {
+        {!userSession && sessionLoading ? (
+          <div className="flex gap-1.5 p-1">
+            <div className="h-8 w-20 animate-pulse rounded-lg bg-muted" />
+            <div className="h-8 w-20 animate-pulse rounded-lg bg-muted" />
+          </div>
+        ) : tabs.map((tab) => {
           const Icon = tab.icon;
           return (
             <button
