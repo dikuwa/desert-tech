@@ -21,9 +21,21 @@ interface StaffMember {
   createdAt: Date;
 }
 
+interface PendingInvitation {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  status: string;
+  expiresAt: string;
+  createdAt: string;
+  invitedBy: { name: string; email: string } | null;
+}
+
 export default function StaffPage() {
   const router = useRouter();
   const [staff, setStaff] = useState<StaffMember[]>([]);
+  const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [createUserOpen, setCreateUserOpen] = useState(false);
@@ -33,25 +45,33 @@ export default function StaffPage() {
   const fetchStaff = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/staff");
+      const [staffRes, invitationsRes] = await Promise.all([
+        fetch("/api/staff"),
+        fetch("/api/invitations?status=PENDING&limit=50"),
+      ]);
 
-      if (res.status === 401) {
+      if (staffRes.status === 401) {
         router.push("/admin/login");
         return;
       }
 
-      if (res.status === 403) {
+      if (staffRes.status === 403) {
         setError("You don't have permission to view staff");
         return;
       }
 
-      if (!res.ok) {
-        const data = await res.json();
+      if (!staffRes.ok) {
+        const data = await staffRes.json();
         throw new Error(data.error || "Failed to fetch staff");
       }
 
-      const data = await res.json();
-      setStaff(data.staff);
+      const staffData = await staffRes.json();
+      setStaff(staffData.staff);
+
+      if (invitationsRes.ok) {
+        const invitesData = await invitationsRes.json();
+        setPendingInvitations(invitesData.invitations || []);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load staff");
     } finally {
@@ -174,6 +194,7 @@ export default function StaffPage() {
       ) : (
         <StaffList
           staff={staff}
+          pendingInvitations={pendingInvitations}
           currentUserRole={currentUserRole}
           onUpdate={fetchStaff}
         />

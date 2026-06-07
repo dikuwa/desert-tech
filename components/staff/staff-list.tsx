@@ -18,6 +18,7 @@ import {
   AlertTriangle,
   Check,
   Save,
+  MessageCircle,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -52,6 +53,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
 // ============== PERMISSION GROUPS (reused from create-user-dialog) ==============
@@ -138,8 +140,20 @@ interface StaffMember {
   createdAt: Date;
 }
 
+interface PendingInvitation {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  status: string;
+  expiresAt: string;
+  createdAt: string;
+  invitedBy: { name: string; email: string } | null;
+}
+
 interface StaffListProps {
   staff: StaffMember[];
+  pendingInvitations?: PendingInvitation[];
   currentUserRole: UserRole;
   onUpdate: () => void;
 }
@@ -313,7 +327,7 @@ function QuickPermissionEditor({
 
 // ============== MAIN COMPONENT ==============
 
-export function StaffList({ staff, currentUserRole, onUpdate }: StaffListProps) {
+export function StaffList({ staff, pendingInvitations = [], currentUserRole, onUpdate }: StaffListProps) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<{
     type: "suspend" | "activate" | "disable" | "reactivate" | "unlock" | "revoke-sessions" | "delete";
@@ -324,6 +338,68 @@ export function StaffList({ staff, currentUserRole, onUpdate }: StaffListProps) 
   const [editPerms, setEditPerms] = useState<Permission[]>([]);
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+  const [whatsappShare, setWhatsappShare] = useState<{
+    invitation: PendingInvitation;
+    step: "phone" | "ready";
+    phone: string;
+    phoneClean: string;
+    acceptUrl: string;
+    loading: boolean;
+    error: string | null;
+  } | null>(null);
+
+  // ============== WHATSAPP SHARE HANDLER ==============
+
+  const handleWhatsAppShare = (invitation: PendingInvitation) => {
+    setWhatsappShare({
+      invitation,
+      step: "phone",
+      phone: "",
+      phoneClean: "",
+      acceptUrl: "",
+      loading: false,
+      error: null,
+    });
+  };
+
+  const handleWhatsAppSubmitPhone = async () => {
+    if (!whatsappShare) return;
+    const phoneRaw = whatsappShare.phone.trim();
+    if (!phoneRaw) {
+      setWhatsappShare({ ...whatsappShare, error: "Phone number is required" });
+      return;
+    }
+
+    setWhatsappShare({ ...whatsappShare, loading: true, error: null });
+
+    try {
+      const res = await fetch(`/api/invitations/${whatsappShare.invitation.id}/resend`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: phoneRaw }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to resend invitation");
+      }
+
+      const data = await res.json();
+      setWhatsappShare({
+        ...whatsappShare,
+        step: "ready",
+        loading: false,
+        acceptUrl: data.acceptUrl,
+        phoneClean: phoneRaw.replace(/[^\d]/g, ""),
+      });
+    } catch (err) {
+      setWhatsappShare({
+        ...whatsappShare,
+        loading: false,
+        error: err instanceof Error ? err.message : "Failed to create invite link",
+      });
+    }
+  };
 
   // ============== SEPARATE PILL STYLING ==============
 
@@ -766,6 +842,88 @@ export function StaffList({ staff, currentUserRole, onUpdate }: StaffListProps) 
         ))}
       </div>
 
+      {/* ============== PENDING INVITATIONS ============== */}
+      {pendingInvitations.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+              Pending Invitations
+            </h3>
+            <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-600 dark:text-amber-400">
+              {pendingInvitations.length}
+            </span>
+          </div>
+          {pendingInvitations.map((inv) => (
+            <div
+              key={inv.id}
+              className="rounded-xl border border-dashed border-amber-500/30 bg-amber-500/[0.03] p-4 transition-all hover:shadow-sm"
+            >
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-sm">
+                    {inv.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                      .toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-sm font-semibold text-foreground">{inv.name}</span>
+                      <span className="rounded-[3px] border border-amber-500/20 bg-amber-500/10 px-1.5 py-[2px] text-[9px] font-bold leading-none text-amber-600 dark:text-amber-400">
+                        PENDING
+                      </span>
+                      <span className={`rounded-[3px] border px-1.5 py-[2px] text-[10px] font-bold leading-none select-none ${
+                        inv.role === UserRole.ADMIN
+                          ? "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/25"
+                          : "bg-muted text-muted-foreground border-border"
+                      }`}>
+                        {inv.role}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">{inv.email}</p>
+                    {inv.invitedBy && (
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        Invited by {inv.invitedBy.name}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs gap-1.5"
+                    onClick={() => handleWhatsAppShare(inv)}
+                  >
+                    <MessageCircle className="h-3.5 w-3.5" />
+                    WhatsApp
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs gap-1.5"
+                    onClick={async () => {
+                      try {
+                        const res = await fetch(`/api/invitations/${inv.id}/resend`, { method: "POST" });
+                        if (!res.ok) throw new Error("Failed to resend");
+                        toast.success("Invitation resent via email");
+                        onUpdate();
+                      } catch (err) {
+                        toast.error(err instanceof Error ? err.message : "Failed to resend");
+                      }
+                    }}
+                  >
+                    <Send className="h-3.5 w-3.5" />
+                    Resend Email
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* ============== CONFIRMATION DIALOG ============== */}
       <AlertDialog
         open={confirmAction !== null}
@@ -975,6 +1133,96 @@ export function StaffList({ staff, currentUserRole, onUpdate }: StaffListProps) 
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ============== WHATSAPP SHARE DIALOG ============== */}
+      <Dialog
+        open={whatsappShare !== null}
+        onOpenChange={(open) => {
+          if (!open) setWhatsappShare(null);
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {whatsappShare?.step === "ready" ? "Share on WhatsApp" : "Share Invitation via WhatsApp"}
+            </DialogTitle>
+            <DialogDescription>
+              {whatsappShare?.step === "ready"
+                ? `Send the invite link to ${whatsappShare?.invitation.name} via your own WhatsApp`
+                : `Enter the phone number for ${whatsappShare?.invitation.name}`}
+            </DialogDescription>
+          </DialogHeader>
+
+          {whatsappShare?.step === "phone" && (
+            <div className="space-y-4">
+              {whatsappShare.error && (
+                <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+                  {whatsappShare.error}
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="wa-share-phone">Phone Number</Label>
+                <Input
+                  id="wa-share-phone"
+                  value={whatsappShare.phone}
+                  onChange={(e) => setWhatsappShare({ ...whatsappShare, phone: e.target.value })}
+                  placeholder="e.g. +264 81 123 4567"
+                  required
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setWhatsappShare(null)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleWhatsAppSubmitPhone} disabled={whatsappShare.loading}>
+                  {whatsappShare.loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Get Invite Link
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {whatsappShare?.step === "ready" && (
+            <div className="space-y-4 text-center py-4">
+              <Check className="mx-auto h-8 w-8 text-success" />
+              <p className="text-sm text-muted-foreground">
+                Invite link ready! Share it with {whatsappShare.invitation.name}:
+              </p>
+              <a
+                href={`https://wa.me/${whatsappShare.phoneClean}?text=${encodeURIComponent(
+                  `You've been invited to join Desert Technology!\n\nClick here to accept:\n${whatsappShare.acceptUrl}`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-md active:translate-y-0"
+              >
+                <MessageCircle className="h-4 w-4" />
+                Share on WhatsApp
+              </a>
+              <div className="flex items-center justify-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(whatsappShare.acceptUrl);
+                    toast.success("Invite link copied");
+                  }}
+                  className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+                >
+                  Copy invite link
+                </button>
+                <span className="text-xs text-muted-foreground">·</span>
+                <button
+                  type="button"
+                  onClick={() => setWhatsappShare(null)}
+                  className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </>
