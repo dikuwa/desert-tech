@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Users, UserX, AlertCircle } from "lucide-react";
+import { Plus, Users, UserX, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CreateUserDialog } from "@/components/staff/create-user-dialog";
 import { StaffList } from "@/components/staff/staff-list";
@@ -175,21 +175,8 @@ export default function StaffPage() {
 
       {/* Loading */}
       {loading ? (
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="rounded-xl border border-border bg-card p-5 animate-pulse"
-            >
-              <div className="flex items-start gap-4">
-                <div className="h-12 w-12 rounded-full bg-muted" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 w-32 bg-muted rounded" />
-                  <div className="h-3 w-48 bg-muted rounded" />
-                </div>
-              </div>
-            </div>
-          ))}
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-6 w-6 animate-spin text-primary/60" />
         </div>
       ) : (
         <StaffList
