@@ -14,6 +14,14 @@ import { sendPasswordResetEmail } from "@/lib/email";
 import { ensureSystemUsers, SYSTEM_USERS } from "@/lib/system-users";
 
 const baseURL = process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+const trustedOrigins = Array.from(new Set([
+  baseURL,
+  process.env.NEXT_PUBLIC_APP_URL,
+  process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
+  "https://desertechnam.vercel.app",
+  "http://localhost:3000",
+  "http://localhost:3040",
+].filter((origin): origin is string => Boolean(origin))));
 
 /**
  * Returns true when no real database is configured (mock/dev mode).
@@ -33,6 +41,7 @@ export function isAuthMockMode(): boolean {
  */
 export const auth = betterAuth({
   baseURL,
+  trustedOrigins,
 
   // Database adapter
   database: db ? prismaAdapter(db, { provider: "postgresql" }) : undefined,
