@@ -1,4 +1,5 @@
 import { DashboardSidebar } from "@/components/dashboard/sidebar";
+import { DashboardNotificationPoller } from "@/components/dashboard/notification-poller";
 import { requireAuth } from "@/lib/auth-server";
 import { redirect } from "next/navigation";
 
@@ -16,6 +17,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="dashboard-shell flex min-h-screen">
+      <DashboardNotificationPoller />
       <DashboardSidebar
         user={{
           name: user.name,

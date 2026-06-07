@@ -338,6 +338,7 @@ export function StaffList({ staff, pendingInvitations = [], currentUserRole, onU
   const [editPerms, setEditPerms] = useState<Permission[]>([]);
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+  const [resendingId, setResendingId] = useState<string | null>(null);
   const [whatsappShare, setWhatsappShare] = useState<{
     invitation: PendingInvitation;
     step: "phone" | "ready";
@@ -643,7 +644,7 @@ export function StaffList({ staff, pendingInvitations = [], currentUserRole, onU
 
   return (
     <>
-      <div className="space-y-6">
+      <div>
       <div className="space-y-4">
         {staff.map((member) => (
           <div
@@ -845,7 +846,7 @@ export function StaffList({ staff, pendingInvitations = [], currentUserRole, onU
 
       {/* ============== PENDING INVITATIONS ============== */}
       {pendingInvitations.length > 0 && (
-        <div className="space-y-3">
+        <div className="space-y-3 mt-6">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
               Pending Invitations
@@ -904,19 +905,46 @@ export function StaffList({ staff, pendingInvitations = [], currentUserRole, onU
                     variant="outline"
                     size="sm"
                     className="h-8 text-xs gap-1.5"
+                    disabled={resendingId === inv.id}
                     onClick={async () => {
+                      setResendingId(inv.id);
                       try {
                         const res = await fetch(`/api/invitations/${inv.id}/resend`, { method: "POST" });
-                        if (!res.ok) throw new Error("Failed to resend");
-                        toast.success("Invitation resent via email");
+
+                        // Try to read the API response body for error and message
+                        let apiError: string | null = null;
+                        let apiMessage: string | null = null;
+                        try {
+                          const body = await res.json();
+                          if (body?.error) apiError = body.error;
+                          if (body?.message) apiMessage = body.message;
+                        } catch {}
+
+                        if (!res.ok) {
+                          if (res.status === 429) {
+                            toast.error("Please wait before resending this invitation.");
+                          } else {
+                            toast.error(apiError || "The invitation email could not be sent. Please try again.");
+                          }
+                          return;
+                        }
+
+                        // Use the API response message (distinguishes dev fallback from production)
+                        toast.success(apiMessage || "Invitation email resent successfully.");
                         onUpdate();
                       } catch (err) {
-                        toast.error(err instanceof Error ? err.message : "Failed to resend");
+                        toast.error("The invitation email could not be sent. Please try again.");
+                      } finally {
+                        setResendingId(null);
                       }
                     }}
                   >
-                    <Send className="h-3.5 w-3.5" />
-                    Resend Email
+                    {resendingId === inv.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Send className="h-3.5 w-3.5" />
+                    )}
+                    {resendingId === inv.id ? "Sending…" : "Resend Email"}
                   </Button>
                 </div>
               </div>

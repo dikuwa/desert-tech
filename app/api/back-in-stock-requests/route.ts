@@ -163,7 +163,7 @@ export async function POST(req: Request) {
       note: validated.note,
     });
 
-    // Also add to Zustand dashboard store for immediate visibility
+    // Add to Zustand dashboard store for immediate visibility
     try {
       const { useDashboardStore } = await import("@/lib/store/dashboard");
       useDashboardStore.getState().addBackInStockRequest({
@@ -179,6 +179,15 @@ export async function POST(req: Request) {
     } catch {
       // Zustand store not available (server-side)
     }
+
+    // Create a dashboard notification so the poller picks it up
+    const { createSystemNotification } = await import("@/lib/notifications");
+    await createSystemNotification({
+      type: "backinstock",
+      title: "New Stock Request",
+      message: `${validated.customerName} requested ${validated.productName}`,
+      relatedEntityType: "backinstock",
+    });
 
     return NextResponse.json({
       success: true,
@@ -231,11 +240,59 @@ export async function PATCH(req: Request) {
     }
 
     if ("id" in action) {
-      const { updateBackInStockRequestStatus } = await import("@/lib/back-in-stock-store");
-      updated = Boolean(updateBackInStockRequestStatus(action.id, status)) || updated;
+      const { updateBackInStockRequestStatus, getBackInStockRequestById } = await import("@/lib/back-in-stock-store");
+      const previous = getBackInStockRequestById(action.id);
+      const changed = Boolean(updateBackInStockRequestStatus(action.id, status));
+      updated = changed || updated;
+
+      if (status === "ReadyToContact" && updated) {
+        // Get product name from in-memory store, or fall back to DB
+        let productName = previous?.productName;
+        let customerName = previous?.customerName;
+
+        // If in-memory didn't have the request, try the DB
+        if (!previous && updated) {
+          try {
+            const { db } = await import("@/lib/db");
+            if (db) {
+              const dbRecord = await db.backInStockRequest.findUnique({
+                where: { id: action.id },
+                select: { productName: true, customerName: true },
+              });
+              if (dbRecord) {
+                productName = dbRecord.productName;
+                customerName = dbRecord.customerName;
+              }
+            }
+          } catch {}
+        }
+
+        if (productName && customerName) {
+          const { createSystemNotification } = await import("@/lib/notifications");
+          await createSystemNotification({
+            type: "stock",
+            title: "Stock Restored",
+            message: `${productName} is now back in stock — ${customerName} has been notified.`,
+            relatedEntityType: "backinstock",
+          });
+        }
+      }
     } else {
       const { markRequestsReadyForProduct } = await import("@/lib/back-in-stock-store");
-      updated = markRequestsReadyForProduct(action.productId, action.productName).length > 0 || updated;
+      const changed = markRequestsReadyForProduct(action.productId, action.productName);
+      updated = changed.length > 0 || updated;
+
+      // Create a stock restoration notification when requests become ReadyToContact
+      if (status === "ReadyToContact" && updated) {
+        const count = changed.length || 1; // At minimum 1 (DB-only requests)
+        const { createSystemNotification } = await import("@/lib/notifications");
+        await createSystemNotification({
+          type: "stock",
+          title: "Stock Restored",
+          message: `${count} customer${count > 1 ? "s" : ""} requested ${action.productName}. Stock is now available.`,
+          relatedEntityType: "backinstock",
+        });
+      }
     }
 
     return updated

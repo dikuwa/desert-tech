@@ -1,10 +1,10 @@
 /**
  * POST /api/invitations/[id]/resend
- * Resend an invitation via email and/or WhatsApp.
+ * Resend an invitation via email.
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { requirePermission, createAuditLog, getCurrentUser } from "@/lib/auth-server";
+import { requirePermission, createAuditLog } from "@/lib/auth-server";
 import { db } from "@/lib/db";
 import { InvitationStatus } from "@/lib/enums";
 import { Permissions } from "@/lib/permissions";
@@ -24,7 +24,7 @@ export async function POST(
     const rateLimit = await checkRateLimit("invitation-resend", `${clientIP}:${id}`);
     if (!rateLimit.allowed) {
       return NextResponse.json(
-        { error: "Rate limit exceeded", retryAfter: rateLimit.retryAfter },
+        { error: "Please wait before resending this invitation.", retryAfter: rateLimit.retryAfter },
         { status: 429 }
       );
     }
@@ -59,39 +59,92 @@ export async function POST(
     const token = generateInvitationToken();
     const tokenHash = await hashToken(token);
 
-    // Update expiry
+    // Update expiry (resets the 48-hour window)
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 48);
 
     await db.invitation.update({
       where: { id },
       data: { tokenHash, expiresAt },
+      // updatedAt is auto-updated by Prisma's @updatedAt
     });
 
-    // Send email
-    await sendInvitationEmail({
-      to: invitation.email,
-      name: invitation.name,
-      inviterName: currentUser.name,
-      token,
-      role: invitation.role,
-    });
+    // Normalize app URL (strip trailing slash to prevent double-slash in URLs)
+    const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/+$/, "");
+    const acceptUrl = `${appUrl}/admin/invite/accept?token=${token}`;
 
+    // Send email — catch provider errors so the audit log is still written
+    let emailSent = false;
+    let emailError: string | null = null;
+
+    const isDevFallback = !process.env.RESEND_API_KEY;
+
+    if (isDevFallback) {
+      // Development fallback — log the invitation URL to the server console
+      // The client will show a dev-specific message instead of a false success toast
+      console.log("\n========== INVITATION EMAIL (Development Mode) ==========");
+      console.log(`To: ${invitation.email}`);
+      console.log(`Name: ${invitation.name}`);
+      console.log(`Accept URL: ${acceptUrl}`);
+      console.log("========================================================\n");
+      emailSent = true; // Dev fallback is the intended dev "sending" mechanism
+    } else {
+      try {
+        await sendInvitationEmail({
+          to: invitation.email,
+          name: invitation.name,
+          inviterName: currentUser.name,
+          token,
+          role: invitation.role,
+        });
+        emailSent = true;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Unknown email error";
+        emailError = message;
+        console.error("[API] Failed to send invitation email:", message);
+      }
+    }
+
+    // Record the resend in the audit log regardless of email success
     await createAuditLog({
       action: "invitation.resent",
       targetType: "invitation",
       targetId: id,
       targetLabel: invitation.email,
-    metadata: {} as const,
+      metadata: {
+        emailSent,
+        emailError,
+      },
     });
 
-    const acceptUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/admin/invite/accept?token=${token}`;
+    if (emailError) {
+      return NextResponse.json({
+        success: false,
+        error: "The invitation email could not be sent. Please try again.",
+        acceptUrl,
+      }, { status: 500 });
+    }
 
-    return NextResponse.json({ success: true, acceptUrl, message: "Invitation resent via Email" });
+    return NextResponse.json({
+      success: true,
+      acceptUrl,
+      message: isDevFallback
+        ? "Invitation link generated (development mode — check server console)"
+        : "Invitation email resent successfully.",
+      devMode: isDevFallback,
+    });
   } catch (error) {
+    // Permission, rate-limit, and validation errors are returned above.
+    // This catch handles unexpected errors only.
+    if (error instanceof Error &&
+      (error.message.includes("Permission") ||
+       error.message.includes("Rate limit"))) {
+      throw error; // Let the caller handle known errors
+    }
+
     console.error("[API] POST /api/invitations/[id]/resend error:", error);
     return NextResponse.json(
-      { error: "Failed to resend invitation" },
+      { error: "The invitation email could not be sent. Please try again." },
       { status: 500 }
     );
   }

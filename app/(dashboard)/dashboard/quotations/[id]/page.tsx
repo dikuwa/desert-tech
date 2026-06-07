@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -25,8 +26,19 @@ import {
   getStatusLabel,
 } from "@/lib/dashboard-data";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function QuotationDetailPage() {
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const params = useParams();
   const router = useRouter();
   const quotation = useDashboardStore((s) =>
@@ -82,11 +94,9 @@ export default function QuotationDetailPage() {
   };
 
   const handleDelete = () => {
-    if (confirm("Delete this quotation?")) {
-      deleteQuotation(quotation.id);
-      toast.success("Quotation deleted");
-      router.push("/dashboard/quotations");
-    }
+    deleteQuotation(quotation.id);
+    toast.success("Quotation deleted");
+    router.push("/dashboard/quotations");
   };
 
   return (
@@ -168,13 +178,34 @@ export default function QuotationDetailPage() {
             Edit
           </Link>
           <button
-            onClick={handleDelete}
+            onClick={() => setDeleteOpen(true)}
             className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-destructive hover:border-destructive/30 transition-colors"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Quotation</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {quotation.quotationNumber} for {quotation.customerName}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Print-only styles */}
       <style>{`

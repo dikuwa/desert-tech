@@ -42,6 +42,7 @@ export default function DashboardPromotionsPage() {
     try {
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("context", "promotion");
       const res = await fetch("/api/upload", { method: "POST", body: formData });
       const data = await res.json();
       if (data.url) {

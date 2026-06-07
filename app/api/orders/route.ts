@@ -135,6 +135,16 @@ export async function POST(req: Request) {
       createdAt: new Date().toISOString(),
     });
 
+    // Create a dashboard notification so the poller picks it up
+    const { createSystemNotification } = await import("@/lib/notifications");
+    await createSystemNotification({
+      type: "order",
+      title: "New Storefront Order",
+      message: `${validated.fullName} placed an order (${orderNumber})`,
+      relatedEntityType: "order",
+      relatedEntityId: orderNumber,
+    });
+
     return NextResponse.json({
       success: true,
       order: {
