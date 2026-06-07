@@ -10,6 +10,7 @@ import { UserRole } from "@/lib/enums";
 export const Permissions = {
   // Dashboard
   DASHBOARD_VIEW: "dashboard:view",
+  DASHBOARD_VIEW_FINANCIAL_SUMMARY: "dashboard:view_financial_summary",
 
   // Orders
   ORDERS_VIEW: "orders:view",
@@ -18,28 +19,40 @@ export const Permissions = {
   ORDERS_CANCEL: "orders:cancel",
   ORDERS_DELETE: "orders:delete",
 
-  // Products
+  // Products & Inventory
   PRODUCTS_VIEW: "products:view",
   PRODUCTS_CREATE: "products:create",
   PRODUCTS_UPDATE: "products:update",
   PRODUCTS_DELETE: "products:delete",
+  PRODUCTS_MANAGE_STOCK: "products:manage_stock",
 
-  // Categories
+  // Categories & Brands
   CATEGORIES_VIEW: "categories:view",
-  CATEGORIES_MANAGE: "categories:manage",
+  CATEGORIES_CREATE: "categories:create",
+  CATEGORIES_UPDATE: "categories:update",
+  CATEGORIES_DELETE: "categories:delete",
+  BRANDS_VIEW: "brands:view",
+  BRANDS_CREATE: "brands:create",
+  BRANDS_UPDATE: "brands:update",
+  BRANDS_DELETE: "brands:delete",
 
   // Promotions
   PROMOTIONS_VIEW: "promotions:view",
-  PROMOTIONS_MANAGE: "promotions:manage",
+  PROMOTIONS_CREATE: "promotions:create",
+  PROMOTIONS_UPDATE: "promotions:update",
+  PROMOTIONS_DELETE: "promotions:delete",
 
   // Customers
   CUSTOMERS_VIEW: "customers:view",
   CUSTOMERS_UPDATE: "customers:update",
+  CUSTOMERS_EXPORT: "customers:export",
 
   // Payments
   PAYMENTS_VIEW: "payments:view",
   PAYMENTS_CREATE: "payments:create",
   PAYMENTS_UPDATE: "payments:update",
+  PAYMENTS_REFUND: "payments:refund",
+  PAYMENTS_EXPORT: "payments:export",
   PAYMENTS_REMOVE: "payments:remove",
 
   // Documents (Receipts, Quotations)
@@ -51,15 +64,26 @@ export const Permissions = {
 
   // Follow-ups
   FOLLOWUPS_VIEW: "followups:view",
-  FOLLOWUPS_MANAGE: "followups:manage",
+  FOLLOWUPS_CREATE: "followups:create",
+  FOLLOWUPS_UPDATE: "followups:update",
+  FOLLOWUPS_DELETE: "followups:delete",
 
   // Stock Requests
   STOCK_REQUESTS_VIEW: "stockRequests:view",
-  STOCK_REQUESTS_MANAGE: "stockRequests:manage",
+  STOCK_REQUESTS_UPDATE: "stockRequests:update",
+  STOCK_REQUESTS_DELETE: "stockRequests:delete",
+  STOCK_REQUESTS_EXPORT: "stockRequests:export",
 
-  // Staff Management
-  STAFF_VIEW: "staff:view",
-  STAFF_MANAGE: "staff:manage",
+  // Users (Staff Management)
+  USERS_VIEW: "users:view",
+  USERS_INVITE: "users:invite",
+  USERS_CREATE: "users:create",
+  USERS_EDIT: "users:edit",
+  USERS_ASSIGN_ROLES: "users:assign_roles",
+  USERS_MANAGE_PERMISSIONS: "users:manage_permissions",
+  USERS_SUSPEND: "users:suspend",
+  USERS_DISABLE: "users:disable",
+  USERS_DELETE: "users:delete",
 
   // Notifications
   NOTIFICATIONS_VIEW: "notifications:view",
@@ -69,8 +93,9 @@ export const Permissions = {
   SETTINGS_VIEW: "settings:view",
   SETTINGS_UPDATE: "settings:update",
 
-  // Audit Logs
+  // Audit Log
   AUDIT_LOGS_VIEW: "auditLogs:view",
+  AUDIT_LOGS_EXPORT: "auditLogs:export",
 } as const;
 
 export type Permission = (typeof Permissions)[keyof typeof Permissions];
@@ -86,39 +111,66 @@ export type Permission = (typeof Permissions)[keyof typeof Permissions];
 export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   [UserRole.OWNER]: Object.values(Permissions),
   [UserRole.ADMIN]: [
+    // Dashboard — only operational stats by default
     Permissions.DASHBOARD_VIEW,
+    // Orders
     Permissions.ORDERS_VIEW,
     Permissions.ORDERS_CREATE,
     Permissions.ORDERS_UPDATE,
     Permissions.ORDERS_CANCEL,
+    // Products & Inventory
     Permissions.PRODUCTS_VIEW,
     Permissions.PRODUCTS_CREATE,
     Permissions.PRODUCTS_UPDATE,
     Permissions.PRODUCTS_DELETE,
+    Permissions.PRODUCTS_MANAGE_STOCK,
+    // Categories & Brands
     Permissions.CATEGORIES_VIEW,
-    Permissions.CATEGORIES_MANAGE,
+    Permissions.CATEGORIES_CREATE,
+    Permissions.CATEGORIES_UPDATE,
+    Permissions.CATEGORIES_DELETE,
+    Permissions.BRANDS_VIEW,
+    Permissions.BRANDS_CREATE,
+    Permissions.BRANDS_UPDATE,
+    Permissions.BRANDS_DELETE,
+    // Promotions
     Permissions.PROMOTIONS_VIEW,
-    Permissions.PROMOTIONS_MANAGE,
+    Permissions.PROMOTIONS_CREATE,
+    Permissions.PROMOTIONS_UPDATE,
+    Permissions.PROMOTIONS_DELETE,
+    // Customers
     Permissions.CUSTOMERS_VIEW,
     Permissions.CUSTOMERS_UPDATE,
-    Permissions.PAYMENTS_VIEW,
-    Permissions.PAYMENTS_CREATE,
-    Permissions.PAYMENTS_UPDATE,
+    Permissions.CUSTOMERS_EXPORT,
+    // Documents
     Permissions.DOCUMENTS_VIEW,
     Permissions.DOCUMENTS_CREATE,
     Permissions.DOCUMENTS_UPDATE,
     Permissions.DOCUMENTS_SEND,
+    Permissions.DOCUMENTS_DELETE,
+    // Follow-ups
     Permissions.FOLLOWUPS_VIEW,
-    Permissions.FOLLOWUPS_MANAGE,
+    Permissions.FOLLOWUPS_CREATE,
+    Permissions.FOLLOWUPS_UPDATE,
+    Permissions.FOLLOWUPS_DELETE,
+    // Stock Requests
     Permissions.STOCK_REQUESTS_VIEW,
-    Permissions.STOCK_REQUESTS_MANAGE,
-    Permissions.STAFF_VIEW,
-    Permissions.STAFF_MANAGE,
+    Permissions.STOCK_REQUESTS_UPDATE,
+    Permissions.STOCK_REQUESTS_DELETE,
+    Permissions.STOCK_REQUESTS_EXPORT,
+    // Notifications
     Permissions.NOTIFICATIONS_VIEW,
     Permissions.NOTIFICATIONS_MANAGE,
+    // Settings — view only by default
     Permissions.SETTINGS_VIEW,
-    Permissions.SETTINGS_UPDATE,
+    // Audit Log — view only by default
     Permissions.AUDIT_LOGS_VIEW,
+    // Sensitive permissions NOT included by default:
+    // Users: view/invite/create/edit/roles/permissions/suspend/disable/delete
+    // Payments: view/create/update/refund/export/remove
+    // Dashboard: view_financial_summary
+    // Settings: update
+    // Audit Log: export
   ],
   [UserRole.STAFF]: [
     Permissions.DASHBOARD_VIEW,
@@ -128,8 +180,11 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permissions.CUSTOMERS_VIEW,
     Permissions.DOCUMENTS_VIEW,
     Permissions.FOLLOWUPS_VIEW,
-    Permissions.FOLLOWUPS_MANAGE,
+    Permissions.FOLLOWUPS_CREATE,
+    Permissions.FOLLOWUPS_UPDATE,
+    Permissions.STOCK_REQUESTS_VIEW,
     Permissions.NOTIFICATIONS_VIEW,
+    // No financial/management/settings permissions by default
   ],
 };
 
@@ -295,7 +350,7 @@ export const DASHBOARD_NAV: NavItem[] = [
         label: "Brands",
         href: "/dashboard/brands",
         icon: "Award",
-        requiredPermission: Permissions.CATEGORIES_VIEW,
+        requiredPermission: Permissions.BRANDS_VIEW,
       },
     ],
   },
@@ -342,10 +397,10 @@ export const DASHBOARD_NAV: NavItem[] = [
     requiredPermission: Permissions.PROMOTIONS_VIEW,
   },
   {
-    label: "Staff",
+    label: "Users",
     href: "/dashboard/staff",
     icon: "UserCog",
-    requiredPermission: Permissions.STAFF_VIEW,
+    requiredPermission: Permissions.USERS_VIEW,
   },
   {
     label: "Notifications",

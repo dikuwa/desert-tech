@@ -33,7 +33,7 @@ const createInvitationSchema = z.object({
 export async function GET(req: NextRequest) {
   try {
     // Check permission
-    await requirePermission(Permissions.STAFF_VIEW);
+    await requirePermission(Permissions.USERS_VIEW);
 
     if (!db) {
       return NextResponse.json(
@@ -104,7 +104,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     // Check permission
-    const currentUser = await requirePermission(Permissions.STAFF_MANAGE);
+    const currentUser = await requirePermission(Permissions.USERS_INVITE);
 
     // Rate limit by IP
     const clientIP = getClientIP(req);

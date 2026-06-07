@@ -22,7 +22,9 @@ export const UserStatus = {
   INVITED: 'INVITED',
   ACTIVE: 'ACTIVE',
   SUSPENDED: 'SUSPENDED',
-  DISABLED: 'DISABLED'
+  DISABLED: 'DISABLED',
+  LOCKED: 'LOCKED',
+  DELETED: 'DELETED'
 } as const
 
 export type UserStatus = (typeof UserStatus)[keyof typeof UserStatus]

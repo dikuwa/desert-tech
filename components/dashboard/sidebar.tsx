@@ -75,7 +75,7 @@ const navPermissions: Record<string, Permission> = {
   "/dashboard/back-in-stock": Permissions.STOCK_REQUESTS_VIEW,
   "/dashboard/audit-log": Permissions.AUDIT_LOGS_VIEW,
   "/dashboard/payments": Permissions.PAYMENTS_VIEW,
-  "/dashboard/staff": Permissions.STAFF_VIEW,
+  "/dashboard/staff": Permissions.USERS_VIEW,
   "/dashboard/settings": Permissions.SETTINGS_VIEW,
 };
 

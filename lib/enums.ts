@@ -14,6 +14,8 @@ export enum UserStatus {
   ACTIVE = "ACTIVE",
   SUSPENDED = "SUSPENDED",
   DISABLED = "DISABLED",
+  LOCKED = "LOCKED",
+  DELETED = "DELETED",
 }
 
 export enum InvitationStatus {
@@ -35,5 +37,7 @@ export function normalizeUserStatus(status: string): UserStatus {
   if (normalized === UserStatus.SUSPENDED) return UserStatus.SUSPENDED;
   if (normalized === UserStatus.DISABLED) return UserStatus.DISABLED;
   if (normalized === UserStatus.INVITED) return UserStatus.INVITED;
+  if (normalized === UserStatus.LOCKED) return UserStatus.LOCKED;
+  if (normalized === UserStatus.DELETED) return UserStatus.DELETED;
   return UserStatus.ACTIVE;
 }

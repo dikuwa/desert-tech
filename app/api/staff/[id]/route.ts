@@ -35,7 +35,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    await requirePermission(Permissions.STAFF_VIEW);
+    await requirePermission(Permissions.USERS_VIEW);
 
     if (!db) {
       return NextResponse.json(
@@ -97,7 +97,7 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const currentUser = await requirePermission(Permissions.STAFF_MANAGE);
+    const currentUser = await requirePermission(Permissions.USERS_EDIT);
 
     if (!db) {
       return NextResponse.json(
@@ -127,6 +127,11 @@ export async function PATCH(
     }
 
     const { name, role, status, permissions } = result.data;
+
+    // If changing permissions, require the manage_permissions permission
+    if (permissions) {
+      await requirePermission(Permissions.USERS_MANAGE_PERMISSIONS);
+    }
 
     if (id === currentUser.id && (role || status || permissions)) {
       return NextResponse.json(
@@ -250,7 +255,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const currentUser = await requirePermission(Permissions.STAFF_MANAGE);
+    const currentUser = await requirePermission(Permissions.USERS_DELETE);
 
     if (!db) {
       return NextResponse.json(
@@ -305,10 +310,10 @@ export async function DELETE(
       }
     }
 
-    // Soft delete by disabling account
+    // Soft delete by setting status to DELETED and marking deletedAt
     await db.user.update({
       where: { id },
-      data: { status: UserStatus.DISABLED },
+      data: { status: UserStatus.DELETED, deletedAt: new Date() },
     });
 
     // Revoke all sessions
@@ -316,7 +321,7 @@ export async function DELETE(
 
     // Create audit log
     await createAuditLog({
-      action: "user.disabled",
+      action: "user.deleted",
       targetType: "user",
       targetId: id,
       targetLabel: targetUser.name,

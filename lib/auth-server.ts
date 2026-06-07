@@ -32,6 +32,7 @@ export const getCurrentUser = cache(async () => {
   const status = normalizeUserStatus(user.status);
 
   // Check if user account is active
+  // Only ACTIVE users can access the dashboard
   if (status !== UserStatus.ACTIVE) return null;
 
   return {
@@ -42,9 +43,13 @@ export const getCurrentUser = cache(async () => {
     status,
     permissions: (user.permissions as Permission[] | undefined) ?? [],
     twoFactorEnabled: user.twoFactorEnabled,
+    mustChangePassword: user.mustChangePassword,
     emailVerified: user.emailVerified,
     image: user.image,
+    jobTitle: user.jobTitle,
+    phone: user.phone,
     lastActiveAt: user.lastActiveAt,
+    passwordChangedAt: user.passwordChangedAt,
     invitedById: user.invitedById,
   };
 });
@@ -155,6 +160,30 @@ export async function canManageUser(targetUserId: string): Promise<boolean> {
   if (currentUser.id === targetUserId) return true;
 
   return false;
+}
+
+/**
+ * Check if a user is the last active Owner.
+ */
+export async function isLastActiveOwner(userId: string): Promise<boolean> {
+  if (!db) return false;
+
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+
+  if (!user || user.role !== UserRole.OWNER) return false;
+
+  const activeOwnerCount = await db.user.count({
+    where: {
+      role: UserRole.OWNER,
+      status: UserStatus.ACTIVE,
+      id: { not: userId },
+    },
+  });
+
+  return activeOwnerCount === 0;
 }
 
 // ============== AUDIT LOGGING ==============

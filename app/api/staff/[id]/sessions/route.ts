@@ -17,7 +17,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const currentUser = await requirePermission(Permissions.STAFF_MANAGE);
+    const currentUser = await requirePermission(Permissions.USERS_EDIT);
 
     if (!db) {
       return NextResponse.json(
@@ -86,7 +86,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const currentUser = await requirePermission(Permissions.STAFF_VIEW);
+    const currentUser = await requirePermission(Permissions.USERS_VIEW);
 
     if (!db) {
       return NextResponse.json(
@@ -97,7 +97,7 @@ export async function GET(
 
     // Only allow viewing own sessions unless staff:manage permission
     if (id !== currentUser.id) {
-      await requirePermission(Permissions.STAFF_MANAGE);
+      await requirePermission(Permissions.USERS_EDIT);
     }
 
     const sessions = await db.session.findMany({

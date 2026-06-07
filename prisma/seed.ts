@@ -22,6 +22,13 @@ import { ensureSystemUsers } from "../lib/system-users";
 // Load .env.local so the seed script can access DATABASE_URL and ADMIN_* vars
 dotenv.config({ path: path.resolve(__dirname, "../.env.local") });
 
+/**
+ * NOTE: System users are no longer auto-created by this seed script.
+ * Run `tsx scripts/bootstrap-system-users.ts` explicitly after setting
+ * DESERTTECH_OWNER_PASSWORD, DESERTTECH_ADMIN_PASSWORD, and
+ * DESERTTECH_STAFF_PASSWORD environment variables.
+ */
+
 async function main() {
   const DATABASE_URL = process.env.DATABASE_URL;
   if (!DATABASE_URL) {
@@ -33,8 +40,7 @@ async function main() {
   const prisma = new PrismaClient({ adapter });
 
   console.log("🌱 Seeding database...");
-  await ensureSystemUsers(prisma, { resetPasswords: true });
-  console.log("  ✓ Desert Technology system users created");
+  console.log("  ⚠  System users not created by seed. Run `tsx scripts/bootstrap-system-users.ts` to create them.");
 
   // Create categories
   const categories = [

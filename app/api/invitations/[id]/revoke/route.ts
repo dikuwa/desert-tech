@@ -15,7 +15,7 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    await requirePermission(Permissions.STAFF_MANAGE);
+    await requirePermission(Permissions.USERS_INVITE);
 
     if (!db) {
       return NextResponse.json(

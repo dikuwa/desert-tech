@@ -70,8 +70,8 @@ export default function StaffPage() {
           const permissions = session.user.permissions || [];
           setHasManagePermission(
             session.user.role === UserRole.OWNER ||
-            session.user.role === UserRole.ADMIN ||
-            permissions.includes(Permissions.STAFF_MANAGE)
+            permissions.includes(Permissions.USERS_INVITE) ||
+            permissions.includes(Permissions.USERS_CREATE)
           );
         }
       }

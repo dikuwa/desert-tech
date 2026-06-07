@@ -17,7 +17,7 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const currentUser = await requirePermission(Permissions.STAFF_MANAGE);
+    const currentUser = await requirePermission(Permissions.USERS_INVITE);
 
     // Rate limit
     const clientIP = getClientIP(req);

@@ -204,7 +204,7 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
-  const { error: authorizationError } = await authorizePermission(Permissions.STOCK_REQUESTS_MANAGE);
+  const { error: authorizationError } = await authorizePermission(Permissions.STOCK_REQUESTS_UPDATE);
   if (authorizationError) return authorizationError;
 
   try {
@@ -250,7 +250,7 @@ export async function PATCH(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  const { error: authorizationError } = await authorizePermission(Permissions.STOCK_REQUESTS_MANAGE);
+  const { error: authorizationError } = await authorizePermission(Permissions.STOCK_REQUESTS_DELETE);
   if (authorizationError) return authorizationError;
 
   try {

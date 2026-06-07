@@ -52,8 +52,211 @@ export async function sendEmail(options: EmailOptions): Promise<void> {
     console.log(`[Email] Sent to ${to}: ${subject}`);
   } catch (error) {
     console.error("[Email] Failed to send:", error);
-    throw error;
-  }
+    throw error;    }
+}
+
+// ============== WELCOME EMAIL ==============
+
+interface WelcomeEmailParams {
+  to: string;
+  name: string;
+}
+
+export async function sendWelcomeEmail(params: WelcomeEmailParams): Promise<void> {
+  const { to, name } = params;
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Welcome to Desert Technology</title>
+  <style>
+    body { font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; color: #111; background: #f7f7f7; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 0 auto; background: #fff; }
+    .header { background: #f68923; padding: 40px 30px; text-align: center; }
+    .header h1 { color: #fff; margin: 0; font-size: 24px; font-weight: 700; }
+    .content { padding: 40px 30px; }
+    .content h2 { color: #111; font-size: 20px; margin-top: 0; }
+    .footer { background: #111; color: #9a9a9a; padding: 30px; text-align: center; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Desert Technology Consultant</h1>
+    </div>
+    <div class="content">
+      <h2>Welcome, ${name}!</h2>
+      <p>Your Desert Technology account has been created. You can now sign in to the dashboard.</p>
+      <p>If you were created via the direct account method, you may need to change your password on first login.</p>
+      <p><a href="${appUrl}/admin/login" style="color: #f68923;">Sign in to your account</a></p>
+    </div>
+    <div class="footer">
+      <p>Desert Technology Consultant | Namibia</p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+
+  const text = `
+Welcome, ${name}!
+
+Your Desert Technology account has been created. You can now sign in to the dashboard.
+
+Sign in: ${appUrl}/admin/login
+
+Desert Technology Consultant | Namibia
+  `.trim();
+
+  await sendEmail({ to, subject: "Welcome to Desert Technology", html, text });
+}
+
+// ============== TWO-FACTOR EMAILS ==============
+
+interface TwoFactorEmailParams {
+  to: string;
+  name: string;
+  action: "enabled" | "disabled" | "reset";
+  resetBy?: string;
+}
+
+export async function sendTwoFactorEmail(params: TwoFactorEmailParams): Promise<void> {
+  const { to, name, action, resetBy } = params;
+
+  const subject = action === "enabled"
+    ? "Two-Factor Authentication Enabled"
+    : action === "disabled"
+    ? "Two-Factor Authentication Disabled"
+    : "Two-Factor Authentication Reset";
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${subject}</title>
+  <style>
+    body { font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; color: #111; background: #f7f7f7; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 0 auto; background: #fff; }
+    .header { background: #111; padding: 40px 30px; text-align: center; }
+    .header h1 { color: #fff; margin: 0; font-size: 24px; font-weight: 700; }
+    .content { padding: 40px 30px; }
+    .alert { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 16px; margin: 20px 0; }
+    .footer { background: #111; color: #9a9a9a; padding: 30px; text-align: center; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Desert Technology Consultant</h1>
+    </div>
+    <div class="content">
+      <h2>Hello ${name},</h2>
+      ${action === "enabled"
+        ? `<p>Two-factor authentication has been <strong>enabled</strong> on your account.</p><p>Your account is now more secure. Make sure you have saved your recovery codes in a safe place.</p>`
+        : action === "disabled"
+        ? `<p>Two-factor authentication has been <strong>disabled</strong> on your account.</p><p>If you didn't make this change, please contact your administrator immediately.</p>`
+        : `<p>Two-factor authentication has been <strong>reset</strong>${resetBy ? ` by ${resetBy}` : ""}.</p><p>You will need to set up a new authenticator app on your next login.</p>`
+      }
+      <div class="alert">
+        <strong>Security Notice:</strong> If you didn't authorize this change, please contact your administrator immediately.
+      </div>
+    </div>
+    <div class="footer">
+      <p>Desert Technology Consultant | Namibia</p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+
+  const text = `
+Hello ${name},
+
+${action === "enabled"
+  ? "Two-factor authentication has been enabled on your account."
+  : action === "disabled"
+  ? "Two-factor authentication has been disabled on your account."
+  : "Two-factor authentication has been reset."
+}
+
+SECURITY NOTICE: If you didn't authorize this change, please contact your administrator immediately.
+
+Desert Technology Consultant | Namibia
+  `.trim();
+
+  await sendEmail({ to, subject, html, text });
+}
+
+// ============== ROLE / PERMISSION CHANGE EMAIL ==============
+
+interface RoleChangeEmailParams {
+  to: string;
+  name: string;
+  changes: string[];
+  changedBy: string;
+}
+
+export async function sendRoleChangeEmail(params: RoleChangeEmailParams): Promise<void> {
+  const { to, name, changes, changedBy } = params;
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Account Role Updated</title>
+  <style>
+    body { font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; color: #111; background: #f7f7f7; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 0 auto; background: #fff; }
+    .header { background: #f68923; padding: 40px 30px; text-align: center; }
+    .header h1 { color: #fff; margin: 0; font-size: 24px; font-weight: 700; }
+    .content { padding: 40px 30px; }
+    .changes { background: #f7f7f7; padding: 20px; border-radius: 8px; margin: 20px 0; }
+    .changes li { margin: 8px 0; }
+    .footer { background: #111; color: #9a9a9a; padding: 30px; text-align: center; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Desert Technology Consultant</h1>
+    </div>
+    <div class="content">
+      <h2>Hello ${name},</h2>
+      <p>Your account settings were updated by <strong>${changedBy}</strong>.</p>
+      <div class="changes">
+        <strong>Changes:</strong>
+        <ul>
+          ${changes.map((c) => `<li>${c}</li>`).join("")}
+        </ul>
+      </div>
+      <p>These changes take effect immediately. If you notice any issues with your access, please contact your administrator.</p>
+    </div>
+    <div class="footer">
+      <p>Desert Technology Consultant | Namibia</p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+
+  const text = `
+Hello ${name},
+
+Your account settings were updated by ${changedBy}.
+
+Changes:
+${changes.map((c) => `- ${c}`).join("\n")}
+
+These changes take effect immediately.
+
+Desert Technology Consultant | Namibia
+  `.trim();
+
+  await sendEmail({ to, subject: "Your Account Has Been Updated", html, text });
 }
 
 // ============== INVITATION EMAIL ==============

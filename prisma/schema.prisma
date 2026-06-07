@@ -10,20 +10,25 @@ datasource db {
 // ============== AUTH MODELS (Better Auth) ==============
 
 model User {
-  id            String    @id @default(cuid())
-  name          String
-  email         String    @unique
-  emailVerified Boolean   @default(false)
-  image         String?
-  password      String?   // Hashed password - stored via Account for Better Auth
-  role          UserRole  @default(STAFF)
-  status        UserStatus @default(ACTIVE)
-  permissions   Json?     // Array of permission strings
-  twoFactorEnabled Boolean @default(false)
-  lastActiveAt  DateTime?
-  invitedById   String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                  String     @id @default(cuid())
+  name                String
+  email               String     @unique
+  emailVerified       Boolean    @default(false)
+  image               String?
+  password            String?    // Hashed password - stored via Account for Better Auth
+  role                UserRole   @default(STAFF)
+  status              UserStatus @default(ACTIVE)
+  permissions         Json?      // Array of permission strings
+  twoFactorEnabled    Boolean    @default(false)
+  mustChangePassword  Boolean    @default(false)
+  jobTitle            String?
+  phone               String?
+  passwordChangedAt   DateTime?
+  lastActiveAt        DateTime?
+  invitedById         String?
+  deletedAt           DateTime?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
 
   // Relations
   sessions      Session[]
@@ -420,6 +425,8 @@ enum UserStatus {
   ACTIVE
   SUSPENDED
   DISABLED
+  LOCKED
+  DELETED
 }
 
 enum InvitationStatus {

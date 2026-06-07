@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { ShoppingBag, Users, Bell, CalendarClock, AlertTriangle, ArrowRight, TrendingUp } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { formatCents } from "@/lib/dashboard-data";
@@ -12,6 +11,12 @@ export default function DashboardPage() {
   const customers = useDashboardStore((s) => s.customers);
   const notifications = useDashboardStore((s) => s.notifications);
   const followUps = useDashboardStore((s) => s.followUps);
+  const userRole = useDashboardStore((s) => s.userRole);
+  const staffPermissions = useDashboardStore((s) => {
+    const currentUser = s.currentUser;
+    const member = s.staff.find((m) => m.name === currentUser);
+    return member?.permissions ?? [];
+  });
 
   const payments = useDashboardStore((s) => s.payments);
   const recentOrders = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
@@ -24,13 +29,21 @@ export default function DashboardPage() {
   const pendingFollowUps = followUps.filter((f) => f.status === "Pending");
   const unreadNotifications = notifications.filter((n) => !n.isRead);
 
+  // Financial permission check: Owner always sees, Admin/Staff needs granted permission
+  const isOwner = userRole === "Admin" && staffPermissions.includes("all");
+  const hasFinancialAccess = isOwner || staffPermissions.some(
+    (p) => p === "payments:view" || p === "dashboard:view_financial_summary"
+  );
+
   const stats = [
     { label: "New Orders", value: pendingOrders.length, icon: ShoppingBag, color: "text-primary", bg: "bg-accent", href: "/dashboard/orders" },
     { label: "Low Stock Items", value: lowStockProducts.length, icon: AlertTriangle, color: "text-warning", bg: "bg-warning-soft", href: "/dashboard/products" },
     { label: "Pending Follow-ups", value: pendingFollowUps.length, icon: CalendarClock, color: "text-info", bg: "bg-info-soft", href: "/dashboard/follow-ups" },
     { label: "Unread Notifications", value: unreadNotifications.length, icon: Bell, color: "text-destructive", bg: "bg-destructive/10", href: "/dashboard/notifications" },
     { label: "Total Customers", value: customers.length, icon: Users, color: "text-success", bg: "bg-success-soft", href: "/dashboard/customers" },
-    { label: "Revenue Collected", value: formatCents(totalRevenue), icon: TrendingUp, color: "text-success", bg: "bg-success-soft", href: "/dashboard/payments" },
+    ...(hasFinancialAccess
+      ? [{ label: "Revenue Collected", value: formatCents(totalRevenue), icon: TrendingUp as typeof TrendingUp, color: "text-success" as const, bg: "bg-success-soft" as const, href: "/dashboard/payments" as const }]
+      : []),
   ];
 
   return (
@@ -41,7 +54,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Grid - compact */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className={stats.length === 5 ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3" : "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3"}>
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (

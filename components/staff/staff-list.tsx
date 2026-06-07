@@ -64,6 +64,8 @@ export function StaffList({ staff, currentUserRole, onUpdate }: StaffListProps) 
       [UserStatus.ACTIVE]: "bg-success/10 text-success border-success/20",
       [UserStatus.SUSPENDED]: "bg-destructive/10 text-destructive border-destructive/20",
       [UserStatus.DISABLED]: "bg-muted text-muted-foreground border-border",
+      [UserStatus.LOCKED]: "bg-destructive/10 text-destructive border-destructive/20",
+      [UserStatus.DELETED]: "bg-muted text-muted-foreground border-border line-through",
     };
     return variants[status] || variants[UserStatus.DISABLED];
   };

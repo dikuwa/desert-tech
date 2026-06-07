@@ -34,8 +34,13 @@ export type UserMinAggregateOutputType = {
   role: $Enums.UserRole | null
   status: $Enums.UserStatus | null
   twoFactorEnabled: boolean | null
+  mustChangePassword: boolean | null
+  jobTitle: string | null
+  phone: string | null
+  passwordChangedAt: Date | null
   lastActiveAt: Date | null
   invitedById: string | null
+  deletedAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -50,8 +55,13 @@ export type UserMaxAggregateOutputType = {
   role: $Enums.UserRole | null
   status: $Enums.UserStatus | null
   twoFactorEnabled: boolean | null
+  mustChangePassword: boolean | null
+  jobTitle: string | null
+  phone: string | null
+  passwordChangedAt: Date | null
   lastActiveAt: Date | null
   invitedById: string | null
+  deletedAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -67,8 +77,13 @@ export type UserCountAggregateOutputType = {
   status: number
   permissions: number
   twoFactorEnabled: number
+  mustChangePassword: number
+  jobTitle: number
+  phone: number
+  passwordChangedAt: number
   lastActiveAt: number
   invitedById: number
+  deletedAt: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -85,8 +100,13 @@ export type UserMinAggregateInputType = {
   role?: true
   status?: true
   twoFactorEnabled?: true
+  mustChangePassword?: true
+  jobTitle?: true
+  phone?: true
+  passwordChangedAt?: true
   lastActiveAt?: true
   invitedById?: true
+  deletedAt?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -101,8 +121,13 @@ export type UserMaxAggregateInputType = {
   role?: true
   status?: true
   twoFactorEnabled?: true
+  mustChangePassword?: true
+  jobTitle?: true
+  phone?: true
+  passwordChangedAt?: true
   lastActiveAt?: true
   invitedById?: true
+  deletedAt?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -118,8 +143,13 @@ export type UserCountAggregateInputType = {
   status?: true
   permissions?: true
   twoFactorEnabled?: true
+  mustChangePassword?: true
+  jobTitle?: true
+  phone?: true
+  passwordChangedAt?: true
   lastActiveAt?: true
   invitedById?: true
+  deletedAt?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -208,8 +238,13 @@ export type UserGroupByOutputType = {
   status: $Enums.UserStatus
   permissions: runtime.JsonValue | null
   twoFactorEnabled: boolean
+  mustChangePassword: boolean
+  jobTitle: string | null
+  phone: string | null
+  passwordChangedAt: Date | null
   lastActiveAt: Date | null
   invitedById: string | null
+  deletedAt: Date | null
   createdAt: Date
   updatedAt: Date
   _count: UserCountAggregateOutputType | null
@@ -246,8 +281,13 @@ export type UserWhereInput = {
   status?: Prisma.EnumUserStatusFilter<"User"> | $Enums.UserStatus
   permissions?: Prisma.JsonNullableFilter<"User">
   twoFactorEnabled?: Prisma.BoolFilter<"User"> | boolean
+  mustChangePassword?: Prisma.BoolFilter<"User"> | boolean
+  jobTitle?: Prisma.StringNullableFilter<"User"> | string | null
+  phone?: Prisma.StringNullableFilter<"User"> | string | null
+  passwordChangedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   lastActiveAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   invitedById?: Prisma.StringNullableFilter<"User"> | string | null
+  deletedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   sessions?: Prisma.SessionListRelationFilter
@@ -274,8 +314,13 @@ export type UserOrderByWithRelationInput = {
   status?: Prisma.SortOrder
   permissions?: Prisma.SortOrderInput | Prisma.SortOrder
   twoFactorEnabled?: Prisma.SortOrder
+  mustChangePassword?: Prisma.SortOrder
+  jobTitle?: Prisma.SortOrderInput | Prisma.SortOrder
+  phone?: Prisma.SortOrderInput | Prisma.SortOrder
+  passwordChangedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   lastActiveAt?: Prisma.SortOrderInput | Prisma.SortOrder
   invitedById?: Prisma.SortOrderInput | Prisma.SortOrder
+  deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   sessions?: Prisma.SessionOrderByRelationAggregateInput
@@ -305,8 +350,13 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   status?: Prisma.EnumUserStatusFilter<"User"> | $Enums.UserStatus
   permissions?: Prisma.JsonNullableFilter<"User">
   twoFactorEnabled?: Prisma.BoolFilter<"User"> | boolean
+  mustChangePassword?: Prisma.BoolFilter<"User"> | boolean
+  jobTitle?: Prisma.StringNullableFilter<"User"> | string | null
+  phone?: Prisma.StringNullableFilter<"User"> | string | null
+  passwordChangedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   lastActiveAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   invitedById?: Prisma.StringNullableFilter<"User"> | string | null
+  deletedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   sessions?: Prisma.SessionListRelationFilter
@@ -333,8 +383,13 @@ export type UserOrderByWithAggregationInput = {
   status?: Prisma.SortOrder
   permissions?: Prisma.SortOrderInput | Prisma.SortOrder
   twoFactorEnabled?: Prisma.SortOrder
+  mustChangePassword?: Prisma.SortOrder
+  jobTitle?: Prisma.SortOrderInput | Prisma.SortOrder
+  phone?: Prisma.SortOrderInput | Prisma.SortOrder
+  passwordChangedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   lastActiveAt?: Prisma.SortOrderInput | Prisma.SortOrder
   invitedById?: Prisma.SortOrderInput | Prisma.SortOrder
+  deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.UserCountOrderByAggregateInput
@@ -356,8 +411,13 @@ export type UserScalarWhereWithAggregatesInput = {
   status?: Prisma.EnumUserStatusWithAggregatesFilter<"User"> | $Enums.UserStatus
   permissions?: Prisma.JsonNullableWithAggregatesFilter<"User">
   twoFactorEnabled?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
+  mustChangePassword?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
+  jobTitle?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
+  phone?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
+  passwordChangedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
   lastActiveAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
   invitedById?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
+  deletedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
 }
@@ -373,7 +433,12 @@ export type UserCreateInput = {
   status?: $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: boolean
+  mustChangePassword?: boolean
+  jobTitle?: string | null
+  phone?: string | null
+  passwordChangedAt?: Date | string | null
   lastActiveAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -400,8 +465,13 @@ export type UserUncheckedCreateInput = {
   status?: $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: boolean
+  mustChangePassword?: boolean
+  jobTitle?: string | null
+  phone?: string | null
+  passwordChangedAt?: Date | string | null
   lastActiveAt?: Date | string | null
   invitedById?: string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -427,7 +497,12 @@ export type UserUpdateInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastActiveAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -454,8 +529,13 @@ export type UserUncheckedUpdateInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastActiveAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invitedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -481,8 +561,13 @@ export type UserCreateManyInput = {
   status?: $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: boolean
+  mustChangePassword?: boolean
+  jobTitle?: string | null
+  phone?: string | null
+  passwordChangedAt?: Date | string | null
   lastActiveAt?: Date | string | null
   invitedById?: string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -498,7 +583,12 @@ export type UserUpdateManyMutationInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastActiveAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -514,8 +604,13 @@ export type UserUncheckedUpdateManyInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastActiveAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invitedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -546,8 +641,13 @@ export type UserCountOrderByAggregateInput = {
   status?: Prisma.SortOrder
   permissions?: Prisma.SortOrder
   twoFactorEnabled?: Prisma.SortOrder
+  mustChangePassword?: Prisma.SortOrder
+  jobTitle?: Prisma.SortOrder
+  phone?: Prisma.SortOrder
+  passwordChangedAt?: Prisma.SortOrder
   lastActiveAt?: Prisma.SortOrder
   invitedById?: Prisma.SortOrder
+  deletedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -562,8 +662,13 @@ export type UserMaxOrderByAggregateInput = {
   role?: Prisma.SortOrder
   status?: Prisma.SortOrder
   twoFactorEnabled?: Prisma.SortOrder
+  mustChangePassword?: Prisma.SortOrder
+  jobTitle?: Prisma.SortOrder
+  phone?: Prisma.SortOrder
+  passwordChangedAt?: Prisma.SortOrder
   lastActiveAt?: Prisma.SortOrder
   invitedById?: Prisma.SortOrder
+  deletedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -578,8 +683,13 @@ export type UserMinOrderByAggregateInput = {
   role?: Prisma.SortOrder
   status?: Prisma.SortOrder
   twoFactorEnabled?: Prisma.SortOrder
+  mustChangePassword?: Prisma.SortOrder
+  jobTitle?: Prisma.SortOrder
+  phone?: Prisma.SortOrder
+  passwordChangedAt?: Prisma.SortOrder
   lastActiveAt?: Prisma.SortOrder
   invitedById?: Prisma.SortOrder
+  deletedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -816,7 +926,12 @@ export type UserCreateWithoutInvitedByInput = {
   status?: $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: boolean
+  mustChangePassword?: boolean
+  jobTitle?: string | null
+  phone?: string | null
+  passwordChangedAt?: Date | string | null
   lastActiveAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -842,7 +957,12 @@ export type UserUncheckedCreateWithoutInvitedByInput = {
   status?: $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: boolean
+  mustChangePassword?: boolean
+  jobTitle?: string | null
+  phone?: string | null
+  passwordChangedAt?: Date | string | null
   lastActiveAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -878,7 +998,12 @@ export type UserCreateWithoutInvitedUsersInput = {
   status?: $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: boolean
+  mustChangePassword?: boolean
+  jobTitle?: string | null
+  phone?: string | null
+  passwordChangedAt?: Date | string | null
   lastActiveAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -904,8 +1029,13 @@ export type UserUncheckedCreateWithoutInvitedUsersInput = {
   status?: $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: boolean
+  mustChangePassword?: boolean
+  jobTitle?: string | null
+  phone?: string | null
+  passwordChangedAt?: Date | string | null
   lastActiveAt?: Date | string | null
   invitedById?: string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -954,8 +1084,13 @@ export type UserScalarWhereInput = {
   status?: Prisma.EnumUserStatusFilter<"User"> | $Enums.UserStatus
   permissions?: Prisma.JsonNullableFilter<"User">
   twoFactorEnabled?: Prisma.BoolFilter<"User"> | boolean
+  mustChangePassword?: Prisma.BoolFilter<"User"> | boolean
+  jobTitle?: Prisma.StringNullableFilter<"User"> | string | null
+  phone?: Prisma.StringNullableFilter<"User"> | string | null
+  passwordChangedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   lastActiveAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   invitedById?: Prisma.StringNullableFilter<"User"> | string | null
+  deletedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
 }
@@ -982,7 +1117,12 @@ export type UserUpdateWithoutInvitedUsersInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastActiveAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -1008,8 +1148,13 @@ export type UserUncheckedUpdateWithoutInvitedUsersInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastActiveAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invitedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -1034,7 +1179,12 @@ export type UserCreateWithoutTwoFactorInput = {
   status?: $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: boolean
+  mustChangePassword?: boolean
+  jobTitle?: string | null
+  phone?: string | null
+  passwordChangedAt?: Date | string | null
   lastActiveAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -1060,8 +1210,13 @@ export type UserUncheckedCreateWithoutTwoFactorInput = {
   status?: $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: boolean
+  mustChangePassword?: boolean
+  jobTitle?: string | null
+  phone?: string | null
+  passwordChangedAt?: Date | string | null
   lastActiveAt?: Date | string | null
   invitedById?: string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -1102,7 +1257,12 @@ export type UserUpdateWithoutTwoFactorInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastActiveAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -1128,8 +1288,13 @@ export type UserUncheckedUpdateWithoutTwoFactorInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastActiveAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invitedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -1154,7 +1319,12 @@ export type UserCreateWithoutSessionsInput = {
   status?: $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: boolean
+  mustChangePassword?: boolean
+  jobTitle?: string | null
+  phone?: string | null
+  passwordChangedAt?: Date | string | null
   lastActiveAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
@@ -1180,8 +1350,13 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   status?: $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: boolean
+  mustChangePassword?: boolean
+  jobTitle?: string | null
+  phone?: string | null
+  passwordChangedAt?: Date | string | null
   lastActiveAt?: Date | string | null
   invitedById?: string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
@@ -1222,7 +1397,12 @@ export type UserUpdateWithoutSessionsInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastActiveAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
@@ -1248,8 +1428,13 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastActiveAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invitedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
@@ -1274,7 +1459,12 @@ export type UserCreateWithoutAccountsInput = {
   status?: $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: boolean
+  mustChangePassword?: boolean
+  jobTitle?: string | null
+  phone?: string | null
+  passwordChangedAt?: Date | string | null
   lastActiveAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -1300,8 +1490,13 @@ export type UserUncheckedCreateWithoutAccountsInput = {
   status?: $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: boolean
+  mustChangePassword?: boolean
+  jobTitle?: string | null
+  phone?: string | null
+  passwordChangedAt?: Date | string | null
   lastActiveAt?: Date | string | null
   invitedById?: string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -1342,7 +1537,12 @@ export type UserUpdateWithoutAccountsInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastActiveAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -1368,8 +1568,13 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastActiveAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invitedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -1394,7 +1599,12 @@ export type UserCreateWithoutInvitationsCreatedInput = {
   status?: $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: boolean
+  mustChangePassword?: boolean
+  jobTitle?: string | null
+  phone?: string | null
+  passwordChangedAt?: Date | string | null
   lastActiveAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -1420,8 +1630,13 @@ export type UserUncheckedCreateWithoutInvitationsCreatedInput = {
   status?: $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: boolean
+  mustChangePassword?: boolean
+  jobTitle?: string | null
+  phone?: string | null
+  passwordChangedAt?: Date | string | null
   lastActiveAt?: Date | string | null
   invitedById?: string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -1462,7 +1677,12 @@ export type UserUpdateWithoutInvitationsCreatedInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastActiveAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -1488,8 +1708,13 @@ export type UserUncheckedUpdateWithoutInvitationsCreatedInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastActiveAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invitedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -1514,7 +1739,12 @@ export type UserCreateWithoutAuditLogsInput = {
   status?: $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: boolean
+  mustChangePassword?: boolean
+  jobTitle?: string | null
+  phone?: string | null
+  passwordChangedAt?: Date | string | null
   lastActiveAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -1540,8 +1770,13 @@ export type UserUncheckedCreateWithoutAuditLogsInput = {
   status?: $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: boolean
+  mustChangePassword?: boolean
+  jobTitle?: string | null
+  phone?: string | null
+  passwordChangedAt?: Date | string | null
   lastActiveAt?: Date | string | null
   invitedById?: string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -1582,7 +1817,12 @@ export type UserUpdateWithoutAuditLogsInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastActiveAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -1608,8 +1848,13 @@ export type UserUncheckedUpdateWithoutAuditLogsInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastActiveAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invitedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -1634,7 +1879,12 @@ export type UserCreateWithoutPaymentsInput = {
   status?: $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: boolean
+  mustChangePassword?: boolean
+  jobTitle?: string | null
+  phone?: string | null
+  passwordChangedAt?: Date | string | null
   lastActiveAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -1660,8 +1910,13 @@ export type UserUncheckedCreateWithoutPaymentsInput = {
   status?: $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: boolean
+  mustChangePassword?: boolean
+  jobTitle?: string | null
+  phone?: string | null
+  passwordChangedAt?: Date | string | null
   lastActiveAt?: Date | string | null
   invitedById?: string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -1702,7 +1957,12 @@ export type UserUpdateWithoutPaymentsInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastActiveAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -1728,8 +1988,13 @@ export type UserUncheckedUpdateWithoutPaymentsInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastActiveAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invitedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -1754,7 +2019,12 @@ export type UserCreateWithoutReceiptsInput = {
   status?: $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: boolean
+  mustChangePassword?: boolean
+  jobTitle?: string | null
+  phone?: string | null
+  passwordChangedAt?: Date | string | null
   lastActiveAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -1780,8 +2050,13 @@ export type UserUncheckedCreateWithoutReceiptsInput = {
   status?: $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: boolean
+  mustChangePassword?: boolean
+  jobTitle?: string | null
+  phone?: string | null
+  passwordChangedAt?: Date | string | null
   lastActiveAt?: Date | string | null
   invitedById?: string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -1822,7 +2097,12 @@ export type UserUpdateWithoutReceiptsInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastActiveAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -1848,8 +2128,13 @@ export type UserUncheckedUpdateWithoutReceiptsInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastActiveAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invitedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -1874,7 +2159,12 @@ export type UserCreateWithoutFollowUpsInput = {
   status?: $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: boolean
+  mustChangePassword?: boolean
+  jobTitle?: string | null
+  phone?: string | null
+  passwordChangedAt?: Date | string | null
   lastActiveAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -1900,8 +2190,13 @@ export type UserUncheckedCreateWithoutFollowUpsInput = {
   status?: $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: boolean
+  mustChangePassword?: boolean
+  jobTitle?: string | null
+  phone?: string | null
+  passwordChangedAt?: Date | string | null
   lastActiveAt?: Date | string | null
   invitedById?: string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -1942,7 +2237,12 @@ export type UserUpdateWithoutFollowUpsInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastActiveAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -1968,8 +2268,13 @@ export type UserUncheckedUpdateWithoutFollowUpsInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastActiveAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invitedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -1994,7 +2299,12 @@ export type UserCreateWithoutNotificationsInput = {
   status?: $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: boolean
+  mustChangePassword?: boolean
+  jobTitle?: string | null
+  phone?: string | null
+  passwordChangedAt?: Date | string | null
   lastActiveAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
@@ -2020,8 +2330,13 @@ export type UserUncheckedCreateWithoutNotificationsInput = {
   status?: $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: boolean
+  mustChangePassword?: boolean
+  jobTitle?: string | null
+  phone?: string | null
+  passwordChangedAt?: Date | string | null
   lastActiveAt?: Date | string | null
   invitedById?: string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
@@ -2062,7 +2377,12 @@ export type UserUpdateWithoutNotificationsInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastActiveAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -2088,8 +2408,13 @@ export type UserUncheckedUpdateWithoutNotificationsInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastActiveAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   invitedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -2114,7 +2439,12 @@ export type UserCreateManyInvitedByInput = {
   status?: $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: boolean
+  mustChangePassword?: boolean
+  jobTitle?: string | null
+  phone?: string | null
+  passwordChangedAt?: Date | string | null
   lastActiveAt?: Date | string | null
+  deletedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -2130,7 +2460,12 @@ export type UserUpdateWithoutInvitedByInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastActiveAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
@@ -2156,7 +2491,12 @@ export type UserUncheckedUpdateWithoutInvitedByInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastActiveAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -2182,7 +2522,12 @@ export type UserUncheckedUpdateManyWithoutInvitedByInput = {
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   permissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastActiveAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -2301,8 +2646,13 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   status?: boolean
   permissions?: boolean
   twoFactorEnabled?: boolean
+  mustChangePassword?: boolean
+  jobTitle?: boolean
+  phone?: boolean
+  passwordChangedAt?: boolean
   lastActiveAt?: boolean
   invitedById?: boolean
+  deletedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   sessions?: boolean | Prisma.User$sessionsArgs<ExtArgs>
@@ -2330,8 +2680,13 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   status?: boolean
   permissions?: boolean
   twoFactorEnabled?: boolean
+  mustChangePassword?: boolean
+  jobTitle?: boolean
+  phone?: boolean
+  passwordChangedAt?: boolean
   lastActiveAt?: boolean
   invitedById?: boolean
+  deletedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   invitedBy?: boolean | Prisma.User$invitedByArgs<ExtArgs>
@@ -2348,8 +2703,13 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   status?: boolean
   permissions?: boolean
   twoFactorEnabled?: boolean
+  mustChangePassword?: boolean
+  jobTitle?: boolean
+  phone?: boolean
+  passwordChangedAt?: boolean
   lastActiveAt?: boolean
   invitedById?: boolean
+  deletedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   invitedBy?: boolean | Prisma.User$invitedByArgs<ExtArgs>
@@ -2366,13 +2726,18 @@ export type UserSelectScalar = {
   status?: boolean
   permissions?: boolean
   twoFactorEnabled?: boolean
+  mustChangePassword?: boolean
+  jobTitle?: boolean
+  phone?: boolean
+  passwordChangedAt?: boolean
   lastActiveAt?: boolean
   invitedById?: boolean
+  deletedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "email" | "emailVerified" | "image" | "password" | "role" | "status" | "permissions" | "twoFactorEnabled" | "lastActiveAt" | "invitedById" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "email" | "emailVerified" | "image" | "password" | "role" | "status" | "permissions" | "twoFactorEnabled" | "mustChangePassword" | "jobTitle" | "phone" | "passwordChangedAt" | "lastActiveAt" | "invitedById" | "deletedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   sessions?: boolean | Prisma.User$sessionsArgs<ExtArgs>
   accounts?: boolean | Prisma.User$accountsArgs<ExtArgs>
@@ -2420,8 +2785,13 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     status: $Enums.UserStatus
     permissions: runtime.JsonValue | null
     twoFactorEnabled: boolean
+    mustChangePassword: boolean
+    jobTitle: string | null
+    phone: string | null
+    passwordChangedAt: Date | null
     lastActiveAt: Date | null
     invitedById: string | null
+    deletedAt: Date | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["user"]>
@@ -2868,8 +3238,13 @@ export interface UserFieldRefs {
   readonly status: Prisma.FieldRef<"User", 'UserStatus'>
   readonly permissions: Prisma.FieldRef<"User", 'Json'>
   readonly twoFactorEnabled: Prisma.FieldRef<"User", 'Boolean'>
+  readonly mustChangePassword: Prisma.FieldRef<"User", 'Boolean'>
+  readonly jobTitle: Prisma.FieldRef<"User", 'String'>
+  readonly phone: Prisma.FieldRef<"User", 'String'>
+  readonly passwordChangedAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly lastActiveAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly invitedById: Prisma.FieldRef<"User", 'String'>
+  readonly deletedAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"User", 'DateTime'>
 }

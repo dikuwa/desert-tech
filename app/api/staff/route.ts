@@ -15,7 +15,7 @@ import {
 } from "@/lib/auth-server";
 import { db } from "@/lib/db";
 import { UserRole, UserStatus } from "@/lib/enums";
-import { DEFAULT_ROLE_PERMISSIONS, Permissions } from "@/lib/permissions";
+import { DEFAULT_ROLE_PERMISSIONS, Permissions, type Permission } from "@/lib/permissions";
 import bcrypt from "bcryptjs";
 
 const createUserSchema = z.object({
@@ -23,6 +23,9 @@ const createUserSchema = z.object({
   email: z.string().email(),
   password: z.string().min(10).max(128),
   role: z.nativeEnum(UserRole),
+  permissions: z.array(z.enum(Object.values(Permissions) as [Permission, ...Permission[]])).optional(),
+  jobTitle: z.string().max(100).optional(),
+  phone: z.string().max(50).optional(),
 });
 
 /**
@@ -31,7 +34,7 @@ const createUserSchema = z.object({
  */
 export async function GET(req: NextRequest) {
   try {
-    await requirePermission(Permissions.STAFF_VIEW);
+    await requirePermission(Permissions.USERS_VIEW);
 
     if (!db) {
       return NextResponse.json(
@@ -118,7 +121,7 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
-    const currentUser = await requirePermission(Permissions.STAFF_MANAGE);
+    const currentUser = await requirePermission(Permissions.USERS_CREATE);
 
     if (!db) {
       return NextResponse.json({ error: "Database not available" }, { status: 503 });
@@ -132,7 +135,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { name, password, role } = result.data;
+    const { name, password, role, permissions, jobTitle, phone } = result.data;
     const email = result.data.email.toLowerCase().trim();
 
     if (role === UserRole.OWNER && currentUser.role !== UserRole.OWNER) {
@@ -159,7 +162,10 @@ export async function POST(req: NextRequest) {
           role,
           status: UserStatus.ACTIVE,
           emailVerified: true,
-          permissions: DEFAULT_ROLE_PERMISSIONS[role],
+          permissions: (permissions && permissions.length > 0) ? permissions : DEFAULT_ROLE_PERMISSIONS[role],
+          mustChangePassword: true, // Temporary password — force change on first login
+          jobTitle: jobTitle || null,
+          phone: phone || null,
           invitedById: currentUser.id,
         },
       });
