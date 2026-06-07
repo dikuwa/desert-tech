@@ -15,6 +15,7 @@ import { useState } from "react";
 import { useCart } from "@/lib/store/cart";
 import { formatNAD } from "@/lib/data";
 import { cn } from "@/lib/utils";
+import { ProductImage } from "@/components/ui/product-image";
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
 const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
@@ -93,10 +94,10 @@ export default function CartPage() {
                 href={`/shop/${item.slug}`}
                 className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 border border-border"
               >
-                <img
+                <ProductImage
                   src={item.imageUrl}
                   alt={item.name}
-                  className="w-full h-full object-contain p-2"
+                  showFallbackText={false}
                 />
               </Link>
 

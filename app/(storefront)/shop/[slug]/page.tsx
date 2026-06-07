@@ -28,6 +28,7 @@ import { useWishlist } from "@/lib/store/wishlist";
 import { NotifyMeModal } from "@/components/storefront/notify-me-modal";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { ProductImage } from "@/components/ui/product-image";
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
 const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
@@ -123,10 +124,10 @@ export default function ProductDetailPage() {
         {/* Left: Image Gallery */}
         <div className="space-y-4">
           <div className="relative aspect-square rounded-2xl overflow-hidden border border-border bg-gradient-to-br from-gray-50 to-gray-100">
-            <img
+            <ProductImage
               src={product.images[selectedImage] || product.imageUrl}
               alt={product.name}
-              className="w-full h-full object-contain p-8 transition-all duration-500"
+              className="w-full h-full transition-all duration-500"
             />
             {product.discountPercent && !isSoldOut && (
               <div className="absolute top-4 left-4 rounded-lg bg-primary px-3 py-1 text-sm font-bold text-primary-foreground">
@@ -163,10 +164,10 @@ export default function ProductDetailPage() {
                   )}
                   aria-label={`View product image ${idx + 1}`}
                 >
-                  <img
+                  <ProductImage
                     src={img}
                     alt={`${product.name} view ${idx + 1}`}
-                    className="w-full h-full object-contain p-1.5"
+                    showFallbackText={false}
                   />
                 </button>
               ))}
@@ -320,10 +321,10 @@ export default function ProductDetailPage() {
             {relatedProducts.map((rp) => (
               <Link key={rp.id} href={`/shop/${rp.slug}`} className="group block">
                 <div className="aspect-square rounded-xl overflow-hidden border border-border bg-gradient-to-br from-gray-50 to-gray-100 mb-3">
-                  <img
+                  <ProductImage
                     src={rp.imageUrl}
                     alt={rp.name}
-                    className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
+                    className="w-full h-full group-hover:scale-105 transition-transform duration-300"
                   />
                 </div>
                 <h3 className="text-sm font-semibold text-foreground line-clamp-1 group-hover:text-primary transition-colors">

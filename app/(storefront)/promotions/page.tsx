@@ -77,7 +77,7 @@ export default function PromotionsPage() {
                     <img
                       src={promo.imageUrl}
                       alt={promo.title}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                      className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.04]"
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground/40">
@@ -133,7 +133,7 @@ export default function PromotionsPage() {
                     <img
                       src={promo.imageUrl}
                       alt={promo.title}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                      className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.04]"
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground/40">

@@ -9,6 +9,7 @@ import { MoneyInput } from "@/components/ui/money-input";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { generateProductSku } from "@/lib/product-sku";
 import { toast } from "sonner";
+import { ProductImage } from "@/components/ui/product-image";
 
 export default function EditProductPage() {
   const router = useRouter();
@@ -315,7 +316,7 @@ export default function EditProductPage() {
               {images.length > 0 && (
                 <div className="space-y-3">
                   <div className="aspect-[4/3] overflow-hidden rounded-lg border border-border bg-muted">
-                    <img src={images[selectedImage]} alt="Selected product preview" className="h-full w-full object-contain p-3" />
+                    <ProductImage src={images[selectedImage]} alt="Selected product preview" />
                   </div>
                   <div className="flex flex-wrap gap-2">
                   {images.map((url, idx) => (

@@ -21,6 +21,7 @@ import { getPromotionProducts, formatNAD, type ProductData } from "@/lib/data";
 import { useCart } from "@/lib/store/cart";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { ProductImage } from "@/components/ui/product-image";
 
 export default function PromotionDetailPage() {
   const params = useParams();
@@ -149,7 +150,7 @@ export default function PromotionDetailPage() {
                 <img
                   src={promotion.imageUrl}
                   alt={promotion.title}
-                  className="h-full w-full object-cover"
+                  className="h-full w-full object-cover object-center"
                 />
               </div>
             ) : (
@@ -225,10 +226,10 @@ export default function PromotionDetailPage() {
                         href={`/shop/${product.slug}`}
                         className="relative h-28 w-28 flex-shrink-0 overflow-hidden rounded-lg border border-border bg-muted sm:h-32 sm:w-32"
                       >
-                        <img
+                        <ProductImage
                           src={product.imageUrl}
                           alt={product.name}
-                          className="h-full w-full object-contain p-3 transition-transform duration-300 group-hover:scale-105"
+                          className="transition-transform duration-300 group-hover:scale-105"
                         />
                       </Link>
 
@@ -345,13 +346,12 @@ export default function PromotionDetailPage() {
                       className="group flex gap-3 rounded-xl border border-border bg-card p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0"
                     >
                       {promo.imageUrl ? (
-                        <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-muted">
-                          <img
-                            src={promo.imageUrl}
-                            alt={promo.title}
-                            className="h-full w-full object-cover"
-                          />
-                        </div>
+                        <ProductImage
+                          src={promo.imageUrl}
+                          alt={promo.title}
+                          containerClassName="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-muted"
+                          showFallbackText={false}
+                        />
                       ) : (
                         <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground/40">
                           <Icon className="h-5 w-5" />

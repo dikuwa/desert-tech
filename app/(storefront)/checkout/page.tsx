@@ -22,6 +22,7 @@ import { formatNAD } from "@/lib/data";
 // Fulfillment options
 type FulfillmentMethod = "collection" | "courier";
 import { cn } from "@/lib/utils";
+import { ProductImage } from "@/components/ui/product-image";
 import { useDashboardStore } from "@/lib/store/dashboard";
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
@@ -482,10 +483,10 @@ export default function CheckoutPage() {
               {items.map((item) => (
                 <div key={item.productId} className="flex gap-3">
                   <div className="flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 border border-border">
-                    <img
+                    <ProductImage
                       src={item.imageUrl}
                       alt={item.name}
-                      className="w-full h-full object-contain p-1.5"
+                      showFallbackText={false}
                     />
                   </div>
                   <div className="flex-1 min-w-0">

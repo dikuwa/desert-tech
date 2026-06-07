@@ -5,6 +5,7 @@ import { ShoppingCart, X, Minus, Plus, ArrowRight, Trash2 } from "lucide-react";
 import { useCart } from "@/lib/store/cart";
 import { formatNAD } from "@/lib/data";
 import { cn } from "@/lib/utils";
+import { ProductImage } from "@/components/ui/product-image";
 import { useState, useRef, useEffect } from "react";
 
 export function CartDropdown() {
@@ -70,7 +71,7 @@ export function CartDropdown() {
                       className="w-14 h-14 rounded-lg overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 border border-border flex-shrink-0"
                       onClick={() => setOpen(false)}
                     >
-                      <img src={item.imageUrl} alt={item.name} className="w-full h-full object-contain p-1" />
+                      <ProductImage src={item.imageUrl} alt={item.name} showFallbackText={false} />
                     </Link>
                     <div className="flex-1 min-w-0">
                       <Link

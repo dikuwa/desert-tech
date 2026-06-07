@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, Check, Heart, ImageOff, ShoppingCart, Tag } from "lucide-react";
+import { Bell, Check, Heart, ShoppingCart, Tag } from "lucide-react";
 import { useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -10,6 +10,7 @@ import { useWishlist } from "@/lib/store/wishlist";
 import { toast } from "sonner";
 import { NotifyMeModal } from "@/components/storefront/notify-me-modal";
 import { fadeUpVariants, motionTransition } from "@/lib/motion";
+import { ProductImage } from "@/components/ui/product-image";
 
 export interface ProductData {
   id: string;
@@ -111,7 +112,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
       <Link
         href={`/shop/${product.slug}`}
-        className="relative flex aspect-[4/3] items-center justify-center bg-gray-100 p-5"
+        className="relative block aspect-[4/3] overflow-hidden bg-gray-100"
       >
         <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-1.5 pr-12">
           {product.discountPercent && !isSoldOut && (
@@ -126,19 +127,13 @@ export function ProductCard({ product }: ProductCardProps) {
             </span>
           )}
         </div>
-        {product.imageUrl && !imgError ? (
-          <img
-            src={product.imageUrl}
-            alt={product.name}
-            className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
-            onError={() => setImgError(true)}
-          />
-        ) : (
-          <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-            <ImageOff className="h-6 w-6" />
-            <span className="text-[11px] font-medium">{product.name}</span>
-          </div>
-        )}
+        <ProductImage
+          src={product.imageUrl}
+          alt={product.name}
+          className="transition-transform duration-300 group-hover:scale-105"
+          showFallbackText={true}
+          fallbackIconSize={24}
+        />
       </Link>
 
       <div className="flex flex-1 flex-col gap-3 p-4">
