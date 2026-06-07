@@ -24,6 +24,7 @@ import { useDashboardStore } from "@/lib/store/dashboard";
 const ALL_AVAILABILITY = [
   { value: "in_stock", label: "In Stock" },
   { value: "low_stock", label: "Low Stock" },
+  { value: "sold_out", label: "Out of Stock" },
 ];
 
 const ITEMS_PER_PAGE = 12;

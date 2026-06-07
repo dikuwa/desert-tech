@@ -113,6 +113,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permissions.STOCK_REQUESTS_VIEW,
     Permissions.STOCK_REQUESTS_MANAGE,
     Permissions.STAFF_VIEW,
+    Permissions.STAFF_MANAGE,
     Permissions.NOTIFICATIONS_VIEW,
     Permissions.NOTIFICATIONS_MANAGE,
     Permissions.SETTINGS_VIEW,

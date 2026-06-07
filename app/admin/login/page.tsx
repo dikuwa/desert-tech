@@ -1,6 +1,6 @@
 /**
  * Admin Login Page
- * Invite-only authentication with email/password.
+ * Dashboard authentication with email/password.
  * No public sign-up, no role selector.
  */
 
@@ -228,12 +228,12 @@ export default function AdminLoginPage() {
             </Link>
           </p>
 
-          {/* Sign Up Notice */}
+          {/* Account Notice */}
           <div className="mt-6 rounded-lg border border-border bg-muted/50 p-3 text-center">
             <p className="text-xs text-muted-foreground">
               Don&apos;t have an account?{" "}
               <span className="text-foreground">
-                Access is by invitation only.
+                Ask an Owner or Admin to create one.
               </span>
             </p>
           </div>

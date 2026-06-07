@@ -405,5 +405,6 @@ export const ALL_BRANDS = [...new Set(products.map((p) => p.brand))].sort();
 export const ALL_AVAILABILITY = [
   { value: "in_stock", label: "In Stock" },
   { value: "low_stock", label: "Low Stock" },
+  { value: "sold_out", label: "Out of Stock" },
 ];
 export const ALL_CONDITIONS = ["New", "Refurbished", "Pre-Owned"];

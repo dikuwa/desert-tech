@@ -15,9 +15,9 @@
 import { parseHumanToCents } from "../lib/format";
 import { PrismaClient } from "../lib/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 import path from "path";
+import { ensureSystemUsers } from "../lib/system-users";
 
 // Load .env.local so the seed script can access DATABASE_URL and ADMIN_* vars
 dotenv.config({ path: path.resolve(__dirname, "../.env.local") });
@@ -32,81 +32,9 @@ async function main() {
   const adapter = new PrismaPg({ connectionString: DATABASE_URL });
   const prisma = new PrismaClient({ adapter });
 
-  // Read admin credentials from env vars
-  const adminEmail = process.env.ADMIN_EMAIL || "admin@deserttech.com";
-  const adminPassword = process.env.ADMIN_PASSWORD;
-  const adminName = process.env.ADMIN_NAME || "Admin User";
-  const staffPassword = process.env.STAFF_PASSWORD || "Staff@2025";
-
-  if (!adminPassword) {
-    console.error("❌ ADMIN_PASSWORD is not set. Add it to .env.local");
-    process.exit(1);
-  }
-
   console.log("🌱 Seeding database...");
-  console.log("   Admin email:", adminEmail);
-
-  // Hash passwords with bcrypt (Better Auth uses bcrypt for password verification)
-  console.log("   Hashing passwords...");
-  const [adminHash, staffHash] = await Promise.all([
-    bcrypt.hash(adminPassword, 10),
-    bcrypt.hash(staffPassword, 10),
-  ]);
-
-  // Create admin user + account with password
-  const admin = await prisma.user.upsert({
-    where: { email: adminEmail },
-    update: { name: adminName, role: "OWNER", status: "ACTIVE", emailVerified: true },
-    create: {
-      name: adminName,
-      email: adminEmail,
-      role: "OWNER",
-      status: "ACTIVE",
-      emailVerified: true,
-    },
-  });
-
-  // Remove any existing email-password accounts for this user, then create fresh
-  await prisma.account.deleteMany({
-    where: { userId: admin.id, providerId: "credential" },
-  });
-  await prisma.account.create({
-    data: {
-      userId: admin.id,
-      providerId: "credential",
-      accountId: admin.id,
-      password: adminHash,
-    },
-  });
-
-  console.log(`  ✓ Admin user: ${adminEmail} (${admin.role})`);
-
-  // Create staff user
-  const staff = await prisma.user.upsert({
-    where: { email: "staff@deserttech.com" },
-    update: { name: "Staff User", role: "STAFF", status: "ACTIVE", emailVerified: true },
-    create: {
-      name: "Staff User",
-      email: "staff@deserttech.com",
-      role: "STAFF",
-      status: "ACTIVE",
-      emailVerified: true,
-    },
-  });
-
-  await prisma.account.deleteMany({
-    where: { userId: staff.id, providerId: "credential" },
-  });
-  await prisma.account.create({
-    data: {
-      userId: staff.id,
-      providerId: "credential",
-      accountId: staff.id,
-      password: staffHash,
-    },
-  });
-
-  console.log(`  ✓ Staff user: staff@deserttech.com (${staff.role})`);
+  await ensureSystemUsers(prisma, { resetPasswords: true });
+  console.log("  ✓ Desert Technology system users created");
 
   // Create categories
   const categories = [
@@ -251,9 +179,9 @@ async function main() {
   }
 
   console.log("\n✅ Database seeded successfully!");
+  console.log("   Owner login: owner@deserttech.com");
   console.log("   Admin login: admin@deserttech.com");
   console.log("   Staff login: staff@deserttech.com");
-  console.log("   (Passwords are set via Better Auth sign-up)");
 }
 
 main()

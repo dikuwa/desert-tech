@@ -25,6 +25,7 @@ import {
   Banknote,
   ArrowUp,
   ArrowDown,
+  LockKeyhole,
 } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn, decodeHTMLEntities } from "@/lib/utils";
@@ -58,8 +59,11 @@ export default function SettingsPage() {
 
   const [saved, setSaved] = useState(false);
   const [form, setForm] = useState(settings);
-  const [activeTab, setActiveTab] = useState<"store" | "hero" | "contact" | "banking" | "payment-methods">("store");
+  const [activeTab, setActiveTab] = useState<"store" | "hero" | "contact" | "banking" | "payment-methods" | "security">("store");
   const [uploading, setUploading] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
+  const [passwordSaving, setPasswordSaving] = useState(false);
   const heroImageInputRef = useRef<HTMLInputElement>(null);
 
   // Contact detail form
@@ -81,6 +85,36 @@ export default function SettingsPage() {
     updateSettings(form);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  };
+
+  const handlePasswordChange = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setPasswordMessage(null);
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordMessage("New passwords do not match.");
+      return;
+    }
+
+    setPasswordSaving(true);
+    try {
+      const response = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword,
+          revokeOtherSessions: true,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || data.error || "Could not change password");
+      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setPasswordMessage("Password changed successfully. Other sessions were revoked.");
+    } catch (error) {
+      setPasswordMessage(error instanceof Error ? error.message : "Could not change password");
+    } finally {
+      setPasswordSaving(false);
+    }
   };
 
   const updateField = (field: string, value: string) =>
@@ -183,6 +217,7 @@ export default function SettingsPage() {
     { id: "contact" as const, label: "Contact", icon: Phone },
     { id: "banking" as const, label: "Banking", icon: CreditCard },
     { id: "payment-methods" as const, label: "Payments", icon: Banknote },
+    { id: "security" as const, label: "Security", icon: LockKeyhole },
   ];
 
   return (
@@ -217,6 +252,68 @@ export default function SettingsPage() {
       </div>
 
       <div className="grid gap-6">
+        {activeTab === "security" && (
+          <div className="max-w-xl rounded-xl border border-border bg-card p-6 space-y-5">
+            <div className="flex items-center gap-2 border-b border-border pb-3">
+              <LockKeyhole className="h-5 w-5 text-primary" />
+              <div>
+                <h2 className="text-base font-semibold text-foreground">Change Password</h2>
+                <p className="text-xs text-muted-foreground">Update your own dashboard password.</p>
+              </div>
+            </div>
+            <form onSubmit={handlePasswordChange} className="space-y-4">
+              {passwordMessage && (
+                <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-foreground">
+                  {passwordMessage}
+                </div>
+              )}
+              <div>
+                <label className="text-sm font-medium text-foreground">Current Password</label>
+                <input
+                  type="password"
+                  autoComplete="current-password"
+                  value={passwordForm.currentPassword}
+                  onChange={(e) => setPasswordForm((form) => ({ ...form, currentPassword: e.target.value }))}
+                  className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground">New Password</label>
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  minLength={10}
+                  value={passwordForm.newPassword}
+                  onChange={(e) => setPasswordForm((form) => ({ ...form, newPassword: e.target.value }))}
+                  className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  required
+                />
+                <p className="mt-1 text-xs text-muted-foreground">Use at least 10 characters.</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground">Confirm New Password</label>
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  minLength={10}
+                  value={passwordForm.confirmPassword}
+                  onChange={(e) => setPasswordForm((form) => ({ ...form, confirmPassword: e.target.value }))}
+                  className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={passwordSaving}
+                className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+              >
+                {passwordSaving ? "Changing Password..." : "Change Password"}
+              </button>
+            </form>
+          </div>
+        )}
+
         {/* === STORE TAB === */}
         {activeTab === "store" && (
           <div className="rounded-xl border border-border bg-card p-6 space-y-5">

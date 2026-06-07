@@ -45,7 +45,7 @@ const availabilityConfig = {
     class: "bg-warning-soft text-warning border-warning/20",
   },
   sold_out: {
-    label: "Sold Out",
+    label: "Out of Stock",
     class: "bg-gray-100 text-gray-500 border-gray-200",
   },
 };

@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Users, Mail, AlertCircle } from "lucide-react";
+import { Plus, Users, UserX, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { InviteDialog } from "@/components/staff/invite-dialog";
+import { CreateUserDialog } from "@/components/staff/create-user-dialog";
 import { StaffList } from "@/components/staff/staff-list";
 import { Permissions } from "@/lib/permissions";
 import { UserRole, UserStatus } from "@/lib/enums";
@@ -26,7 +26,7 @@ export default function StaffPage() {
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [inviteOpen, setInviteOpen] = useState(false);
+  const [createUserOpen, setCreateUserOpen] = useState(false);
   const [currentUserRole, setCurrentUserRole] = useState<UserRole>(UserRole.STAFF);
   const [hasManagePermission, setHasManagePermission] = useState(false);
 
@@ -86,7 +86,7 @@ export default function StaffPage() {
   }, []);
 
   const activeCount = staff.filter((s) => s.status === UserStatus.ACTIVE).length;
-  const invitedCount = staff.filter((s) => s.status === UserStatus.INVITED).length;
+  const disabledCount = staff.filter((s) => s.status === UserStatus.DISABLED).length;
   const suspendedCount = staff.filter((s) => s.status === UserStatus.SUSPENDED).length;
 
   return (
@@ -95,16 +95,16 @@ export default function StaffPage() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            Staff Management
+            User Management
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             Manage team members and their access permissions
           </p>
         </div>
         {hasManagePermission && (
-          <Button onClick={() => setInviteOpen(true)}>
+          <Button onClick={() => setCreateUserOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Invite Staff
+            Create User
           </Button>
         )}
       </div>
@@ -125,11 +125,11 @@ export default function StaffPage() {
         <div className="rounded-xl border border-border bg-card p-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10">
-              <Mail className="h-5 w-5 text-warning" />
+              <UserX className="h-5 w-5 text-warning" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{invitedCount}</p>
-              <p className="text-xs text-muted-foreground">Invited</p>
+              <p className="text-2xl font-bold">{disabledCount}</p>
+              <p className="text-xs text-muted-foreground">Disabled</p>
             </div>
           </div>
         </div>
@@ -179,10 +179,10 @@ export default function StaffPage() {
         />
       )}
 
-      {/* Invite Dialog */}
-      <InviteDialog
-        open={inviteOpen}
-        onOpenChange={setInviteOpen}
+      <CreateUserDialog
+        open={createUserOpen}
+        onOpenChange={setCreateUserOpen}
+        currentUserRole={currentUserRole}
         onSuccess={fetchStaff}
       />
     </div>

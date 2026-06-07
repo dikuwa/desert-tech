@@ -11,6 +11,7 @@ import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { UserRole, UserStatus } from "@/lib/enums";
 import { sendPasswordResetEmail } from "@/lib/email";
+import { ensureSystemUsers, SYSTEM_USERS } from "@/lib/system-users";
 
 const baseURL = process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
@@ -25,11 +26,10 @@ export function isAuthMockMode(): boolean {
  * Better Auth configuration with Prisma adapter.
  * Features:
  * - Email/password authentication
- * - Email verification
  * - Password reset
  * - Two-factor authentication (TOTP)
  * - Session management
- * - Invite-only registration (disabled public sign-up)
+ * - Disabled public sign-up
  */
 export const auth = betterAuth({
   baseURL,
@@ -41,7 +41,7 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     disableSignUp: true,
-    requireEmailVerification: true,
+    requireEmailVerification: false,
     minPasswordLength: 10,
     maxPasswordLength: 128,
     resetPasswordTokenExpiresIn: 3600, // 1 hour
@@ -133,8 +133,13 @@ export const auth = betterAuth({
     before: createAuthMiddleware(async (ctx) => {
       if (ctx.path !== "/sign-in/email" || !db || !ctx.body?.email) return;
 
+      const email = String(ctx.body.email).toLowerCase().trim();
+      if (SYSTEM_USERS.some((user) => user.email === email)) {
+        await ensureSystemUsers(db);
+      }
+
       const user = await db.user.findUnique({
-        where: { email: String(ctx.body.email).toLowerCase().trim() },
+        where: { email },
         select: { status: true },
       });
 

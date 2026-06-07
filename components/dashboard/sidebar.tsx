@@ -42,7 +42,7 @@ const adminNavItems = [
   { href: "/dashboard/receipts", label: "Receipts", icon: FileText },
   { href: "/dashboard/quotations", label: "Quotations", icon: FileText },
   { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
-  { href: "/dashboard/back-in-stock", label: "Stock Requests", icon: PackageSearch },
+  { href: "/dashboard/back-in-stock", label: "Stock Notification Requests", icon: PackageSearch },
 ];
 
 const monitoringNavItems = [
@@ -54,7 +54,7 @@ const financialNavItems = [
 ];
 
 const staffNavItems = [
-  { href: "/dashboard/staff", label: "Staff", icon: UserCog },
+  { href: "/dashboard/staff", label: "Users", icon: UserCog },
 ];
 
 const bottomNavItems = [

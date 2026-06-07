@@ -2,70 +2,66 @@
 
 ## Status - June 7, 2026
 
-The invite-only authentication foundation is deployed and the highest-risk
-authentication boundaries are wired. It should be treated as phase 1 of the
-authorization rollout, not as a completed security program.
+The dashboard uses active email/password accounts created by an Owner or Admin. Public
+sign-up remains disabled, but users do not need an invitation, email verification,
+magic link, or OTP before their first login.
 
-Production migration:
+## Production Transition
 
-- Applied `prisma/migrations/20260607060000_invite_only_auth/migration.sql`.
-- Preserved both existing users and their verified-email state.
-- Migrated the existing Admin account to `OWNER`.
-- Migrated the existing Staff account to `STAFF`.
-- Converted existing credential accounts to Better Auth's `credential` provider.
-- Created the invitation, audit log, password reset, rate limit, and two-factor tables.
+- Preserved existing users and historical relationships.
+- Added the branded `owner@deserttech.com` Owner account.
+- Migrated `admin@deserttech.com` to `ADMIN`.
+- Migrated `staff@deserttech.com` to `STAFF`.
+- Replaced the legacy seeded credentials with the requested branded credentials.
+- Added the missing `Session.impersonatedBy` database column required by Better Auth.
+- Created the invitation, audit log, password reset, rate limit, and optional two-factor
+  tables during the earlier authentication migration.
 
 ## Verified And Corrected
 
-- Better Auth uses the Prisma adapter with valid Better Auth 1.6 options.
+- Better Auth uses the Prisma adapter and bcrypt credential verification.
 - Public email/password sign-up is disabled.
-- Existing bcrypt passwords remain compatible.
-- Invitation-created accounts use Better Auth credential records.
-- Invitation tokens and password-reset tokens are stored as hashes.
-- Invitation acceptance creates the user, credential account, and accepted invitation
-  state in one transaction.
-- The two-factor plugin and required `TwoFactor` table are configured.
-- The login page handles the authenticator-code challenge for users who enabled 2FA.
+- Email verification is not required for dashboard login.
+- Two-factor infrastructure remains available but is not required.
+- The three branded system accounts are bootstrapped when missing during development,
+  production startup, and deployment builds.
+- Startup bootstrap does not overwrite passwords after the initial legacy transition.
+- Owner and Admin can create active credential accounts directly from User Management.
+- Admin cannot create, modify, or disable Owner accounts.
+- Owner can create another Owner and can disable a different Owner only when another
+  active Owner remains.
+- Users can change their own password from Settings -> Security.
 - Dashboard access validates a real Better Auth session and active account.
 - Suspended and disabled accounts are rejected.
 - Sidebar items use server-derived roles and permissions.
-- Protected order, stock-request, receipt, document, and upload APIs now enforce
+- Protected order, stock-request, receipt, document, staff, and upload APIs enforce
   server-side permissions.
-- Storefront order submissions, stock requests, and public document-token lookup remain
-  public where required.
-- Password resets revoke existing sessions.
-- Product upload no longer accepts SVG files.
 
-## Production Verification
+## Verified Login And Role Behavior
 
-- `/admin/login` returns `200`.
-- Unauthenticated `/dashboard` redirects to `/admin/login`.
-- Unauthenticated protected APIs return `401`.
-- A forged Better Auth session cookie is rejected with `401`.
-- Public email/password sign-up returns the expected disabled response.
-- Public document-token lookup remains reachable.
-- Production build and TypeScript checks pass.
+- `owner@deserttech.com` signs in as active `OWNER`.
+- `admin@deserttech.com` signs in as active `ADMIN`.
+- `staff@deserttech.com` signs in as active `STAFF`.
+- Admin-created users can sign in immediately.
+- Admin cannot create an Owner.
+- Staff cannot access User Management.
+- Public self-registration remains disabled.
+- Production build, TypeScript checks, Prisma validation, and focused tests pass.
 
 ## Required Next Phase
 
 1. Add server-side view-permission guards to every individual dashboard page.
 2. Move remaining client/Zustand business mutations behind permission-checked server
    endpoints before relying on STAFF restrictions for separation of duties.
-3. Add Settings -> Security UI for TOTP enrollment, recovery codes, password changes,
-   and current-user session management.
-4. Enforce mandatory 2FA enrollment for OWNER and ADMIN after the enrollment UI exists.
-5. Complete staff-management UI for role and permission editing, invitation resend and
-   revoke, password-reset initiation, and activity views.
-6. Standardize unauthenticated error handling in all new staff and invitation APIs so
-   invalid sessions consistently return `401` instead of a generic `500`.
-7. Add automated integration tests for OWNER, ADMIN, STAFF, suspended users, expired
-   and single-use invitations, password reset, and 2FA sign-in.
+3. Extend Settings -> Security with optional TOTP enrollment, recovery codes, and
+   current-user session management if those controls are needed later.
+4. Complete User Management UI for role and permission editing and activity views.
+5. Standardize unauthenticated error handling in remaining routes.
+6. Add automated integration tests for all role and account-status combinations.
 
 ## Operational Notes
 
-- Keep `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `DATABASE_URL`, and email-provider
-  credentials configured in Vercel production.
-- Do not use `prisma db push` for production security-schema changes. Add and review
-  data-preserving migrations.
-- Review audit logs and rate-limit records regularly once the remaining protected
-  mutations are moved server-side.
+- Keep `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and `DATABASE_URL` configured in Vercel.
+- Do not set `RESET_SYSTEM_USER_PASSWORDS=true` during normal deployments.
+- Prefer disabling users over deleting database records with historical relationships.
+- See `OWNER_ACCOUNT_TRANSITION.md` for the permanent Owner transition procedure.

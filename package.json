@@ -3,14 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "tsx scripts/bootstrap-system-users.ts && next dev",
+    "build": "tsx scripts/bootstrap-system-users.ts && next build",
+    "start": "tsx scripts/bootstrap-system-users.ts && next start",
     "lint": "next lint",
     "postinstall": "prisma generate --config=prisma.config.ts 2>/dev/null || true",
     "db:generate": "prisma generate",
     "db:push": "prisma db push --config=prisma.config.ts",
     "db:seed": "tsx prisma/seed.ts",
+    "users:bootstrap": "tsx scripts/bootstrap-system-users.ts",
     "db:reset": "prisma db push --force-reset --config=prisma.config.ts && tsx prisma/seed.ts",
     "db:studio": "prisma studio --config=prisma.config.ts"
   },

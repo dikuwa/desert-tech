@@ -157,7 +157,7 @@ export default function ProductDetailPage() {
                 {product.condition}
               </span>
               <span className={cn("inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold", availabilityColor[product.availability])}>
-                {isSoldOut ? "Sold Out" : isLowStock ? `Low Stock (${product.stockCount} left)` : "In Stock"}
+                {isSoldOut ? "Out of Stock" : isLowStock ? `Low Stock (${product.stockCount} left)` : "In Stock"}
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">

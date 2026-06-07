@@ -59,7 +59,7 @@ vi.mock("@/lib/store/dashboard", () => ({
 describe("BackInStockPage", () => {
   it("renders the page title", () => {
     render(<BackInStockPage />);
-    expect(screen.getByText("Stock Requests")).toBeDefined();
+    expect(screen.getByText("Stock Notification Requests")).toBeDefined();
   });
 
   it("shows the total request count", () => {

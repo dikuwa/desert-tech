@@ -148,9 +148,9 @@ export async function PATCH(
       );
     }
 
-    if (targetUser.role === UserRole.OWNER) {
+    if (targetUser.role === UserRole.OWNER && currentUser.role !== UserRole.OWNER) {
       return NextResponse.json(
-        { error: "The OWNER account cannot be modified through staff management" },
+        { error: "Only an Owner can modify another Owner account" },
         { status: 403 }
       );
     }
@@ -250,7 +250,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    await requirePermission(Permissions.STAFF_MANAGE);
+    const currentUser = await requirePermission(Permissions.STAFF_MANAGE);
 
     if (!db) {
       return NextResponse.json(
@@ -280,11 +280,29 @@ export async function DELETE(
       );
     }
 
-    if (targetUser.role === UserRole.OWNER) {
+    if (targetUser.role === UserRole.OWNER && currentUser.role !== UserRole.OWNER) {
       return NextResponse.json(
-        { error: "The OWNER account cannot be disabled" },
+        { error: "Only an Owner can disable another Owner account" },
         { status: 403 }
       );
+    }
+
+    if (targetUser.role === UserRole.OWNER) {
+      if (id === currentUser.id) {
+        return NextResponse.json(
+          { error: "You cannot disable your own Owner account" },
+          { status: 403 },
+        );
+      }
+      const activeOwnerCount = await db.user.count({
+        where: { role: UserRole.OWNER, status: UserStatus.ACTIVE },
+      });
+      if (activeOwnerCount <= 1) {
+        return NextResponse.json(
+          { error: "Create another active Owner before disabling this account" },
+          { status: 409 },
+        );
+      }
     }
 
     // Soft delete by disabling account
