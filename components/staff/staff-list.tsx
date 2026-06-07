@@ -324,18 +324,27 @@ export function StaffList({ staff, currentUserRole, onUpdate }: StaffListProps) 
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
-  // ============== COMPACT PILL STYLING ==============
+  // ============== SEPARATE PILL STYLING ==============
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  /** Combined role + status pill — e.g. "OWNER · ACTIVE" */
-  const getCombinedPill = (role: UserRole, status: UserStatus) => {
-    const roleColors: Record<UserRole, string> = {
+  /** Role pill — e.g. "OWNER" */
+  const getRolePill = (role: UserRole) => {
+    const colors: Record<UserRole, string> = {
       [UserRole.OWNER]: "bg-primary/15 text-primary border-primary/25",
       [UserRole.ADMIN]: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/25",
       [UserRole.STAFF]: "bg-muted text-muted-foreground border-border",
     };
-    const statusColors: Record<UserStatus, string> = {
+    return (
+      <span className={`rounded-[3px] border px-1.5 py-[2px] text-[10px] font-bold leading-none select-none ${colors[role] || colors[UserRole.STAFF]}`}>
+        {role}
+      </span>
+    );
+  };
+
+  /** Status pill — e.g. "ACTIVE" */
+  const getStatusPill = (status: UserStatus) => {
+    const colors: Record<UserStatus, string> = {
       [UserStatus.INVITED]: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20",
       [UserStatus.ACTIVE]: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
       [UserStatus.SUSPENDED]: "bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/20",
@@ -343,17 +352,9 @@ export function StaffList({ staff, currentUserRole, onUpdate }: StaffListProps) 
       [UserStatus.LOCKED]: "bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/20",
       [UserStatus.DELETED]: "bg-muted text-muted-foreground line-through border-border",
     };
-    const roleColor = roleColors[role] || roleColors[UserRole.STAFF];
-    const statusColor = statusColors[status] || "bg-muted text-muted-foreground";
-    // Combine: role gets the border and left bg, status appends on the right with a divider
     return (
-      <span className={`inline-flex items-center text-[10px] font-bold leading-none select-none`}>
-        <span className={`rounded-l-[3px] border border-r-0 px-1.5 py-[2px] ${roleColor}`}>
-          {role}
-        </span>
-        <span className={`rounded-r-[3px] border border-l-0 px-1.5 py-[2px] ${statusColor}`}>
-          {status}
-        </span>
+      <span className={`rounded-[3px] border px-1.5 py-[2px] text-[10px] font-bold leading-none select-none ${colors[status] || "bg-muted text-muted-foreground border-border"}`}>
+        {status}
       </span>
     );
   };
@@ -566,8 +567,9 @@ export function StaffList({ staff, currentUserRole, onUpdate }: StaffListProps) 
                     <h3 className="text-base font-semibold text-foreground">
                       {member.name}
                     </h3>
-                    {/* Combined role + status pill — compact & bold */}
-                    {getCombinedPill(member.role, member.status)}
+                    {/* Separate role + status pills — closely spaced */}
+                    {getRolePill(member.role)}
+                    {getStatusPill(member.status)}
                     {member.twoFactorEnabled && (
                       <span className="inline-flex items-center rounded-[3px] border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-[2px] text-[9px] font-bold leading-none text-emerald-600 dark:text-emerald-400">
                         2FA
@@ -671,6 +673,16 @@ export function StaffList({ staff, currentUserRole, onUpdate }: StaffListProps) 
                       >
                         <UserX className="mr-2 h-4 w-4" />
                         Disable
+                      </DropdownMenuItem>
+                    )}
+
+                    {member.status === UserStatus.DISABLED && (
+                      <DropdownMenuItem
+                        onClick={() => handleStatusChange(member.id, UserStatus.ACTIVE)}
+                        className="text-success"
+                      >
+                        <Shield className="mr-2 h-4 w-4" />
+                        Reactivate
                       </DropdownMenuItem>
                     )}
 
