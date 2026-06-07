@@ -14,7 +14,15 @@ import {
   ShieldCheck,
   RotateCcw,
 } from "lucide-react";
-import { getProductBySlug, formatNAD, categories, mergeProducts } from "@/lib/data";
+import {
+  dashboardProductToProductData,
+  getProductBySlug,
+  formatNAD,
+  categories,
+  mergeProducts,
+  type ProductData,
+} from "@/lib/data";
+import type { DashboardProduct } from "@/lib/dashboard-data";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { useCart } from "@/lib/store/cart";
 import { useWishlist } from "@/lib/store/wishlist";
@@ -31,15 +39,30 @@ export default function ProductDetailPage() {
   const dashboardProducts = useDashboardStore((s) => s.products);
   // Merge static + dashboard products and search for the slug
   const allProductsMerged = mergeProducts(dashboardProducts);
-  const product = allProductsMerged.find((p) => p.slug === slug) || getProductBySlug(slug);
+  const localProduct = allProductsMerged.find((p) => p.slug === slug) || getProductBySlug(slug);
+  const [remoteProduct, setRemoteProduct] = useState<ProductData | null | undefined>(undefined);
+  const product = localProduct || remoteProduct;
   const { addItem, items } = useCart();
   const [selectedImage, setSelectedImage] = useState(0);
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => { setHydrated(true); }, []);
+  useEffect(() => {
+    if (localProduct) return;
+    fetch("/api/products")
+      .then((response) => response.json())
+      .then((data: { products?: DashboardProduct[] }) => {
+        const match = data.products?.find((candidate) => candidate.slug === slug);
+        setRemoteProduct(match ? dashboardProductToProductData(match) : null);
+      })
+      .catch(() => setRemoteProduct(null));
+  }, [localProduct, slug]);
   const [addedToCart, setAddedToCart] = useState(false);
   const { toggleItem, isWishlisted } = useWishlist();
   
 
+  if (!product && remoteProduct === undefined) {
+    return <div className="mx-auto max-w-7xl px-4 py-20 text-sm text-muted-foreground">Loading product...</div>;
+  }
   if (!product) notFound();
 
   const wishlisted = isWishlisted(product.id);
