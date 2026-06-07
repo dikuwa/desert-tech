@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, BadgePercent, Clock3, ShieldCheck, Truck } from "lucide-react";
 import { HeroSection } from "@/components/storefront/hero-section";
@@ -6,9 +8,9 @@ import { ProductCard } from "@/components/storefront/product-card";
 import { FeaturedPromotionsCarousel } from "@/components/storefront/featured-promotions-carousel";
 import { TrustSection } from "@/components/storefront/trust-section";
 import { WhatsAppCTA } from "@/components/storefront/whatsapp-cta";
-import { getFeaturedProducts } from "@/lib/data";
-
-const featuredProducts = getFeaturedProducts().slice(0, 8);
+import { mergeProducts } from "@/lib/data";
+import { useDashboardStore } from "@/lib/store/dashboard";
+import { useMemo } from "react";
 
 const serviceNotes = [
   { label: "New, refurbished and pre-owned", icon: BadgePercent },
@@ -18,6 +20,9 @@ const serviceNotes = [
 ];
 
 export default function HomePage() {
+  const dashboardProducts = useDashboardStore((s) => s.products);
+  const allProducts = useMemo(() => mergeProducts(dashboardProducts), [dashboardProducts]);
+  const featuredProducts = allProducts.filter(p => p.isFeatured).slice(0, 8);
   return (
     <div>
       <HeroSection />

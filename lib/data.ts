@@ -1,3 +1,5 @@
+import type { DashboardProduct } from "@/lib/dashboard-data";
+
 export interface ProductData {
   id: string;
   name: string;
@@ -335,17 +337,20 @@ export function searchProducts(query: string): ProductData[] {
   );
 }
 
-export function filterProducts(params: {
-  category?: string;
-  brand?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  availability?: string;
-  condition?: string;
-  search?: string;
-  sort?: string;
-}): ProductData[] {
-  let result = [...products];
+export function filterProducts(
+  params: {
+    category?: string;
+    brand?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    availability?: string;
+    condition?: string;
+    search?: string;
+    sort?: string;
+  },
+  productsArray?: ProductData[],
+): ProductData[] {
+  let result = [...(productsArray ?? products)];
 
   if (params.search) {
     const q = params.search.toLowerCase();
@@ -395,6 +400,97 @@ export function filterProducts(params: {
   }
 
   return result;
+}
+
+const CATEGORY_SLUG_MAP: Record<string, string> = {
+  "Apple": "apple",
+  "Windows": "windows",
+  "Gaming": "gaming",
+  "CCTV & Security": "cctv",
+  "Networking": "networking",
+  "Phones & Tablets": "phones",
+  "Accessories": "accessories",
+  "POS Systems": "pos",
+};
+
+const CATEGORY_ID_MAP: Record<string, string> = {
+  "Apple": "cat-1",
+  "Windows": "cat-2",
+  "Gaming": "cat-3",
+  "CCTV & Security": "cat-4",
+  "Networking": "cat-5",
+  "Phones & Tablets": "cat-6",
+  "Accessories": "cat-7",
+  "POS Systems": "cat-8",
+};
+
+/**
+ * Map a DashboardProduct (from the Zustand store) to the storefront ProductData format.
+ * This bridges the gap between products created in the dashboard and products
+ * displayed on the storefront shop/home pages.
+ */
+
+/**
+ * Convert dashboard availability to storefront availability format.
+ */
+function mapAvailability(avail: string): "in_stock" | "low_stock" | "sold_out" {
+  if (avail === "InStock") return "in_stock";
+  if (avail === "LowStock") return "low_stock";
+  return "sold_out";
+}
+
+/**
+ * Map a DashboardProduct to the storefront ProductData interface.
+ */
+export function dashboardProductToProductData(p: DashboardProduct): ProductData {
+  const categorySlug = CATEGORY_SLUG_MAP[p.category] || "general";
+  const categoryId = CATEGORY_ID_MAP[p.category] || "cat-general";
+  const stockCount = p.stockQuantity > 0 ? p.stockQuantity : undefined;
+  const fallbackProduct = products.find((product) => product.slug === p.slug);
+  const images = p.images && p.images.length > 0
+    ? p.images
+    : p.imageUrl
+      ? [p.imageUrl]
+      : fallbackProduct?.images ?? [];
+  const imageUrl = p.imageUrl || images[0] || fallbackProduct?.imageUrl || "";
+
+  return {
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    brand: p.brand,
+    categoryId,
+    categoryName: p.category,
+    categorySlug,
+    condition: (p.condition === "New" || p.condition === "Refurbished" || p.condition === "Pre-Owned") ? p.condition : "New",
+    description: p.description || fallbackProduct?.description || "",
+    specs: p.description?.split(".")[0] || fallbackProduct?.specs || p.name,
+    priceCents: p.priceCents,
+    oldPriceCents: p.compareAtPriceCents || undefined,
+    discountPercent: p.compareAtPriceCents ? Math.round((1 - p.priceCents / p.compareAtPriceCents) * 100) : undefined,
+    imageUrl,
+    images: images.length > 0 ? images : imageUrl ? [imageUrl] : [],
+    availability: mapAvailability(p.availability),
+    stockCount,
+    warranty: p.warranty || undefined,
+    rating: fallbackProduct?.rating ?? 4.0,
+    reviewCount: fallbackProduct?.reviewCount ?? 0,
+    isFeatured: p.isFeatured,
+    sku: p.sku || undefined,
+  };
+}
+
+/**
+ * Merge static products with dashboard-managed products.
+ * Dashboard products with matching slugs override static ones.
+ */
+export function mergeProducts(dashboardProducts: DashboardProduct[]): ProductData[] {
+  const mapped = dashboardProducts.map(dashboardProductToProductData);
+  const dashboardSlugs = new Set(mapped.map((p) => p.slug));
+  // Start with static products that don't have a dashboard override
+  const merged = products.filter((p) => !dashboardSlugs.has(p.slug));
+  // Append dashboard products at the beginning (newest first)
+  return [...mapped, ...merged];
 }
 
 export function formatNAD(cents: number): string {

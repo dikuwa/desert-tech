@@ -14,9 +14,11 @@ export default function EditProductPage() {
   const params = useParams();
   const products = useDashboardStore((s) => s.products);
   const updateProduct = useDashboardStore((s) => s.updateProduct);
+  const syncProducts = useDashboardStore((s) => s.syncProducts);
   const product = products.find(p => p.id === params.id);
   const [submitting, setSubmitting] = useState(false);
-  const [images, setImages] = useState<string[]>([]);
+  const [images, setImages] = useState<string[]>(() => product?.images?.length ? product.images : product?.imageUrl ? [product.imageUrl] : []);
+  const [selectedImage, setSelectedImage] = useState(0);
   const [uploading, setUploading] = useState(false);
 
   const brands = useDashboardStore((s) => s.brands);
@@ -79,6 +81,7 @@ export default function EditProductPage() {
 
   const removeImage = (idx: number) => {
     setImages(prev => prev.filter((_, i) => i !== idx));
+    setSelectedImage(prev => Math.max(0, Math.min(prev, images.length - 2)));
   };
 
   if (!product || !form) {
@@ -93,10 +96,9 @@ export default function EditProductPage() {
   const onSubmit = async () => {
     if (!form.name.trim()) return;
     setSubmitting(true);
-    await new Promise(r => setTimeout(r, 300));
     const stockWasUnavailable = product.availability === "OutOfStock" || product.stockQuantity <= 0;
     const stockIsAvailable = form.stockQuantity > 0;
-    updateProduct(product.id, {
+    const payload = {
       name: form.name.trim(),
       brand: form.brand.trim(),
       category: form.category,
@@ -104,16 +106,32 @@ export default function EditProductPage() {
       priceCents: form.priceCents,
       stockQuantity: form.stockQuantity,
       lowStockThreshold: form.reorderLimit || 5,
-      availability: form.stockQuantity > 0 ? "InStock" : "OutOfStock",
+      availability: form.stockQuantity <= 0 ? "OutOfStock" : form.stockQuantity <= form.reorderLimit ? "LowStock" : "InStock",
       isPublished: true,
       isFeatured: form.isFeatured,
       sku: form.sku || undefined,
       description: form.description || undefined,
       warranty: form.warranty || undefined,
       compareAtPriceCents: form.priceWas || undefined,
-      imageUrl: images[0] || product.imageUrl,
-      images: images.length > 0 ? [...(product.images || []), ...images] : undefined,
-    });
+      imageUrl: images[0] || "",
+      images,
+    };
+    try {
+      const response = await fetch(`/api/products/${product.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.product) throw new Error(data.error || "Could not update product.");
+      updateProduct(product.id, data.product);
+      syncProducts(products.map((existing) => existing.id === product.id ? data.product : existing));
+      toast.success("Product updated");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not update product.");
+      setSubmitting(false);
+      return;
+    }
     if (stockWasUnavailable && stockIsAvailable) {
       fetch("/api/back-in-stock-requests", {
         method: "PATCH",
@@ -128,8 +146,6 @@ export default function EditProductPage() {
     setSubmitting(false);
     router.push("/dashboard/products");
   };
-
-  const existingImages = product.imageUrl ? [product.imageUrl, ...(product.images || [])] : [];
 
   return (
     <div className="space-y-6">
@@ -267,22 +283,24 @@ export default function EditProductPage() {
                   </>
                 )}
               </label>
-              {(existingImages.length > 0 || images.length > 0) && (
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {existingImages.map((url, idx) => (
-                    <div key={`existing-${idx}`} className="relative group h-16 w-16 rounded-lg border border-border overflow-hidden">
-                      <img src={url} alt={`Product image ${idx + 1}`} className="h-full w-full object-cover" />
-                    </div>
-                  ))}
+              {images.length > 0 && (
+                <div className="space-y-3">
+                  <div className="aspect-[4/3] overflow-hidden rounded-lg border border-border bg-muted">
+                    <img src={images[selectedImage]} alt="Selected product preview" className="h-full w-full object-contain p-3" />
+                  </div>
+                  <div className="flex flex-wrap gap-2">
                   {images.map((url, idx) => (
-                    <div key={`new-${idx}`} className="relative group h-16 w-16 rounded-lg border border-border overflow-hidden">
+                    <div key={url} className={`relative group h-16 w-16 rounded-lg border-2 overflow-hidden ${selectedImage === idx ? "border-primary" : "border-border"}`}>
+                      <button type="button" onClick={() => setSelectedImage(idx)} className="h-full w-full">
                       <img src={url} alt={`New image ${idx + 1}`} className="h-full w-full object-cover" />
-                      <button onClick={() => removeImage(idx)}
-                        className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <span className="text-white text-[10px] font-semibold">Remove</span>
+                      </button>
+                      <button type="button" onClick={() => removeImage(idx)}
+                        className="absolute right-0 top-0 bg-black/60 px-1.5 py-0.5 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="text-[10px] font-semibold">Remove</span>
                       </button>
                     </div>
                   ))}
+                  </div>
                 </div>
               )}
             </div>

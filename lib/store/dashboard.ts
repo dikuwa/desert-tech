@@ -79,6 +79,7 @@ interface DashboardState {
   addProduct: (p: Omit<DashboardProduct, "id" | "createdAt" | "slug">) => void;
   updateProduct: (id: string, data: Partial<DashboardProduct>) => void;
   deleteProduct: (id: string) => void;
+  syncProducts: (products: DashboardProduct[]) => void;
 
   // Categories CRUD
   addCategory: (c: Omit<DashboardCategory, "id" | "slug" | "productCount">) => void;
@@ -426,6 +427,11 @@ export const useDashboardStore = create<DashboardState>()(
         })),
 
       // === Products ===
+      syncProducts: (products) => {
+        if (products.length > 0) {
+          set({ products });
+        }
+      },
       addProduct: (p) => {
         const id = `p${nextProductId++}`;
         // Server-side SKU uniqueness validation
@@ -1050,5 +1056,4 @@ export const useDashboardStore = create<DashboardState>()(
     },
   ),
 );
-
 

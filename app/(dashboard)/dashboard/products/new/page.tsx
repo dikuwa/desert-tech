@@ -41,11 +41,12 @@ function generateSKU(category: string, existingProducts: { sku?: string }[]): st
 
 export default function NewProductPage() {
   const router = useRouter();
-  const addProduct = useDashboardStore((s) => s.addProduct);
+  const syncProducts = useDashboardStore((s) => s.syncProducts);
   const products = useDashboardStore((s) => s.products);
   const brands = useDashboardStore((s) => s.brands);
   const [submitting, setSubmitting] = useState(false);
   const [images, setImages] = useState<string[]>([]);
+  const [selectedImage, setSelectedImage] = useState(0);
   const [uploading, setUploading] = useState(false);    const [form, setForm] = useState({
     name: "", brand: "", category: "Apple", condition: "New" as const,
     priceCents: 0, stockQuantity: 0, reorderLimit: 5,
@@ -101,6 +102,7 @@ export default function NewProductPage() {
 
   const removeImage = (idx: number) => {
     setImages(prev => prev.filter((_, i) => i !== idx));
+    setSelectedImage(prev => Math.max(0, Math.min(prev, images.length - 2)));
   };
 
   const onSubmit = async () => {
@@ -111,8 +113,7 @@ export default function NewProductPage() {
       return;
     }
     setSubmitting(true);
-    await new Promise(r => setTimeout(r, 300));
-    addProduct({
+    const payload = {
       name: form.name.trim(),
       brand: form.brand.trim(),
       category: form.category,
@@ -120,7 +121,7 @@ export default function NewProductPage() {
       priceCents: form.priceCents,
       stockQuantity: form.stockQuantity || 0,
       lowStockThreshold: form.reorderLimit || 5,
-      availability: form.stockQuantity > 0 ? "InStock" : "OutOfStock",
+      availability: form.stockQuantity <= 0 ? "OutOfStock" : form.stockQuantity <= form.reorderLimit ? "LowStock" : "InStock",
       isPublished: true,
       isFeatured: form.isFeatured,
       sku: form.sku || undefined,
@@ -128,9 +129,24 @@ export default function NewProductPage() {
       images: images.length > 0 ? images : undefined,
       description: form.description.trim() || undefined,
       warranty: form.warranty.trim() || undefined,
-    });
-    setSubmitting(false);
-    router.push("/dashboard/products");
+      compareAtPriceCents: form.priceWas || undefined,
+    };
+    try {
+      const response = await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.product) throw new Error(data.error || "Could not save product.");
+      syncProducts([data.product, ...products.filter((product) => product.id !== data.product.id)]);
+      toast.success("Product saved and published");
+      router.push("/dashboard/products");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not save product.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -264,18 +280,26 @@ export default function NewProductPage() {
                 )}
               </label>
               {images.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-3">
+                <div className="space-y-3">
+                  <div className="aspect-[4/3] overflow-hidden rounded-lg border border-border bg-muted">
+                    <img src={images[selectedImage]} alt="Selected product preview" className="h-full w-full object-contain p-3" />
+                  </div>
+                  <div className="flex flex-wrap gap-2">
                   {images.map((url, idx) => (
-                    <div key={idx} className="relative group h-16 w-16 rounded-lg border border-border overflow-hidden">
+                    <div key={url} className={cn("relative group h-16 w-16 rounded-lg border-2 overflow-hidden", selectedImage === idx ? "border-primary" : "border-border")}>
+                      <button type="button" onClick={() => setSelectedImage(idx)} className="h-full w-full">
                       <img src={url} alt={`Product image ${idx + 1}`} className="h-full w-full object-cover" />
+                      </button>
                       <button
+                        type="button"
                         onClick={() => removeImage(idx)}
-                        className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute right-0 top-0 bg-black/60 px-1.5 py-0.5 text-white opacity-0 group-hover:opacity-100 transition-opacity"
                       >
-                        <span className="text-white text-[10px] font-semibold">Remove</span>
+                        <span className="text-[10px] font-semibold">Remove</span>
                       </button>
                     </div>
                   ))}
+                  </div>
                 </div>
               )}
             </div>

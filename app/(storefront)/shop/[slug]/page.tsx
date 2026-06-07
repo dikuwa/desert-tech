@@ -14,7 +14,8 @@ import {
   ShieldCheck,
   RotateCcw,
 } from "lucide-react";
-import { getProductBySlug, formatNAD, products, categories } from "@/lib/data";
+import { getProductBySlug, formatNAD, categories, mergeProducts } from "@/lib/data";
+import { useDashboardStore } from "@/lib/store/dashboard";
 import { useCart } from "@/lib/store/cart";
 import { useWishlist } from "@/lib/store/wishlist";
 import { NotifyMeModal } from "@/components/storefront/notify-me-modal";
@@ -27,7 +28,10 @@ const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
 export default function ProductDetailPage() {
   const params = useParams();
   const slug = params.slug as string;
-  const product = getProductBySlug(slug);
+  const dashboardProducts = useDashboardStore((s) => s.products);
+  // Merge static + dashboard products and search for the slug
+  const allProductsMerged = mergeProducts(dashboardProducts);
+  const product = allProductsMerged.find((p) => p.slug === slug) || getProductBySlug(slug);
   const { addItem, items } = useCart();
   const [selectedImage, setSelectedImage] = useState(0);
   const [hydrated, setHydrated] = useState(false);
@@ -43,7 +47,7 @@ export default function ProductDetailPage() {
   const isSoldOut = product.availability === "sold_out";
   const isLowStock = product.availability === "low_stock";
   const cartItem = items.find((i) => i.productId === product.id);
-  const relatedProducts = products
+  const relatedProducts = allProductsMerged
     .filter((p) => p.categoryId === product.categoryId && p.id !== product.id)
     .slice(0, 4);
 

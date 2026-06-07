@@ -14,10 +14,10 @@ import {
 import { ProductCard } from "@/components/storefront/product-card";
 import type { ProductData } from "@/components/storefront/product-card";
 import {
-  products as allProducts,
   categories,
   ALL_CONDITIONS,
   filterProducts,
+  mergeProducts,
 } from "@/lib/data";
 import { useDashboardStore } from "@/lib/store/dashboard";
 
@@ -41,14 +41,18 @@ export default function ShopPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const managedBrands = useDashboardStore((s) => s.brands);
+  const dashboardProducts = useDashboardStore((s) => s.products);
   const [selectedBrand, setSelectedBrand] = useState("all");
+
+  // Merge static products with dashboard-created products
+  const allProducts = useMemo(() => mergeProducts(dashboardProducts), [dashboardProducts]);
 
   // Use managed active brands, fall back to all unique brands from products
   const BRANDS = useMemo(() => {
     const activeManagedBrands = managedBrands.filter(b => b.isActive).sort((a, b) => a.sortOrder - b.sortOrder).map(b => b.name);
     if (activeManagedBrands.length > 0) return activeManagedBrands;
     return [...new Set(allProducts.map(p => p.brand))].sort();
-  }, [managedBrands]);
+  }, [managedBrands, allProducts]);
   const [selectedAvailability, setSelectedAvailability] = useState("all");
   const [selectedCondition, setSelectedCondition] = useState("all");
   const [selectedSort, setSelectedSort] = useState("featured");
@@ -74,8 +78,8 @@ export default function ShopPage() {
       availability: selectedAvailability !== "all" ? selectedAvailability : undefined,
       condition: selectedCondition !== "all" ? selectedCondition : undefined,
       sort: selectedSort,
-    });
-  }, [searchQuery, selectedCategory, selectedBrand, selectedAvailability, selectedCondition, selectedSort]);
+    }, allProducts);
+  }, [searchQuery, selectedCategory, selectedBrand, selectedAvailability, selectedCondition, selectedSort, allProducts]);
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginatedProducts = filtered.slice(
@@ -110,7 +114,7 @@ export default function ShopPage() {
       counts[cat.slug] = allProducts.filter((p) => p.categorySlug === cat.slug).length;
     });
     return counts;
-  }, []);
+  }, [allProducts]);
 
   const FilterSidebar = () => (
     <div className="space-y-4">

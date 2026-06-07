@@ -10,6 +10,7 @@ import { useDashboardStore } from "@/lib/store/dashboard";
 import { formatCents, getStatusBadgeClass, getStatusLabel } from "@/lib/dashboard-data";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -61,9 +62,17 @@ export default function ProductsPage() {
     URL.revokeObjectURL(url);
   };
 
-  const handleDelete = (id: string) => {
-    deleteProduct(id);
-    setDeleteConfirm(null);
+  const handleDelete = async (id: string) => {
+    try {
+      const response = await fetch(`/api/products/${id}`, { method: "DELETE" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not delete product.");
+      deleteProduct(id);
+      toast.success("Product deleted");
+      setDeleteConfirm(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not delete product.");
+    }
   };
 
   return (
