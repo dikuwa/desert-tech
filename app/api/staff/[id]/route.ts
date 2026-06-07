@@ -16,6 +16,7 @@ import { db } from "@/lib/db";
 import { UserRole, UserStatus } from "@/lib/enums";
 import { Permissions, type Permission } from "@/lib/permissions";
 import { sendAccountStatusEmail } from "@/lib/email";
+import { sendAccountStatusWhatsApp } from "@/lib/whatsapp";
 
 // Validation schema for updates
 const updateStaffSchema = z.object({
@@ -143,7 +144,7 @@ export async function PATCH(
     // Get current user data for audit log
     const targetUser = await db.user.findUnique({
       where: { id },
-      select: { name: true, email: true, role: true, status: true, permissions: true },
+      select: { name: true, email: true, role: true, status: true, permissions: true, phone: true },
     });
 
     if (!targetUser) {
@@ -184,7 +185,7 @@ export async function PATCH(
       // Revoke all sessions
       await revokeAllUserSessions(id);
 
-      // Send email notification
+      // Send notifications
       try {
         await sendAccountStatusEmail({
           to: targetUser.email,
@@ -194,8 +195,15 @@ export async function PATCH(
       } catch (emailError) {
         console.error("[API] Failed to send suspension email:", emailError);
       }
+      if (targetUser.phone) {
+        try {
+          await sendAccountStatusWhatsApp(targetUser.phone, targetUser.name, "suspended");
+        } catch (whatsappError) {
+          console.error("[API] Failed to send suspension WhatsApp:", whatsappError);
+        }
+      }
     } else if (status === UserStatus.ACTIVE && targetUser.status === UserStatus.SUSPENDED) {
-      // Send reactivation email
+      // Send notifications
       try {
         await sendAccountStatusEmail({
           to: targetUser.email,
@@ -204,6 +212,13 @@ export async function PATCH(
         });
       } catch (emailError) {
         console.error("[API] Failed to send reactivation email:", emailError);
+      }
+      if (targetUser.phone) {
+        try {
+          await sendAccountStatusWhatsApp(targetUser.phone, targetUser.name, "reactivated");
+        } catch (whatsappError) {
+          console.error("[API] Failed to send reactivation WhatsApp:", whatsappError);
+        }
       }
     }
 

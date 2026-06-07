@@ -49,6 +49,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function SettingsPage() {
   const settings = useDashboardStore((s) => s.settings);
@@ -122,6 +133,8 @@ export default function SettingsPage() {
   const [tfaPassword, setTfaPassword] = useState("");
   const [tfaCode, setTfaCode] = useState("");
   const [tfaMessage, setTfaMessage] = useState<string | null>(null);
+  const [disable2FAOpen, setDisable2FAOpen] = useState(false);
+  const [disabling2FA, setDisabling2FA] = useState(false);
   const heroImageInputRef = useRef<HTMLInputElement>(null);
 
   // Contact detail form
@@ -1226,30 +1239,57 @@ export default function SettingsPage() {
                     </button>
                   )}
                   {userSession?.twoFactorEnabled && (
-                    <button
-                      onClick={async () => {
-                        if (!confirm("Are you sure you want to disable two-factor authentication? This will reduce the security of your account.")) return;
-                        try {
-                          const res = await fetch("/api/auth/two-factor/disable", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                          });
-                          if (!res.ok) {
-                            const data = await res.json();
-                            throw new Error(data.message || data.error || "Failed to disable 2FA");
-                          }
-                          setTfaState({ step: "idle" });
-                          setTfaMessage("Two-factor authentication has been disabled.");
-                          setUserSession((prev) => prev ? { ...prev, twoFactorEnabled: false } : prev);
-                        } catch (err) {
-                          setTfaMessage(err instanceof Error ? err.message : "Failed to disable 2FA");
-                        }
-                      }}
-                      className="rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
-                    >
-                      <ShieldOff className="mr-1.5 h-3.5 w-3.5 inline" />
-                      Disable 2FA
-                    </button>
+                    <>
+                      <button
+                        onClick={() => setDisable2FAOpen(true)}
+                        className="rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
+                      >
+                        <ShieldOff className="mr-1.5 h-3.5 w-3.5 inline" />
+                        Disable 2FA
+                      </button>
+                      <AlertDialog open={disable2FAOpen} onOpenChange={setDisable2FAOpen}>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Disable Two-Factor Authentication?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will reduce the security of your account. You will no longer need
+                              a verification code from your authenticator app when signing in.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel disabled={disabling2FA}>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              disabled={disabling2FA}
+                              onClick={async (e) => {
+                                e.preventDefault();
+                                setDisabling2FA(true);
+                                try {
+                                  const res = await fetch("/api/auth/two-factor/disable", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                  });
+                                  if (!res.ok) {
+                                    const data = await res.json();
+                                    throw new Error(data.message || data.error || "Failed to disable 2FA");
+                                  }
+                                  setTfaState({ step: "idle" });
+                                  toast.success("Two-factor authentication has been disabled.");
+                                  setUserSession((prev) => prev ? { ...prev, twoFactorEnabled: false } : prev);
+                                  setDisable2FAOpen(false);
+                                } catch (err) {
+                                  toast.error(err instanceof Error ? err.message : "Failed to disable 2FA");
+                                } finally {
+                                  setDisabling2FA(false);
+                                }
+                              }}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              {disabling2FA ? "Disabling..." : "Yes, Disable"}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </>
                   )}
                 </div>
               </div>
