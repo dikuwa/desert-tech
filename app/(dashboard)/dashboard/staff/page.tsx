@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { Plus, Users, UserX, AlertCircle } from "lucide-react";
+import { FadeIn } from "@/components/ui/fade-in";
 import { Button } from "@/components/ui/button";
 import { CreateUserDialog } from "@/components/staff/create-user-dialog";
 import { StaffList } from "@/components/staff/staff-list";
@@ -127,39 +128,28 @@ export default function StaffPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10">
-              <Users className="h-5 w-5 text-success" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{activeCount}</p>
-              <p className="text-xs text-muted-foreground">Active</p>
-            </div>
-          </div>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10">
-              <UserX className="h-5 w-5 text-warning" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{disabledCount}</p>
-              <p className="text-xs text-muted-foreground">Disabled</p>
-            </div>
-          </div>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10">
-              <AlertCircle className="h-5 w-5 text-destructive" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{suspendedCount}</p>
-              <p className="text-xs text-muted-foreground">Suspended</p>
-            </div>
-          </div>
-        </div>
+        {[
+          { icon: Users, color: "text-success", bg: "bg-success/10", label: "Active", count: activeCount },
+          { icon: UserX, color: "text-warning", bg: "bg-warning/10", label: "Disabled", count: disabledCount },
+          { icon: AlertCircle, color: "text-destructive", bg: "bg-destructive/10", label: "Suspended", count: suspendedCount },
+        ].map((stat, i) => {
+          const Icon = stat.icon;
+          return (
+            <FadeIn key={stat.label} delay={i * 0.06}>
+              <div className="rounded-xl border border-border bg-card p-4">
+                <div className="flex items-center gap-3">
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${stat.bg}`}>
+                    <Icon className={`h-5 w-5 ${stat.color}`} />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{stat.count}</p>
+                    <p className="text-xs text-muted-foreground">{stat.label}</p>
+                  </div>
+                </div>
+              </div>
+            </FadeIn>
+          );
+        })}
       </div>
 
       {/* Error */}
@@ -169,12 +159,16 @@ export default function StaffPage() {
         </div>
       )}
 
-      <StaffList
-        staff={staff}
-        pendingInvitations={pendingInvitations}
-        currentUserRole={currentUserRole}
-        onUpdate={fetchStaff}
-      />
+
+
+      <FadeIn delay={0.2}>
+        <StaffList
+          staff={staff}
+          pendingInvitations={pendingInvitations}
+          currentUserRole={currentUserRole}
+          onUpdate={fetchStaff}
+        />
+      </FadeIn>
 
       <CreateUserDialog
         open={createUserOpen}

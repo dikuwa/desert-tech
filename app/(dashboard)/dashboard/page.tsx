@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { ShoppingBag, Users, Bell, CalendarClock, AlertTriangle, ArrowRight, TrendingUp } from "lucide-react";
+import { FadeIn } from "@/components/ui/fade-in";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { formatCents } from "@/lib/dashboard-data";
 import { Permissions } from "@/lib/permissions";
@@ -106,9 +107,10 @@ export default function DashboardPage() {
 
       {/* Stats Grid - compact */}
       <div className={stats.length === 5 ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3" : "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3"}>
-        {stats.map((stat) => {
+        {stats.map((stat, i) => {
           const Icon = stat.icon;
           return (
+            <FadeIn key={stat.label} delay={i * 0.04}>
             <Link
               key={stat.label}
               href={stat.href}
@@ -122,10 +124,12 @@ export default function DashboardPage() {
                 <p className="text-[10px] text-muted-foreground truncate mt-1">{stat.label}</p>
               </div>
             </Link>
+            </FadeIn>
           );
         })}
       </div>
 
+      <FadeIn delay={0.2}>
       <div className="grid lg:grid-cols-2 gap-6 bg-noise rounded-xl p-4">
         <div className="rounded-xl border border-border bg-card">
           <div className="flex items-center justify-between p-5 border-b border-border">
@@ -179,6 +183,7 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+      </FadeIn>
     </div>
   );
 }
