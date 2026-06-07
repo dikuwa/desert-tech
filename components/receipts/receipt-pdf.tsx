@@ -17,112 +17,118 @@ const colors = {
   primary: "#f68923",
   text: "#1a1a2e",
   muted: "#6b7280",
-  border: "#d9dce1",
-  surface: "#f6f7f8",
+  border: "#ddd8d2",
+  page: "#f7f5f2",
+  document: "#fffdfb",
+  surface: "#f6f4f1",
+  successSoft: "#edf7ef",
+  warningSoft: "#fff6e8",
   success: "#15803d",
   warning: "#d97706",
 };
 
 const styles = StyleSheet.create({
   page: {
-    padding: 20,
-    paddingTop: 16,
-    paddingBottom: 14,
+    padding: 24,
     fontFamily: "SpaceGrotesk",
-    fontSize: 8.5,
+    fontSize: 9,
     color: colors.text,
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.page,
   },
   document: {
     border: `1 solid ${colors.border}`,
+    borderRadius: 8,
+    backgroundColor: colors.document,
   },
   section: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
     borderBottom: `1 solid ${colors.border}`,
   },
   header: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
     borderBottom: `1 solid ${colors.border}`,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
   },
   brand: { flexDirection: "row", alignItems: "flex-start" },
-  logo: { width: 85, height: 28, objectFit: "contain", marginRight: 10 },
-  companyName: { fontSize: 13, fontWeight: "bold", marginBottom: 3 },
-  companyLine: { fontSize: 8, color: colors.muted, marginBottom: 2 },
+  logo: { width: 48, height: 42, objectFit: "contain", marginRight: 12 },
+  companyName: { fontSize: 12.5, fontWeight: "bold", marginBottom: 3 },
+  companyLine: { fontSize: 8, color: colors.muted, marginBottom: 1.5 },
   badge: {
     alignSelf: "flex-end",
     backgroundColor: colors.primary,
     color: "#ffffff",
     borderRadius: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    fontSize: 8,
+    paddingHorizontal: 11,
+    paddingVertical: 5.5,
+    fontSize: 7.5,
     fontWeight: "bold",
   },
-  receiptNumber: { marginTop: 7, fontSize: 11, fontWeight: "bold", textAlign: "right" },
+  receiptNumber: { marginTop: 8, fontSize: 10.5, fontWeight: "bold", textAlign: "right" },
   infoGrid: { flexDirection: "row" },
   infoColumn: { flex: 1 },
   label: {
-    fontSize: 6.5,
+    fontSize: 6.75,
     fontWeight: "bold",
     color: colors.muted,
     textTransform: "uppercase",
     letterSpacing: 0.5,
-    marginBottom: 3,
+    marginBottom: 4,
   },
-  value: { fontSize: 8.5, fontWeight: "bold" },
-  customerName: { fontSize: 9, fontWeight: "bold", marginBottom: 2 },
-  customerLine: { fontSize: 7.5, color: colors.muted, marginBottom: 1.5 },
+  value: { fontSize: 9, fontWeight: "bold" },
+  customerName: { fontSize: 9.5, fontWeight: "bold", marginBottom: 2.5 },
+  customerLine: { fontSize: 8, color: colors.muted, marginBottom: 1.5 },
   tableHeader: {
     flexDirection: "row",
-    paddingBottom: 4,
+    paddingBottom: 5,
     borderBottom: `1 solid ${colors.border}`,
   },
-  tableRow: { flexDirection: "row", paddingVertical: 5 },
+  tableRow: { flexDirection: "row", paddingVertical: 6 },
   headerText: {
-    fontSize: 6.5,
+    fontSize: 6.75,
     fontWeight: "bold",
     color: colors.muted,
     textTransform: "uppercase",
   },
-  cell: { fontSize: 8 },
+  cell: { fontSize: 8.5 },
   description: { width: "38%" },
   sku: { width: "22%", textAlign: "left" },
   qty: { width: "10%", textAlign: "center" },
   price: { width: "15%", textAlign: "right" },
   total: { width: "15%", textAlign: "right", fontWeight: "bold" },
-  totals: { width: 210, marginLeft: "auto" },
+  totals: { width: 220, marginLeft: "auto" },
   totalRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 3,
+    paddingVertical: 3.5,
   },
-  totalLabel: { fontSize: 8, color: colors.muted },
-  totalValue: { fontSize: 8, fontWeight: "bold" },
+  totalLabel: { fontSize: 8.5, color: colors.muted },
+  totalValue: { fontSize: 8.5, fontWeight: "bold" },
   grandTotal: {
     flexDirection: "row",
     justifyContent: "space-between",
     borderTop: `1 solid ${colors.border}`,
-    paddingTop: 4,
-    marginTop: 2,
+    paddingTop: 6,
+    marginTop: 3,
   },
-  grandText: { fontSize: 10, fontWeight: "bold" },
+  grandText: { fontSize: 11, fontWeight: "bold" },
   paymentSummary: { flexDirection: "row" },
   paymentBox: {
     flex: 1,
-    borderRadius: 4,
+    borderRadius: 6,
     backgroundColor: colors.surface,
-    padding: 8,
-    marginRight: 6,
+    padding: 9,
+    marginRight: 7,
   },
+  paymentBoxSuccess: { backgroundColor: colors.successSoft },
+  paymentBoxWarning: { backgroundColor: colors.warningSoft },
   paymentBoxLast: { marginRight: 0 },
-  paymentValue: { fontSize: 11, fontWeight: "bold", marginTop: 3 },
-  footer: { paddingHorizontal: 16, paddingVertical: 7, textAlign: "center" },
-  footerText: { fontSize: 6.5, color: colors.muted, marginBottom: 1 },
+  paymentValue: { fontSize: 11.5, fontWeight: "bold", marginTop: 3 },
+  footer: { paddingHorizontal: 20, paddingVertical: 9, textAlign: "center" },
+  footerText: { fontSize: 6.75, color: colors.muted, marginBottom: 1 },
 });
 
 interface ReceiptItem {
@@ -289,10 +295,10 @@ export function ReceiptPDF({
             </View>
           </View>
 
-          <View style={styles.section}>
-            <Text style={[styles.label, { marginBottom: 9 }]}>Payment Summary</Text>
+          <View style={styles.section} wrap={false}>
+            <Text style={[styles.label, { marginBottom: 10 }]}>Payment Summary</Text>
             <View style={styles.paymentSummary}>
-              <View style={styles.paymentBox}>
+              <View style={[styles.paymentBox, settled ? styles.paymentBoxSuccess : styles.paymentBoxWarning]}>
                 <Text style={[styles.label, { color: settled ? colors.success : colors.warning }]}>Status</Text>
                 <Text style={[styles.paymentValue, { color: settled ? colors.success : colors.warning }]}>{statusLabel}</Text>
               </View>
@@ -300,11 +306,11 @@ export function ReceiptPDF({
                 <Text style={styles.label}>Order Total</Text>
                 <Text style={[styles.paymentValue, { color: colors.primary }]}>{formatCurrency(totalCents)}</Text>
               </View>
-              <View style={styles.paymentBox}>
+              <View style={totalPaidCents > 0 ? [styles.paymentBox, styles.paymentBoxSuccess] : styles.paymentBox}>
                 <Text style={styles.label}>Paid</Text>
                 <Text style={[styles.paymentValue, { color: settled ? colors.success : colors.primary }]}>{formatCurrency(totalPaidCents)}</Text>
               </View>
-              <View style={[styles.paymentBox, styles.paymentBoxLast]}>
+              <View style={[styles.paymentBox, showBalance ? styles.paymentBoxWarning : styles.paymentBoxSuccess, styles.paymentBoxLast]}>
                 <Text style={[styles.label, { color: showBalance ? colors.warning : colors.success }]}>Balance</Text>
                 <Text style={[styles.paymentValue, { color: showBalance ? colors.warning : colors.success }]}>
                   {showBalance ? formatCurrency(balanceDueCents) : settled ? "N$ 0" : formatCurrency(subtotal)}
