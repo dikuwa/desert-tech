@@ -35,7 +35,7 @@ const ENTITY_ROUTES: Record<string, (entityId: string) => string> = {
   promotion: () => `/dashboard/promotions`,
   settings: () => `/dashboard/settings`,
   backinstock: () => `/dashboard/back-in-stock`,
-  brand: (id) => `/dashboard/brands/${id}`,
+  brand: () => `/dashboard/categories?tab=brands`,
   notification: () => `/dashboard/notifications`,
 };
 

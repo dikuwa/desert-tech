@@ -1,15 +1,25 @@
 "use client";
 
-import { useState } from "react";
-import { FolderOpen, Plus, Pencil, Check, X, Trash2, Tag, Image as ImageIcon, Eye, EyeOff, Star, ExternalLink } from "lucide-react";
-import Link from "next/link";
+import { useEffect, useState } from "react";
+import { FolderOpen, Plus, Pencil, Check, X, Trash2, Tag, Image as ImageIcon, Eye, EyeOff, Star } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import type { DashboardBrand } from "@/lib/dashboard-data";
 
 export default function CategoriesBrandsPage() {
-  const [activeTab, setActiveTab] = useState<"categories" | "brands">("categories");
+  const searchParams = useSearchParams();
+  const requestedTab = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState<"categories" | "brands">(
+    requestedTab === "brands" ? "brands" : "categories",
+  );
+
+  useEffect(() => {
+    if (requestedTab === "brands" || requestedTab === "categories") {
+      setActiveTab(requestedTab);
+    }
+  }, [requestedTab]);
 
   return (
     <div className="space-y-6">
@@ -318,7 +328,6 @@ function BrandsSection() {
                     <span>Order: {br.sortOrder}</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Link href={`/dashboard/brands/${br.id}`} className="rounded-md p-1.5 text-muted-foreground hover:text-primary hover:bg-accent transition-colors" title="View brand page"><ExternalLink className="h-3.5 w-3.5" /></Link>
                     <button onClick={() => startEdit(br)} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
                     <button onClick={() => toggleBrandActive(br.id)} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title={br.isActive ? "Deactivate" : "Activate"}>
                       {br.isActive ? <X className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}

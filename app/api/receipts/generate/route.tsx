@@ -7,7 +7,9 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { renderToStream } from "@react-pdf/renderer";
-import { ReceiptPDF } from "@/components/receipts/receipt-pdf";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { ReceiptPDF, type ReceiptPDFProps } from "@/components/receipts/receipt-pdf";
 
 // Order data store (same in-memory store used by /api/orders)
 // We import this to look up orders
@@ -16,6 +18,33 @@ import { useDashboardStore } from "@/lib/store/dashboard";
 import { addReceipt } from "@/lib/receipt-store";
 import { uploadFile } from "@/lib/storage";
 import { computePaymentFields } from "@/lib/dashboard-data";
+
+function loadPdfLogo(): string | null {
+  try {
+    const logoPath = path.join(process.cwd(), "public", "images", "deserttech-logo-pdf.png");
+    return `data:image/png;base64,${readFileSync(logoPath).toString("base64")}`;
+  } catch (error) {
+    console.warn("[PDF] Receipt logo unavailable; using text branding", error);
+    return null;
+  }
+}
+
+async function streamToBuffer(stream: Awaited<ReturnType<typeof renderToStream>>) {
+  const chunks: Buffer[] = [];
+  await new Promise<void>((resolve, reject) => {
+    stream.on("data", (chunk: Buffer) => chunks.push(chunk));
+    stream.on("end", resolve);
+    stream.on("error", reject);
+  });
+  return Buffer.concat(chunks);
+}
+
+async function renderReceiptBuffer(props: ReceiptPDFProps, logoSrc: string | null, useFallbackFont = false) {
+  const stream = await renderToStream(
+    <ReceiptPDF {...props} logoSrc={logoSrc} useFallbackFont={useFallbackFont} />,
+  );
+  return streamToBuffer(stream);
+}
 
 // Helper to get a readable order from either the in-memory store or dashboard store
 function findOrder(orderIdOrNumber: string) {
@@ -112,34 +141,29 @@ export async function POST(request: NextRequest) {
       day: "numeric",
     });
 
-    // Render PDF to stream with full payment data
-    const stream = await renderToStream(
-      <ReceiptPDF
-        receiptNumber={receiptNumber}
-        orderNumber={order.orderNumber}
-        date={date}
-        customerName={order.customerName}
-        customerPhone={order.customerPhone}
-        items={order.items}
-        subtotal={order.subtotalCents}
-        paymentStatus={order.paymentStatus}
-        totalPaidCents={order.totalPaidCents}
-        balanceDueCents={order.balanceDueCents}
-        fulfillmentMethod={order.fulfillmentMethod}
-        courierFeeCents={order.courierFeeCents}
-        shipping={order.shipping}
-      />,
-    );
+    const receiptProps: ReceiptPDFProps = {
+      receiptNumber,
+      orderNumber: order.orderNumber,
+      date,
+      customerName: order.customerName,
+      customerPhone: order.customerPhone,
+      items: order.items,
+      subtotal: order.subtotalCents,
+      paymentStatus: order.paymentStatus,
+      totalPaidCents: order.totalPaidCents,
+      balanceDueCents: order.balanceDueCents,
+      fulfillmentMethod: order.fulfillmentMethod,
+      courierFeeCents: order.courierFeeCents,
+      shipping: order.shipping,
+    };
 
-    // Collect stream into buffer using event-based pattern
-    // (more compatible across Next.js runtimes than for-await-of)
-    const chunks: Buffer[] = [];
-    await new Promise<void>((resolve, reject) => {
-      stream.on("data", (chunk: Buffer) => chunks.push(chunk));
-      stream.on("end", resolve);
-      stream.on("error", reject);
-    });
-    const pdfBuffer = Buffer.concat(chunks);
+    let pdfBuffer: Buffer;
+    try {
+      pdfBuffer = await renderReceiptBuffer(receiptProps, loadPdfLogo());
+    } catch (error) {
+      console.error("[PDF] Receipt assets failed; retrying with text branding", error);
+      pdfBuffer = await renderReceiptBuffer(receiptProps, null, true);
+    }
 
     const isView = body.view === true || body.view === "true" || body.view === 1;
 
@@ -163,7 +187,7 @@ export async function POST(request: NextRequest) {
       issuedAt: new Date().toISOString(),
     });
 
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(new Uint8Array(pdfBuffer), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": isView ? `inline; filename="${receiptNumber}.pdf"` : `attachment; filename="${receiptNumber}.pdf"`,

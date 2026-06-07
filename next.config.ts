@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  outputFileTracingIncludes: {
+    "/api/receipts/generate": [
+      "./public/fonts/*.ttf",
+      "./public/images/deserttech-logo-pdf.png",
+    ],
+  },
   images: {
     remotePatterns: [
       {

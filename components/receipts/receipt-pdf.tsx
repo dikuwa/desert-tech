@@ -1,5 +1,4 @@
 import { Document, Page, View, Text, Image, StyleSheet, Font } from "@react-pdf/renderer";
-import { readFileSync } from "node:fs";
 import path from "node:path";
 
 // Register Space Grotesk — the same font used by the website, for consistent branding
@@ -33,16 +32,6 @@ const colors = {
   warning: "#d97706",
 };
 
-// Load company logo (PNG) — PNG is the most reliably supported image format in @react-pdf/renderer
-let logoDataUri: string | null = null;
-try {
-  const logoPath = path.join(process.cwd(), "public", "images", "desertech-doc-logo.png");
-  logoDataUri = `data:image/png;base64,${readFileSync(logoPath).toString("base64")}`;
-} catch {
-  // Logo is not critical for PDF rendering
-  logoDataUri = null;
-}
-
 const styles = StyleSheet.create({
   page: {
     padding: 20,
@@ -52,6 +41,9 @@ const styles = StyleSheet.create({
     fontSize: 8.5,
     color: colors.text,
     backgroundColor: "#ffffff",
+  },
+  fallbackPage: {
+    fontFamily: "Helvetica",
   },
   document: {
     border: `1 solid ${colors.border}`,
@@ -153,7 +145,7 @@ interface ReceiptItem {
   sku?: string;
 }
 
-interface ReceiptPDFProps {
+export interface ReceiptPDFProps {
   receiptNumber: string;
   orderNumber: string;
   date: string;
@@ -177,6 +169,8 @@ interface ReceiptPDFProps {
     region: string;
     deliveryNotes?: string;
   };
+  logoSrc?: string | null;
+  useFallbackFont?: boolean;
 }
 
 function formatCurrency(cents: number): string {
@@ -206,6 +200,8 @@ export function ReceiptPDF({
   fulfillmentMethod,
   courierFeeCents,
   shipping,
+  logoSrc,
+  useFallbackFont = false,
 }: ReceiptPDFProps) {
   const statusLabel = paymentLabel(paymentStatus);
   const settled = paymentStatus === "PaidInFull" || paymentStatus === "Paid";
@@ -214,11 +210,11 @@ export function ReceiptPDF({
 
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={[styles.page, useFallbackFont ? styles.fallbackPage : {}]}>
         <View style={styles.document}>
           <View style={styles.header}>
             <View style={styles.brand}>
-              {logoDataUri && <Image src={logoDataUri} style={styles.logo} />}
+              {logoSrc && <Image src={logoSrc} style={styles.logo} />}
               <View>
                 <Text style={styles.companyName}>Desert Technology Consultant</Text>
                 <Text style={styles.companyLine}>{storeLocation}</Text>
