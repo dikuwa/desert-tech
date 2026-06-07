@@ -47,7 +47,6 @@ let nextCategoryId = 10;
 let nextPromotionId = 10;
 let nextStaffId = 10;
 let nextFollowUpId = 10;
-let nextNotificationId = 10;
 let nextBackInStockId = 10;
 let nextBrandId = 14;
 let nextPaymentId = 10;
@@ -492,8 +491,12 @@ export const useDashboardStore = create<DashboardState>()(
             ).length;
 
             if (changedCount > 0) {
+              const maxId = s.notifications.reduce((max, n) => {
+                const match = n.id.match(/^n(\d+)$/);
+                return match ? Math.max(max, parseInt(match[1]) + 1) : max;
+              }, 10);
               const newNotif: DashboardNotification = {
-                id: `n${nextNotificationId++}`,
+                id: `n${maxId}`,
                 type: "stock",
                 title: "Stock Restored",
                 message: `${changedCount} customer${changedCount > 1 ? "s" : ""} requested ${productName}. Stock is now available.`,
@@ -788,10 +791,15 @@ export const useDashboardStore = create<DashboardState>()(
         set((s) => ({ payments: [newPayment, ...s.payments] }));
         get().addAuditLog({ action: `Payment recorded: ${p.method}`, entityType: "payment", entityId: id, entityLabel: `${p.customerName} — ${p.orderNumber}` });
       },
-      addNotification: (n) => {
-        const id = `n${nextNotificationId++}`;
+      addNotification: (notif) => {
+        // Calculate next ID from existing notifications to avoid collisions after hydration
+        const maxId = get().notifications.reduce((max, existing) => {
+          const match = existing.id.match(/^n(\d+)$/);
+          return match ? Math.max(max, parseInt(match[1]) + 1) : max;
+        }, 10);
+        const id = `n${maxId}`;
         const newNotif: DashboardNotification = {
-          ...n,
+          ...notif,
           id,
           isRead: false,
           createdAt: new Date().toISOString(),
@@ -918,8 +926,12 @@ export const useDashboardStore = create<DashboardState>()(
           const result: Partial<DashboardState> = { backInStockRequests: updated };
 
           if (changedCount > 0) {
+            const maxId = s.notifications.reduce((max, n) => {
+              const match = n.id.match(/^n(\d+)$/);
+              return match ? Math.max(max, parseInt(match[1]) + 1) : max;
+            }, 10);
             const newNotif: DashboardNotification = {
-              id: `n${nextNotificationId++}`,
+              id: `n${maxId}`,
               type: "stock",
               title: "Stock Restored",
               message: `${changedCount} customer${changedCount > 1 ? "s" : ""} requested ${productName}. Stock is now available.`,
@@ -1039,11 +1051,4 @@ export const useDashboardStore = create<DashboardState>()(
   ),
 );
 
-// Auto-sync across browser tabs when localStorage changes
-if (typeof window !== "undefined") {
-  window.addEventListener("storage", (e) => {
-    if (e.key === "desert-tech-dashboard") {
-      useDashboardStore.persist.rehydrate();
-    }
-  });
-}
+
