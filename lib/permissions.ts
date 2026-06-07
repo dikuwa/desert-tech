@@ -184,7 +184,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permissions.FOLLOWUPS_UPDATE,
     Permissions.STOCK_REQUESTS_VIEW,
     Permissions.NOTIFICATIONS_VIEW,
-    // No financial/management/settings permissions by default
+    Permissions.SETTINGS_VIEW,
+    // No financial/management/user permissions by default
   ],
 };
 

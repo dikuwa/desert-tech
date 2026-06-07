@@ -1,12 +1,33 @@
 "use client";
 
 import Link from "next/link";
+import { useState, useEffect } from "react";
 import { ShoppingBag, Users, Bell, CalendarClock, AlertTriangle, ArrowRight, TrendingUp } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { formatCents } from "@/lib/dashboard-data";
 import { Permissions } from "@/lib/permissions";
 
 export default function DashboardPage() {
+  const [profile, setProfile] = useState<{
+    name: string; email: string; role: string; status: string;
+  } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/get-session")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data?.user) {
+          setProfile({
+            name: data.user.name || "User",
+            email: data.user.email || "",
+            role: data.user.role || "—",
+            status: data.user.status || "—",
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const orders = useDashboardStore((s) => s.orders);
   const products = useDashboardStore((s) => s.products);
   const customers = useDashboardStore((s) => s.customers);
@@ -31,8 +52,6 @@ export default function DashboardPage() {
   const unreadNotifications = notifications.filter((n) => !n.isRead);
 
   // Financial permission check
-  // Real permission system: check for PAYMENTS_VIEW or DASHBOARD_VIEW_FINANCIAL_SUMMARY
-  // Fallback for mock/legacy data: Admin with "all" permissions
   const hasFinancialAccess =
     staffPermissions.includes(Permissions.PAYMENTS_VIEW) ||
     staffPermissions.includes(Permissions.DASHBOARD_VIEW_FINANCIAL_SUMMARY) ||
@@ -51,9 +70,36 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Dashboard</h1>
-        <p className="text-sm text-muted-foreground mt-1">Overview of your store operations.</p>
+      {/* Header + Profile card */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-1">Overview of your store operations.</p>
+        </div>
+
+        {profile && (
+          <Link
+            href="/dashboard/settings"
+            className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-2.5 transition-all hover:shadow-sm hover:border-primary/20 shrink-0"
+          >
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-bold">
+              {profile.name
+                .split(" ")
+                .map((n) => n[0])
+                .join("")
+                .toUpperCase()
+                .slice(0, 2)}
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-foreground truncate leading-tight">
+                {profile.name}
+              </p>
+              <p className="text-[10px] text-muted-foreground truncate leading-tight">
+                {profile.role} · {profile.status}
+              </p>
+            </div>
+          </Link>
+        )}
       </div>
 
       {/* Stats Grid - compact */}
