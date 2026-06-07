@@ -643,6 +643,7 @@ export function StaffList({ staff, pendingInvitations = [], currentUserRole, onU
 
   return (
     <>
+      <div className="space-y-6">
       <div className="space-y-4">
         {staff.map((member) => (
           <div
@@ -923,6 +924,7 @@ export function StaffList({ staff, pendingInvitations = [], currentUserRole, onU
           ))}
         </div>
       )}
+      </div>
 
       {/* ============== CONFIRMATION DIALOG ============== */}
       <AlertDialog
