@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Search, Plus, Download, ChevronLeft, ChevronRight, Package, AlertTriangle, Pencil, Trash2 } from "lucide-react";
+import { FadeIn } from "@/components/ui/fade-in";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { formatCents, getStatusBadgeClass, getStatusLabel } from "@/lib/dashboard-data";
@@ -102,6 +103,7 @@ export default function ProductsPage() {
         </Select>
       </div>
 
+      <FadeIn delay={0.1}>
       <div className="rounded-xl border border-border bg-card overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -171,6 +173,7 @@ export default function ProductsPage() {
           </div>
         )}
       </div>
+      </FadeIn>
 
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2">

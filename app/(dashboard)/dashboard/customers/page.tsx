@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { Search, Users, MessageCircle, Phone, Mail, ChevronLeft, ChevronRight, Plus, Pencil, Check, X, Trash2, ShoppingBag, Eye } from "lucide-react";
+import { FadeIn } from "@/components/ui/fade-in";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { formatCents, getStatusBadgeClass, getStatusLabel } from "@/lib/dashboard-data";
 import { cn } from "@/lib/utils";
@@ -129,8 +130,9 @@ export default function CustomersPage() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {paginated.map(customer => (
-          <div key={customer.id} className="rounded-xl border border-border bg-card p-5 transition-all hover:shadow-sm">
+        {paginated.map((customer, i) => (
+          <FadeIn key={customer.id} delay={i * 0.03}>
+          <div className="rounded-xl border border-border bg-card p-5 transition-all hover:shadow-sm hover:-translate-y-0.5">
             {editId === customer.id ? (
               <div className="space-y-3">
                 <input value={form.fullName} onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))} placeholder="Full name" className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm" />
@@ -233,6 +235,7 @@ export default function CustomersPage() {
               </>
             )}
           </div>
+          </FadeIn>
         ))}
       </div>
 

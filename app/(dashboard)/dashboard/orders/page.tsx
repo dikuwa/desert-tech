@@ -23,6 +23,7 @@ import {
 } from "@/lib/dashboard-data";
 import type { DashboardOrder } from "@/lib/dashboard-data";
 import { toast } from "sonner";
+import { FadeIn } from "@/components/ui/fade-in";
 
 const ITEMS_PER_PAGE = 15;
 
@@ -178,6 +179,7 @@ export default function OrdersPage() {
       </div>
 
       {/* Table */}
+      <FadeIn delay={0.1}>
       <div className="overflow-hidden rounded-xl border border-border bg-card">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -341,6 +343,7 @@ export default function OrdersPage() {
           </table>
         </div>
       </div>
+      </FadeIn>
 
       {/* Pagination */}
       {totalPages > 1 && (

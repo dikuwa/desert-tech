@@ -13,6 +13,7 @@ import {
   MessageCircle,
   Copy,
 } from "lucide-react";
+import { FadeIn } from "@/components/ui/fade-in";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { computePaymentFields, formatCents, getStatusBadgeClass, getStatusLabel } from "@/lib/dashboard-data";
 import { cn } from "@/lib/utils";
@@ -224,10 +225,10 @@ export default function ReceiptsPage() {
         </div>
       ) : (
         <div className="space-y-2">
-          {paginated.map((order) => (
+          {paginated.map((order, i) => (
+            <FadeIn key={order.id} delay={i * 0.03}>
             <div
-              key={order.id}
-              className="rounded-xl border border-border bg-card p-4 transition-all hover:shadow-sm"
+              className="rounded-xl border border-border bg-card p-4 transition-all hover:shadow-sm hover:-translate-y-0.5"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3 min-w-0 flex-1">
@@ -292,6 +293,7 @@ export default function ReceiptsPage() {
                 </div>
               </div>
             </div>
+            </FadeIn>
           ))}
         </div>
       )}
