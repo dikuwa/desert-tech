@@ -52,9 +52,14 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   User: 'User',
+  TwoFactor: 'TwoFactor',
   Session: 'Session',
   Account: 'Account',
   Verification: 'Verification',
+  Invitation: 'Invitation',
+  AuditLog: 'AuditLog',
+  PasswordReset: 'PasswordReset',
+  RateLimit: 'RateLimit',
   Customer: 'Customer',
   Category: 'Category',
   Product: 'Product',
@@ -96,12 +101,27 @@ export const UserScalarFieldEnum = {
   image: 'image',
   password: 'password',
   role: 'role',
+  status: 'status',
   permissions: 'permissions',
+  twoFactorEnabled: 'twoFactorEnabled',
+  lastActiveAt: 'lastActiveAt',
+  invitedById: 'invitedById',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+export const TwoFactorScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  secret: 'secret',
+  backupCodes: 'backupCodes',
+  verified: 'verified'
+} as const
+
+export type TwoFactorScalarFieldEnum = (typeof TwoFactorScalarFieldEnum)[keyof typeof TwoFactorScalarFieldEnum]
 
 
 export const SessionScalarFieldEnum = {
@@ -112,6 +132,7 @@ export const SessionScalarFieldEnum = {
   expiresAt: 'expiresAt',
   ipAddress: 'ipAddress',
   userAgent: 'userAgent',
+  impersonatedBy: 'impersonatedBy',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -147,6 +168,69 @@ export const VerificationScalarFieldEnum = {
 } as const
 
 export type VerificationScalarFieldEnum = (typeof VerificationScalarFieldEnum)[keyof typeof VerificationScalarFieldEnum]
+
+
+export const InvitationScalarFieldEnum = {
+  id: 'id',
+  email: 'email',
+  name: 'name',
+  role: 'role',
+  permissions: 'permissions',
+  tokenHash: 'tokenHash',
+  status: 'status',
+  expiresAt: 'expiresAt',
+  invitedById: 'invitedById',
+  acceptedAt: 'acceptedAt',
+  acceptedById: 'acceptedById',
+  note: 'note',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type InvitationScalarFieldEnum = (typeof InvitationScalarFieldEnum)[keyof typeof InvitationScalarFieldEnum]
+
+
+export const AuditLogScalarFieldEnum = {
+  id: 'id',
+  actorId: 'actorId',
+  actorEmail: 'actorEmail',
+  actorRole: 'actorRole',
+  action: 'action',
+  targetType: 'targetType',
+  targetId: 'targetId',
+  targetLabel: 'targetLabel',
+  metadata: 'metadata',
+  beforeValues: 'beforeValues',
+  afterValues: 'afterValues',
+  ipAddress: 'ipAddress',
+  userAgent: 'userAgent',
+  createdAt: 'createdAt'
+} as const
+
+export type AuditLogScalarFieldEnum = (typeof AuditLogScalarFieldEnum)[keyof typeof AuditLogScalarFieldEnum]
+
+
+export const PasswordResetScalarFieldEnum = {
+  id: 'id',
+  email: 'email',
+  tokenHash: 'tokenHash',
+  expiresAt: 'expiresAt',
+  usedAt: 'usedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type PasswordResetScalarFieldEnum = (typeof PasswordResetScalarFieldEnum)[keyof typeof PasswordResetScalarFieldEnum]
+
+
+export const RateLimitScalarFieldEnum = {
+  id: 'id',
+  key: 'key',
+  count: 'count',
+  windowStart: 'windowStart',
+  createdAt: 'createdAt'
+} as const
+
+export type RateLimitScalarFieldEnum = (typeof RateLimitScalarFieldEnum)[keyof typeof RateLimitScalarFieldEnum]
 
 
 export const CustomerScalarFieldEnum = {
@@ -248,6 +332,7 @@ export const OrderScalarFieldEnum = {
   id: 'id',
   orderNumber: 'orderNumber',
   customerId: 'customerId',
+  status: 'status',
   contactStatus: 'contactStatus',
   paymentStatus: 'paymentStatus',
   fulfillmentStatus: 'fulfillmentStatus',
@@ -380,12 +465,29 @@ export const SortOrder = {
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
+export const NullableJsonNullValueInput = {
+  DbNull: DbNull,
+  JsonNull: JsonNull
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
 export const QueryMode = {
   default: 'default',
   insensitive: 'insensitive'
 } as const
 
 export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
+
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 
 
 export const NullsOrder = {

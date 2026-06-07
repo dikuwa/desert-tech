@@ -38,6 +38,7 @@ export type OrderMinAggregateOutputType = {
   id: string | null
   orderNumber: string | null
   customerId: string | null
+  status: string | null
   contactStatus: string | null
   paymentStatus: string | null
   fulfillmentStatus: string | null
@@ -52,6 +53,7 @@ export type OrderMaxAggregateOutputType = {
   id: string | null
   orderNumber: string | null
   customerId: string | null
+  status: string | null
   contactStatus: string | null
   paymentStatus: string | null
   fulfillmentStatus: string | null
@@ -66,6 +68,7 @@ export type OrderCountAggregateOutputType = {
   id: number
   orderNumber: number
   customerId: number
+  status: number
   contactStatus: number
   paymentStatus: number
   fulfillmentStatus: number
@@ -90,6 +93,7 @@ export type OrderMinAggregateInputType = {
   id?: true
   orderNumber?: true
   customerId?: true
+  status?: true
   contactStatus?: true
   paymentStatus?: true
   fulfillmentStatus?: true
@@ -104,6 +108,7 @@ export type OrderMaxAggregateInputType = {
   id?: true
   orderNumber?: true
   customerId?: true
+  status?: true
   contactStatus?: true
   paymentStatus?: true
   fulfillmentStatus?: true
@@ -118,6 +123,7 @@ export type OrderCountAggregateInputType = {
   id?: true
   orderNumber?: true
   customerId?: true
+  status?: true
   contactStatus?: true
   paymentStatus?: true
   fulfillmentStatus?: true
@@ -219,6 +225,7 @@ export type OrderGroupByOutputType = {
   id: string
   orderNumber: string
   customerId: string
+  status: string
   contactStatus: string
   paymentStatus: string
   fulfillmentStatus: string
@@ -256,6 +263,7 @@ export type OrderWhereInput = {
   id?: Prisma.StringFilter<"Order"> | string
   orderNumber?: Prisma.StringFilter<"Order"> | string
   customerId?: Prisma.StringFilter<"Order"> | string
+  status?: Prisma.StringFilter<"Order"> | string
   contactStatus?: Prisma.StringFilter<"Order"> | string
   paymentStatus?: Prisma.StringFilter<"Order"> | string
   fulfillmentStatus?: Prisma.StringFilter<"Order"> | string
@@ -275,6 +283,7 @@ export type OrderOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   orderNumber?: Prisma.SortOrder
   customerId?: Prisma.SortOrder
+  status?: Prisma.SortOrder
   contactStatus?: Prisma.SortOrder
   paymentStatus?: Prisma.SortOrder
   fulfillmentStatus?: Prisma.SortOrder
@@ -297,6 +306,7 @@ export type OrderWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.OrderWhereInput[]
   NOT?: Prisma.OrderWhereInput | Prisma.OrderWhereInput[]
   customerId?: Prisma.StringFilter<"Order"> | string
+  status?: Prisma.StringFilter<"Order"> | string
   contactStatus?: Prisma.StringFilter<"Order"> | string
   paymentStatus?: Prisma.StringFilter<"Order"> | string
   fulfillmentStatus?: Prisma.StringFilter<"Order"> | string
@@ -316,6 +326,7 @@ export type OrderOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   orderNumber?: Prisma.SortOrder
   customerId?: Prisma.SortOrder
+  status?: Prisma.SortOrder
   contactStatus?: Prisma.SortOrder
   paymentStatus?: Prisma.SortOrder
   fulfillmentStatus?: Prisma.SortOrder
@@ -338,6 +349,7 @@ export type OrderScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"Order"> | string
   orderNumber?: Prisma.StringWithAggregatesFilter<"Order"> | string
   customerId?: Prisma.StringWithAggregatesFilter<"Order"> | string
+  status?: Prisma.StringWithAggregatesFilter<"Order"> | string
   contactStatus?: Prisma.StringWithAggregatesFilter<"Order"> | string
   paymentStatus?: Prisma.StringWithAggregatesFilter<"Order"> | string
   fulfillmentStatus?: Prisma.StringWithAggregatesFilter<"Order"> | string
@@ -351,6 +363,7 @@ export type OrderScalarWhereWithAggregatesInput = {
 export type OrderCreateInput = {
   id?: string
   orderNumber: string
+  status?: string
   contactStatus?: string
   paymentStatus?: string
   fulfillmentStatus?: string
@@ -370,6 +383,7 @@ export type OrderUncheckedCreateInput = {
   id?: string
   orderNumber: string
   customerId: string
+  status?: string
   contactStatus?: string
   paymentStatus?: string
   fulfillmentStatus?: string
@@ -387,6 +401,7 @@ export type OrderUncheckedCreateInput = {
 export type OrderUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   orderNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   contactStatus?: Prisma.StringFieldUpdateOperationsInput | string
   paymentStatus?: Prisma.StringFieldUpdateOperationsInput | string
   fulfillmentStatus?: Prisma.StringFieldUpdateOperationsInput | string
@@ -406,6 +421,7 @@ export type OrderUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   orderNumber?: Prisma.StringFieldUpdateOperationsInput | string
   customerId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   contactStatus?: Prisma.StringFieldUpdateOperationsInput | string
   paymentStatus?: Prisma.StringFieldUpdateOperationsInput | string
   fulfillmentStatus?: Prisma.StringFieldUpdateOperationsInput | string
@@ -424,6 +440,7 @@ export type OrderCreateManyInput = {
   id?: string
   orderNumber: string
   customerId: string
+  status?: string
   contactStatus?: string
   paymentStatus?: string
   fulfillmentStatus?: string
@@ -437,6 +454,7 @@ export type OrderCreateManyInput = {
 export type OrderUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   orderNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   contactStatus?: Prisma.StringFieldUpdateOperationsInput | string
   paymentStatus?: Prisma.StringFieldUpdateOperationsInput | string
   fulfillmentStatus?: Prisma.StringFieldUpdateOperationsInput | string
@@ -451,6 +469,7 @@ export type OrderUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   orderNumber?: Prisma.StringFieldUpdateOperationsInput | string
   customerId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   contactStatus?: Prisma.StringFieldUpdateOperationsInput | string
   paymentStatus?: Prisma.StringFieldUpdateOperationsInput | string
   fulfillmentStatus?: Prisma.StringFieldUpdateOperationsInput | string
@@ -475,6 +494,7 @@ export type OrderCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   orderNumber?: Prisma.SortOrder
   customerId?: Prisma.SortOrder
+  status?: Prisma.SortOrder
   contactStatus?: Prisma.SortOrder
   paymentStatus?: Prisma.SortOrder
   fulfillmentStatus?: Prisma.SortOrder
@@ -493,6 +513,7 @@ export type OrderMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   orderNumber?: Prisma.SortOrder
   customerId?: Prisma.SortOrder
+  status?: Prisma.SortOrder
   contactStatus?: Prisma.SortOrder
   paymentStatus?: Prisma.SortOrder
   fulfillmentStatus?: Prisma.SortOrder
@@ -507,6 +528,7 @@ export type OrderMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   orderNumber?: Prisma.SortOrder
   customerId?: Prisma.SortOrder
+  status?: Prisma.SortOrder
   contactStatus?: Prisma.SortOrder
   paymentStatus?: Prisma.SortOrder
   fulfillmentStatus?: Prisma.SortOrder
@@ -627,6 +649,7 @@ export type OrderUpdateOneRequiredWithoutFollowUpsNestedInput = {
 export type OrderCreateWithoutCustomerInput = {
   id?: string
   orderNumber: string
+  status?: string
   contactStatus?: string
   paymentStatus?: string
   fulfillmentStatus?: string
@@ -644,6 +667,7 @@ export type OrderCreateWithoutCustomerInput = {
 export type OrderUncheckedCreateWithoutCustomerInput = {
   id?: string
   orderNumber: string
+  status?: string
   contactStatus?: string
   paymentStatus?: string
   fulfillmentStatus?: string
@@ -691,6 +715,7 @@ export type OrderScalarWhereInput = {
   id?: Prisma.StringFilter<"Order"> | string
   orderNumber?: Prisma.StringFilter<"Order"> | string
   customerId?: Prisma.StringFilter<"Order"> | string
+  status?: Prisma.StringFilter<"Order"> | string
   contactStatus?: Prisma.StringFilter<"Order"> | string
   paymentStatus?: Prisma.StringFilter<"Order"> | string
   fulfillmentStatus?: Prisma.StringFilter<"Order"> | string
@@ -704,6 +729,7 @@ export type OrderScalarWhereInput = {
 export type OrderCreateWithoutItemsInput = {
   id?: string
   orderNumber: string
+  status?: string
   contactStatus?: string
   paymentStatus?: string
   fulfillmentStatus?: string
@@ -722,6 +748,7 @@ export type OrderUncheckedCreateWithoutItemsInput = {
   id?: string
   orderNumber: string
   customerId: string
+  status?: string
   contactStatus?: string
   paymentStatus?: string
   fulfillmentStatus?: string
@@ -754,6 +781,7 @@ export type OrderUpdateToOneWithWhereWithoutItemsInput = {
 export type OrderUpdateWithoutItemsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   orderNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   contactStatus?: Prisma.StringFieldUpdateOperationsInput | string
   paymentStatus?: Prisma.StringFieldUpdateOperationsInput | string
   fulfillmentStatus?: Prisma.StringFieldUpdateOperationsInput | string
@@ -772,6 +800,7 @@ export type OrderUncheckedUpdateWithoutItemsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   orderNumber?: Prisma.StringFieldUpdateOperationsInput | string
   customerId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   contactStatus?: Prisma.StringFieldUpdateOperationsInput | string
   paymentStatus?: Prisma.StringFieldUpdateOperationsInput | string
   fulfillmentStatus?: Prisma.StringFieldUpdateOperationsInput | string
@@ -788,6 +817,7 @@ export type OrderUncheckedUpdateWithoutItemsInput = {
 export type OrderCreateWithoutPaymentsInput = {
   id?: string
   orderNumber: string
+  status?: string
   contactStatus?: string
   paymentStatus?: string
   fulfillmentStatus?: string
@@ -806,6 +836,7 @@ export type OrderUncheckedCreateWithoutPaymentsInput = {
   id?: string
   orderNumber: string
   customerId: string
+  status?: string
   contactStatus?: string
   paymentStatus?: string
   fulfillmentStatus?: string
@@ -838,6 +869,7 @@ export type OrderUpdateToOneWithWhereWithoutPaymentsInput = {
 export type OrderUpdateWithoutPaymentsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   orderNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   contactStatus?: Prisma.StringFieldUpdateOperationsInput | string
   paymentStatus?: Prisma.StringFieldUpdateOperationsInput | string
   fulfillmentStatus?: Prisma.StringFieldUpdateOperationsInput | string
@@ -856,6 +888,7 @@ export type OrderUncheckedUpdateWithoutPaymentsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   orderNumber?: Prisma.StringFieldUpdateOperationsInput | string
   customerId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   contactStatus?: Prisma.StringFieldUpdateOperationsInput | string
   paymentStatus?: Prisma.StringFieldUpdateOperationsInput | string
   fulfillmentStatus?: Prisma.StringFieldUpdateOperationsInput | string
@@ -872,6 +905,7 @@ export type OrderUncheckedUpdateWithoutPaymentsInput = {
 export type OrderCreateWithoutReceiptsInput = {
   id?: string
   orderNumber: string
+  status?: string
   contactStatus?: string
   paymentStatus?: string
   fulfillmentStatus?: string
@@ -890,6 +924,7 @@ export type OrderUncheckedCreateWithoutReceiptsInput = {
   id?: string
   orderNumber: string
   customerId: string
+  status?: string
   contactStatus?: string
   paymentStatus?: string
   fulfillmentStatus?: string
@@ -922,6 +957,7 @@ export type OrderUpdateToOneWithWhereWithoutReceiptsInput = {
 export type OrderUpdateWithoutReceiptsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   orderNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   contactStatus?: Prisma.StringFieldUpdateOperationsInput | string
   paymentStatus?: Prisma.StringFieldUpdateOperationsInput | string
   fulfillmentStatus?: Prisma.StringFieldUpdateOperationsInput | string
@@ -940,6 +976,7 @@ export type OrderUncheckedUpdateWithoutReceiptsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   orderNumber?: Prisma.StringFieldUpdateOperationsInput | string
   customerId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   contactStatus?: Prisma.StringFieldUpdateOperationsInput | string
   paymentStatus?: Prisma.StringFieldUpdateOperationsInput | string
   fulfillmentStatus?: Prisma.StringFieldUpdateOperationsInput | string
@@ -956,6 +993,7 @@ export type OrderUncheckedUpdateWithoutReceiptsInput = {
 export type OrderCreateWithoutFollowUpsInput = {
   id?: string
   orderNumber: string
+  status?: string
   contactStatus?: string
   paymentStatus?: string
   fulfillmentStatus?: string
@@ -974,6 +1012,7 @@ export type OrderUncheckedCreateWithoutFollowUpsInput = {
   id?: string
   orderNumber: string
   customerId: string
+  status?: string
   contactStatus?: string
   paymentStatus?: string
   fulfillmentStatus?: string
@@ -1006,6 +1045,7 @@ export type OrderUpdateToOneWithWhereWithoutFollowUpsInput = {
 export type OrderUpdateWithoutFollowUpsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   orderNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   contactStatus?: Prisma.StringFieldUpdateOperationsInput | string
   paymentStatus?: Prisma.StringFieldUpdateOperationsInput | string
   fulfillmentStatus?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1024,6 +1064,7 @@ export type OrderUncheckedUpdateWithoutFollowUpsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   orderNumber?: Prisma.StringFieldUpdateOperationsInput | string
   customerId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   contactStatus?: Prisma.StringFieldUpdateOperationsInput | string
   paymentStatus?: Prisma.StringFieldUpdateOperationsInput | string
   fulfillmentStatus?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1040,6 +1081,7 @@ export type OrderUncheckedUpdateWithoutFollowUpsInput = {
 export type OrderCreateManyCustomerInput = {
   id?: string
   orderNumber: string
+  status?: string
   contactStatus?: string
   paymentStatus?: string
   fulfillmentStatus?: string
@@ -1053,6 +1095,7 @@ export type OrderCreateManyCustomerInput = {
 export type OrderUpdateWithoutCustomerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   orderNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   contactStatus?: Prisma.StringFieldUpdateOperationsInput | string
   paymentStatus?: Prisma.StringFieldUpdateOperationsInput | string
   fulfillmentStatus?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1070,6 +1113,7 @@ export type OrderUpdateWithoutCustomerInput = {
 export type OrderUncheckedUpdateWithoutCustomerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   orderNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   contactStatus?: Prisma.StringFieldUpdateOperationsInput | string
   paymentStatus?: Prisma.StringFieldUpdateOperationsInput | string
   fulfillmentStatus?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1087,6 +1131,7 @@ export type OrderUncheckedUpdateWithoutCustomerInput = {
 export type OrderUncheckedUpdateManyWithoutCustomerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   orderNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   contactStatus?: Prisma.StringFieldUpdateOperationsInput | string
   paymentStatus?: Prisma.StringFieldUpdateOperationsInput | string
   fulfillmentStatus?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1159,6 +1204,7 @@ export type OrderSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   id?: boolean
   orderNumber?: boolean
   customerId?: boolean
+  status?: boolean
   contactStatus?: boolean
   paymentStatus?: boolean
   fulfillmentStatus?: boolean
@@ -1179,6 +1225,7 @@ export type OrderSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   id?: boolean
   orderNumber?: boolean
   customerId?: boolean
+  status?: boolean
   contactStatus?: boolean
   paymentStatus?: boolean
   fulfillmentStatus?: boolean
@@ -1194,6 +1241,7 @@ export type OrderSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   id?: boolean
   orderNumber?: boolean
   customerId?: boolean
+  status?: boolean
   contactStatus?: boolean
   paymentStatus?: boolean
   fulfillmentStatus?: boolean
@@ -1209,6 +1257,7 @@ export type OrderSelectScalar = {
   id?: boolean
   orderNumber?: boolean
   customerId?: boolean
+  status?: boolean
   contactStatus?: boolean
   paymentStatus?: boolean
   fulfillmentStatus?: boolean
@@ -1219,7 +1268,7 @@ export type OrderSelectScalar = {
   updatedAt?: boolean
 }
 
-export type OrderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "orderNumber" | "customerId" | "contactStatus" | "paymentStatus" | "fulfillmentStatus" | "preferredContact" | "subtotalCents" | "notes" | "createdAt" | "updatedAt", ExtArgs["result"]["order"]>
+export type OrderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "orderNumber" | "customerId" | "status" | "contactStatus" | "paymentStatus" | "fulfillmentStatus" | "preferredContact" | "subtotalCents" | "notes" | "createdAt" | "updatedAt", ExtArgs["result"]["order"]>
 export type OrderInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   customer?: boolean | Prisma.CustomerDefaultArgs<ExtArgs>
   items?: boolean | Prisma.Order$itemsArgs<ExtArgs>
@@ -1248,6 +1297,7 @@ export type $OrderPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     id: string
     orderNumber: string
     customerId: string
+    status: string
     contactStatus: string
     paymentStatus: string
     fulfillmentStatus: string
@@ -1687,6 +1737,7 @@ export interface OrderFieldRefs {
   readonly id: Prisma.FieldRef<"Order", 'String'>
   readonly orderNumber: Prisma.FieldRef<"Order", 'String'>
   readonly customerId: Prisma.FieldRef<"Order", 'String'>
+  readonly status: Prisma.FieldRef<"Order", 'String'>
   readonly contactStatus: Prisma.FieldRef<"Order", 'String'>
   readonly paymentStatus: Prisma.FieldRef<"Order", 'String'>
   readonly fulfillmentStatus: Prisma.FieldRef<"Order", 'String'>

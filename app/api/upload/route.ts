@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
+import { authorizePermission } from "@/lib/auth-server";
+import { Permissions } from "@/lib/permissions";
 
 export async function POST(request: NextRequest) {
+  const { error } = await authorizePermission(Permissions.PRODUCTS_UPDATE);
+  if (error) return error;
+
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
@@ -12,10 +17,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate file type
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"];
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
-        { error: "Invalid file type. Allowed: JPEG, PNG, WebP, GIF, SVG" },
+        { error: "Invalid file type. Allowed: JPEG, PNG, WebP, GIF" },
         { status: 400 },
       );
     }

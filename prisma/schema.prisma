@@ -7,24 +7,50 @@ datasource db {
   provider = "postgresql"
 }
 
-model User {
-  id           String   @id @default(cuid())
-  name         String
-  email        String   @unique
-  emailVerified Boolean @default(false)
-  image        String?
-  password     String?
-  role         String   @default("staff")
-  permissions  String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+// ============== AUTH MODELS (Better Auth) ==============
 
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  password      String?   // Hashed password - stored via Account for Better Auth
+  role          UserRole  @default(STAFF)
+  status        UserStatus @default(ACTIVE)
+  permissions   Json?     // Array of permission strings
+  twoFactorEnabled Boolean @default(false)
+  lastActiveAt  DateTime?
+  invitedById   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
   sessions      Session[]
   accounts      Account[]
   notifications Notification[]
   payments      PaymentRecord[]
   receipts      Receipt[]
   followUps     FollowUp[]
+  invitationsCreated Invitation[] @relation("InvitedBy")
+  invitedUsers  User[]    @relation("UserInvitedBy")
+  invitedBy     User?     @relation("UserInvitedBy", fields: [invitedById], references: [id])
+  auditLogs     AuditLog[]
+  twoFactor     TwoFactor?
+
+  @@index([email])
+  @@index([role])
+  @@index([status])
+}
+
+model TwoFactor {
+  id          String  @id @default(cuid())
+  userId      String  @unique
+  secret      String
+  backupCodes String
+  verified    Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Session {
@@ -35,28 +61,35 @@ model Session {
   expiresAt    DateTime
   ipAddress    String?
   userAgent    String?
+  impersonatedBy String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
 }
 
 model Account {
-  id              String  @id @default(cuid())
-  userId          String
-  accountId       String
-  providerId      String
-  accessToken     String?
-  refreshToken    String?
-  accessTokenExpiresAt DateTime?
+  id                    String    @id @default(cuid())
+  userId                String
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  accessTokenExpiresAt  DateTime?
   refreshTokenExpiresAt DateTime?
-  scope           String?
-  idToken         String?
-  password        String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  scope                 String?
+  idToken               String?
+  password              String?   // For email/password provider
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
 }
 
 model Verification {
@@ -65,7 +98,92 @@ model Verification {
   value      String
   expiresAt  DateTime
   createdAt  DateTime @default(now())
+
+  @@index([identifier])
 }
+
+// ============== INVITATION SYSTEM ==============
+
+model Invitation {
+  id          String           @id @default(cuid())
+  email       String
+  name        String
+  role        UserRole
+  permissions Json?            // Array of permission strings
+  tokenHash   String           @unique
+  status      InvitationStatus @default(PENDING)
+  expiresAt   DateTime
+  invitedById String
+  acceptedAt  DateTime?
+  acceptedById String?
+  note        String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  invitedBy   User    @relation("InvitedBy", fields: [invitedById], references: [id])
+
+  @@index([email])
+  @@index([tokenHash])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+// ============== AUDIT LOG ==============
+
+model AuditLog {
+  id              String   @id @default(cuid())
+  actorId         String?
+  actorEmail      String?
+  actorRole       UserRole?
+  action          String   // e.g., "invitation.created", "user.role_changed"
+  targetType      String   // e.g., "user", "invitation", "order"
+  targetId        String?
+  targetLabel     String?  // Human-readable label
+  metadata        Json?    // Additional context
+  beforeValues    Json?    // For tracking changes
+  afterValues     Json?    // For tracking changes
+  ipAddress       String?
+  userAgent       String?
+  createdAt       DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([actorId])
+  @@index([action])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+}
+
+// ============== PASSWORD RESET ==============
+
+model PasswordReset {
+  id        String   @id @default(cuid())
+  email     String
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([tokenHash])
+  @@index([email])
+  @@index([expiresAt])
+}
+
+// ============== RATE LIMITING ==============
+
+model RateLimit {
+  id        String   @id @default(cuid())
+  key       String   // Composite key: action:identifier (e.g., "login:email@example.com")
+  count     Int      @default(0)
+  windowStart DateTime
+  createdAt DateTime @default(now())
+
+  @@unique([key])
+  @@index([key])
+  @@index([windowStart])
+}
+
+// ============== STORE MODELS ==============
 
 model Customer {
   id               String   @id @default(cuid())
@@ -119,10 +237,10 @@ model Product {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
-  category     Category        @relation(fields: [categoryId], references: [id])
-  images       ProductImage[]
-  orderItems   OrderItem[]
-  promotions   PromotionProduct[]
+  category            Category        @relation(fields: [categoryId], references: [id])
+  images              ProductImage[]
+  orderItems          OrderItem[]
+  promotions          PromotionProduct[]
   backInStockRequests BackInStockRequest[]
 }
 
@@ -163,10 +281,13 @@ model PromotionProduct {
   product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([promotionId, productId])
-}model Order {
+}
+
+model Order {
   id                String   @id @default(cuid())
   orderNumber       String   @unique
   customerId        String
+  status            String   @default("Pending")
   contactStatus     String   @default("NotContacted")
   paymentStatus     String   @default("Unpaid")
   fulfillmentStatus String   @default("Pending")
@@ -184,13 +305,13 @@ model PromotionProduct {
 }
 
 model OrderItem {
-  id            String @id @default(cuid())
-  orderId       String
-  productId     String
-  productName   String
-  quantity      Int
+  id             String @id @default(cuid())
+  orderId        String
+  productId      String
+  productName    String
+  quantity       Int
   unitPriceCents Int
-  totalCents    Int
+  totalCents     Int
 
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id])
@@ -206,19 +327,19 @@ model PaymentRecord {
   note         String?
   recordedAt   DateTime @default(now())
 
-  order    Order @relation(fields: [orderId], references: [id])
-  recordedBy User @relation(fields: [recordedById], references: [id])
+  order      Order @relation(fields: [orderId], references: [id])
+  recordedBy User  @relation(fields: [recordedById], references: [id])
 }
 
 model Receipt {
-  id           String   @id @default(cuid())
-  orderId      String
-  receiptNumber String  @unique
-  pdfUrl       String?
-  issuedById   String
-  sentVia      String   @default("NotSent")
-  sentAt       DateTime?
-  issuedAt     DateTime @default(now())
+  id            String    @id @default(cuid())
+  orderId       String
+  receiptNumber String    @unique
+  pdfUrl        String?
+  issuedById    String
+  sentVia       String    @default("NotSent")
+  sentAt        DateTime?
+  issuedAt      DateTime  @default(now())
 
   order    Order @relation(fields: [orderId], references: [id])
   issuedBy User  @relation(fields: [issuedById], references: [id])
@@ -282,6 +403,28 @@ model ContactMessage {
 }
 
 model StoreSetting {
-  id    String @id @default("default")
-  data  String
+  id   String @id @default("default")
+  data String
+}
+
+// ============== ENUMS ==============
+
+enum UserRole {
+  OWNER
+  ADMIN
+  STAFF
+}
+
+enum UserStatus {
+  INVITED
+  ACTIVE
+  SUSPENDED
+  DISABLED
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
 }

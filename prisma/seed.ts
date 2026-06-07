@@ -56,24 +56,25 @@ async function main() {
   // Create admin user + account with password
   const admin = await prisma.user.upsert({
     where: { email: adminEmail },
-    update: { name: adminName, role: "Admin", emailVerified: true },
+    update: { name: adminName, role: "OWNER", status: "ACTIVE", emailVerified: true },
     create: {
       name: adminName,
       email: adminEmail,
-      role: "Admin",
+      role: "OWNER",
+      status: "ACTIVE",
       emailVerified: true,
     },
   });
 
   // Remove any existing email-password accounts for this user, then create fresh
   await prisma.account.deleteMany({
-    where: { userId: admin.id, providerId: "email" },
+    where: { userId: admin.id, providerId: "credential" },
   });
   await prisma.account.create({
     data: {
       userId: admin.id,
-      providerId: "email",
-      accountId: adminEmail,
+      providerId: "credential",
+      accountId: admin.id,
       password: adminHash,
     },
   });
@@ -83,23 +84,24 @@ async function main() {
   // Create staff user
   const staff = await prisma.user.upsert({
     where: { email: "staff@deserttech.com" },
-    update: { name: "Staff User", role: "Staff", emailVerified: true },
+    update: { name: "Staff User", role: "STAFF", status: "ACTIVE", emailVerified: true },
     create: {
       name: "Staff User",
       email: "staff@deserttech.com",
-      role: "Staff",
+      role: "STAFF",
+      status: "ACTIVE",
       emailVerified: true,
     },
   });
 
   await prisma.account.deleteMany({
-    where: { userId: staff.id, providerId: "email" },
+    where: { userId: staff.id, providerId: "credential" },
   });
   await prisma.account.create({
     data: {
       userId: staff.id,
-      providerId: "email",
-      accountId: "staff@deserttech.com",
+      providerId: "credential",
+      accountId: staff.id,
       password: staffHash,
     },
   });

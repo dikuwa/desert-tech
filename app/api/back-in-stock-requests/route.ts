@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { authorizePermission } from "@/lib/auth-server";
+import { Permissions } from "@/lib/permissions";
 
 const requestSchema = z.object({
   productId: z.string().min(1),
@@ -26,6 +28,9 @@ const statusSchema = z.union([
 const deleteSchema = z.object({ id: z.string().min(1) });
 
 export async function GET() {
+  const { error } = await authorizePermission(Permissions.STOCK_REQUESTS_VIEW);
+  if (error) return error;
+
   const { getBackInStockRequests } = await import("@/lib/back-in-stock-store");
   const fallbackRequests = getBackInStockRequests();
 
@@ -199,6 +204,9 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
+  const { error: authorizationError } = await authorizePermission(Permissions.STOCK_REQUESTS_MANAGE);
+  if (authorizationError) return authorizationError;
+
   try {
     const action = statusSchema.parse(await req.json());
     const status = action.status;
@@ -242,6 +250,9 @@ export async function PATCH(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  const { error: authorizationError } = await authorizePermission(Permissions.STOCK_REQUESTS_MANAGE);
+  if (authorizationError) return authorizationError;
+
   try {
     const { id } = deleteSchema.parse(await req.json());
     let deleted = false;

@@ -19,6 +19,8 @@ import { useDashboardStore } from "@/lib/store/dashboard";
 import { addReceipt } from "@/lib/receipt-store";
 import { uploadFile } from "@/lib/storage";
 import { computePaymentFields } from "@/lib/dashboard-data";
+import { authorizePermission } from "@/lib/auth-server";
+import { Permissions } from "@/lib/permissions";
 
 const orderSnapshotSchema = z.object({
   orderNumber: z.string().min(1),
@@ -149,6 +151,9 @@ function findOrder(orderIdOrNumber: string) {
 }
 
 export async function POST(request: NextRequest) {
+  const { error: authorizationError } = await authorizePermission(Permissions.DOCUMENTS_CREATE);
+  if (authorizationError) return authorizationError;
+
   try {
     const body = await request.json();
     const { orderId } = body;

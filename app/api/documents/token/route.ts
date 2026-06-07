@@ -18,8 +18,13 @@ import {
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { getOrderByNumber } from "@/lib/order-store";
 import { computePaymentFields } from "@/lib/dashboard-data";
+import { authorizePermission } from "@/lib/auth-server";
+import { Permissions } from "@/lib/permissions";
 
 export async function POST(request: NextRequest) {
+  const { error } = await authorizePermission(Permissions.DOCUMENTS_SEND);
+  if (error) return error;
+
   try {
     const body = await request.json();
     const { type, referenceId, documentNumber } = body;

@@ -10,8 +10,13 @@ import { formatCents } from "@/lib/dashboard-data";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { getOrderByNumber } from "@/lib/order-store";
 import { render } from "@react-email/components";
+import { authorizePermission } from "@/lib/auth-server";
+import { Permissions } from "@/lib/permissions";
 
 export async function POST(request: NextRequest) {
+  const { error } = await authorizePermission(Permissions.DOCUMENTS_SEND);
+  if (error) return error;
+
   try {
     const body = await request.json();
     const { orderNumber, customerEmail, customerName } = body;

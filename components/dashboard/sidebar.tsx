@@ -28,6 +28,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useState } from "react";
+import { UserRole } from "@/lib/enums";
+import { hasPermission, Permissions, type Permission } from "@/lib/permissions";
 
 const adminNavItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -59,14 +61,39 @@ const bottomNavItems = [
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
-export function DashboardSidebar() {
+const navPermissions: Record<string, Permission> = {
+  "/dashboard": Permissions.DASHBOARD_VIEW,
+  "/dashboard/orders": Permissions.ORDERS_VIEW,
+  "/dashboard/products": Permissions.PRODUCTS_VIEW,
+  "/dashboard/categories": Permissions.CATEGORIES_VIEW,
+  "/dashboard/promotions": Permissions.PROMOTIONS_VIEW,
+  "/dashboard/customers": Permissions.CUSTOMERS_VIEW,
+  "/dashboard/follow-ups": Permissions.FOLLOWUPS_VIEW,
+  "/dashboard/receipts": Permissions.DOCUMENTS_VIEW,
+  "/dashboard/quotations": Permissions.DOCUMENTS_VIEW,
+  "/dashboard/notifications": Permissions.NOTIFICATIONS_VIEW,
+  "/dashboard/back-in-stock": Permissions.STOCK_REQUESTS_VIEW,
+  "/dashboard/audit-log": Permissions.AUDIT_LOGS_VIEW,
+  "/dashboard/payments": Permissions.PAYMENTS_VIEW,
+  "/dashboard/staff": Permissions.STAFF_VIEW,
+  "/dashboard/settings": Permissions.SETTINGS_VIEW,
+};
+
+interface DashboardSidebarProps {
+  user: {
+    name: string;
+    role: UserRole;
+    permissions: Permission[];
+  };
+}
+
+export function DashboardSidebar({ user }: DashboardSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
-  const userRole = useDashboardStore((s) => s.userRole);
-  const currentUser = useDashboardStore((s) => s.currentUser);
-  const isStaff = userRole === "Staff";
+  const canAccess = (href: string) =>
+    hasPermission(user.role, user.permissions, navPermissions[href] ?? Permissions.DASHBOARD_VIEW);
   const unreadNotifications = useDashboardStore((s) => s.notifications.filter(n => !n.isRead).length);
   const newStockRequests = useDashboardStore((s) => s.backInStockRequests.filter(r => r.status === "New").length);
 
@@ -114,7 +141,7 @@ export function DashboardSidebar() {
       </div>
 
       {/* Quick SKU Lookup */}
-      {collapsed ? (
+      {canAccess("/dashboard/products") && (collapsed ? (
         <div className="flex justify-center py-3">
           <button
             onClick={() => router.push("/dashboard/products")}
@@ -143,11 +170,11 @@ export function DashboardSidebar() {
             />
           </div>
         </div>
-      )}
+      ))}
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-1">
-        {adminNavItems.map((item) => {
+        {adminNavItems.filter((item) => canAccess(item.href)).map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
           let count = 0;
@@ -177,8 +204,7 @@ export function DashboardSidebar() {
           );
         })}
 
-        {/* Financial section - hidden from Staff */}
-        {!isStaff && financialNavItems.map((item) => {
+        {financialNavItems.filter((item) => canAccess(item.href)).map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
           return (
@@ -198,9 +224,9 @@ export function DashboardSidebar() {
           );
         })}
 
-        {!isStaff && !collapsed && <div className="my-2 border-t border-border" />}
+        {financialNavItems.some((item) => canAccess(item.href)) && !collapsed && <div className="my-2 border-t border-border" />}
 
-        {staffNavItems.map((item) => {
+        {staffNavItems.filter((item) => canAccess(item.href)).map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
           return (
@@ -220,9 +246,7 @@ export function DashboardSidebar() {
           );
         })}
 
-        {/* Settings - always visible */}
-        {/* Monitoring section - hidden from Staff */}
-        {!isStaff && monitoringNavItems.map((item) => {
+        {monitoringNavItems.filter((item) => canAccess(item.href)).map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
           return (
@@ -244,7 +268,7 @@ export function DashboardSidebar() {
 
         <div className="pt-2 mt-2 border-t border-border" />
 
-        {bottomNavItems.map((item) => {
+        {bottomNavItems.filter((item) => canAccess(item.href)).map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
           return (
@@ -271,13 +295,13 @@ export function DashboardSidebar() {
         <div className={cn("flex items-center gap-3", collapsed && "flex-col")}>
           <Avatar className="h-8 w-8">
             <AvatarFallback className="bg-primary/10 text-primary text-xs">
-              {currentUser.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
+              {user.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
             </AvatarFallback>
           </Avatar>
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">{currentUser}</p>
-              <p className="text-xs text-muted-foreground truncate">{userRole}</p>
+              <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
+              <p className="text-xs text-muted-foreground truncate">{user.role}</p>
             </div>
           )}
           {!collapsed && (

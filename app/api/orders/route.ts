@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { addOrder, getOrders } from "@/lib/order-store";
+import { authorizePermission } from "@/lib/auth-server";
+import { Permissions } from "@/lib/permissions";
 
 const orderSchema = z.object({
   fullName: z.string().min(2).max(100),
@@ -166,6 +168,9 @@ export async function POST(req: Request) {
 }
 
 export async function GET() {
+  const { error } = await authorizePermission(Permissions.ORDERS_VIEW);
+  if (error) return error;
+
   const storedOrders = getOrders();
   return NextResponse.json({ orders: storedOrders });
 }
