@@ -197,6 +197,8 @@ export function CreateUserDialog({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [invitePhone, setInvitePhone] = useState<string | null>(null);
 
   const reset = () => {
     setName("");
@@ -210,6 +212,8 @@ export function CreateUserDialog({
     setError(null);
     setSuccess(false);
     setSuccessMessage("");
+    setInviteLink(null);
+    setInvitePhone(null);
   };
 
   // Load role template when role changes
@@ -288,7 +292,7 @@ export function CreateUserDialog({
     }
   };
 
-  // Handle invite by WhatsApp (with optional email)
+  // Handle invite by WhatsApp (with wa.me link)
   const handleWhatsAppInvite = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);
@@ -314,18 +318,16 @@ export function CreateUserDialog({
         }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Failed to send invitation");
+      if (!response.ok) throw new Error(data.error || "Failed to create invitation");
 
+      // Store the invite link so the staff member can share it via their own WhatsApp
+      setInviteLink(data.acceptUrl);
+      setInvitePhone(phone.replace(/[^\d]/g, ""));
       setSuccess(true);
-      const sentVia = email.trim() ? "via WhatsApp & Email" : "via WhatsApp";
-      setSuccessMessage(`Invitation sent to ${name} ${sentVia}`);
+      setSuccessMessage(`Invitation created for ${name}`);
       onSuccess?.();
-      setTimeout(() => {
-        reset();
-        onOpenChange(false);
-      }, 1500);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to send invitation");
+      setError(err instanceof Error ? err.message : "Failed to create invitation");
     } finally {
       setLoading(false);
     }
@@ -466,11 +468,71 @@ export function CreateUserDialog({
         </DialogHeader>
 
         {success ? (
-          <div className="py-8 text-center">
+          <div className="py-6 text-center">
             <Check className="mx-auto mb-3 h-8 w-8 text-success" />
-            <p className="font-medium">{successMessage}</p>
+            <p className="font-medium mb-4">{successMessage}</p>
+
+            {inviteLink && invitePhone && (
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  Share the invite link with {name} via your own WhatsApp:
+                </p>
+                <a
+                  href={`https://wa.me/${invitePhone}?text=${encodeURIComponent(
+                    `You've been invited to join Desert Technology!
+
+Click here to accept:
+${inviteLink}`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-md active:translate-y-0"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  Share on WhatsApp
+                </a>
+                <div className="flex items-center justify-center gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(inviteLink);
+                    }}
+                    className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+                  >
+                    Copy invite link
+                  </button>
+                  <span className="text-xs text-muted-foreground">·</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      reset();
+                      onOpenChange(false);
+                    }}
+                    className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {!inviteLink && (
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    reset();
+                    onOpenChange(false);
+                  }}
+                  className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            )}
           </div>
         ) : (
+
           <>
             {error && (
               <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">

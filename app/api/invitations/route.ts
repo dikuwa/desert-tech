@@ -16,7 +16,6 @@ import { InvitationStatus, UserRole } from "@/lib/enums";
 import { Permissions, type Permission } from "@/lib/permissions";
 import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
 import { sendInvitationEmail } from "@/lib/email";
-import { sendInvitationWhatsApp } from "@/lib/whatsapp";
 
 // Validation schema for creating invitations
 const createInvitationSchema = z.object({
@@ -201,18 +200,14 @@ export async function POST(req: NextRequest) {
       console.error("[API] Failed to send invitation email:", emailError);
     }
 
-    // Send invitation via WhatsApp if phone provided
-    if (phone) {
-      try {
-        const phoneClean = phone.replace(/^\+/, "");
-        await sendInvitationWhatsApp(phoneClean, name, token, role, currentUser.name);
-      } catch (whatsappError) {
-        console.error("[API] Failed to send invitation WhatsApp:", whatsappError);
-      }
-    }
+    const acceptUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/admin/invite/accept?token=${token}`;
 
     return NextResponse.json(
-      { invitation, message: "Invitation created successfully" },
+      {
+        invitation,
+        acceptUrl,
+        message: "Invitation created successfully",
+      },
       { status: 201 }
     );
   } catch (error) {

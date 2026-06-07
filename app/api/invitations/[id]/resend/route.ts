@@ -10,7 +10,6 @@ import { InvitationStatus } from "@/lib/enums";
 import { Permissions } from "@/lib/permissions";
 import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
 import { sendInvitationEmail } from "@/lib/email";
-import { sendInvitationWhatsApp } from "@/lib/whatsapp";
 
 export async function POST(
   req: NextRequest,
@@ -35,15 +34,6 @@ export async function POST(
         { error: "Database not available" },
         { status: 503 }
       );
-    }
-
-    // Parse optional phone from request body for WhatsApp resend
-    let phone: string | undefined;
-    try {
-      const body = await req.json();
-      phone = body.phone?.replace?.(/^\+/, "") || undefined;
-    } catch {
-      // No body or invalid JSON — email-only resend is fine
     }
 
     const invitation = await db.invitation.findUnique({
@@ -87,31 +77,17 @@ export async function POST(
       role: invitation.role,
     });
 
-    // Send WhatsApp if phone provided
-    if (phone) {
-      try {
-        await sendInvitationWhatsApp(
-          phone,
-          invitation.name,
-          token,
-          invitation.role,
-          currentUser.name,
-        );
-      } catch (waError) {
-        console.error("[API] Failed to send WhatsApp on resend:", waError);
-      }
-    }
-
     await createAuditLog({
       action: "invitation.resent",
       targetType: "invitation",
       targetId: id,
       targetLabel: invitation.email,
-      metadata: { sentViaWhatsApp: !!phone },
+    metadata: {} as const,
     });
 
-    const sentVia = phone ? "Email & WhatsApp" : "Email";
-    return NextResponse.json({ success: true, message: `Invitation resent via ${sentVia}` });
+    const acceptUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/admin/invite/accept?token=${token}`;
+
+    return NextResponse.json({ success: true, acceptUrl, message: "Invitation resent via Email" });
   } catch (error) {
     console.error("[API] POST /api/invitations/[id]/resend error:", error);
     return NextResponse.json(
