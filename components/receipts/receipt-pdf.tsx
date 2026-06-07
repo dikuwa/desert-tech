@@ -33,14 +33,14 @@ const colors = {
   warning: "#d97706",
 };
 
-// Load the receipt icon — fall back gracefully if the file is missing
-let iconDataUri: string | null = null;
+// Load company logo (PNG) — PNG is the most reliably supported image format in @react-pdf/renderer
+let logoDataUri: string | null = null;
 try {
-  const iconPath = path.join(process.cwd(), "public", "images", "receipt-icon.svg");
-  iconDataUri = `data:image/svg+xml;base64,${readFileSync(iconPath).toString("base64")}`;
+  const logoPath = path.join(process.cwd(), "public", "images", "desertech-doc-logo.png");
+  logoDataUri = `data:image/png;base64,${readFileSync(logoPath).toString("base64")}`;
 } catch {
-  // Icon is not critical for PDF rendering
-  iconDataUri = null;
+  // Logo is not critical for PDF rendering
+  logoDataUri = null;
 }
 
 const styles = StyleSheet.create({
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   brand: { flexDirection: "row", alignItems: "flex-start" },
-  logo: { width: 38, height: 38, objectFit: "contain", marginRight: 10 },
+  logo: { width: 85, height: 28, objectFit: "contain", marginRight: 10 },
   companyName: { fontSize: 13, fontWeight: "bold", marginBottom: 3 },
   companyLine: { fontSize: 8, color: colors.muted, marginBottom: 2 },
   badge: {
@@ -218,7 +218,7 @@ export function ReceiptPDF({
         <View style={styles.document}>
           <View style={styles.header}>
             <View style={styles.brand}>
-              {iconDataUri && <Image src={iconDataUri} style={styles.logo} />}
+              {logoDataUri && <Image src={logoDataUri} style={styles.logo} />}
               <View>
                 <Text style={styles.companyName}>Desert Technology Consultant</Text>
                 <Text style={styles.companyLine}>{storeLocation}</Text>

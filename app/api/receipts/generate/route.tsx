@@ -34,17 +34,27 @@ function findOrder(orderIdOrNumber: string) {
       orderNumber: order.orderNumber,
       customerName: order.customerName,
       customerPhone: order.customerPhone,
-      items: [
-        ...(order.items?.length
-          ? order.items.map((item) => ({
-              name: item.name,
-              quantity: item.quantity,
-              unitPrice: item.unitPriceCents,
-              total: item.unitPriceCents * item.quantity,
-              sku: item.sku,
-            }))
-          : [{ name: "Order Items", quantity: order.itemCount, unitPrice: order.subtotalCents / order.itemCount, total: order.subtotalCents }]),
-      ],
+      items: order.items?.length
+        ? order.items.map((item) => ({
+            name: item.name,
+            quantity: item.quantity,
+            unitPrice: item.unitPriceCents,
+            total: item.unitPriceCents * item.quantity,
+            sku: item.sku,
+          }))
+        : Array.from({ length: order.itemCount }, (_, i) => {
+            const perItem = Math.round(order.subtotalCents / order.itemCount);
+            return {
+              name: `Product ${i + 1}`,
+              quantity: 1,
+              unitPrice: i === order.itemCount - 1
+                ? order.subtotalCents - perItem * (order.itemCount - 1)
+                : perItem,
+              total: i === order.itemCount - 1
+                ? order.subtotalCents - perItem * (order.itemCount - 1)
+                : perItem,
+            };
+          }),
       subtotalCents: order.subtotalCents,
       paymentStatus: order.paymentStatus,
       totalPaidCents,
