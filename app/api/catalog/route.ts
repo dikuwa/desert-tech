@@ -7,6 +7,7 @@ import { slugifyProduct } from "@/lib/product-records";
 
 const categorySchema = z.object({
   id: z.string().optional(),
+  slug: z.string().optional(),
   name: z.string().min(1),
   description: z.string().optional().default(""),
   isActive: z.boolean().default(true),
@@ -15,6 +16,7 @@ const categorySchema = z.object({
 
 const brandSchema = z.object({
   id: z.string().optional(),
+  slug: z.string().optional(),
   name: z.string().min(1),
   description: z.string().optional().default(""),
   logo: z.string().optional(),
@@ -71,10 +73,12 @@ export async function POST(request: Request) {
   const body = await request.json();
   const categories = z.array(categorySchema).parse(body.categories ?? []);
   const brands = z.array(brandSchema).parse(body.brands ?? []);
+  const replaceBrands = body.replaceBrands === true;
 
   await db.$transaction([
+    ...(replaceBrands ? [db.brand.deleteMany()] : []),
     ...categories.map((category) => {
-      const slug = slugifyProduct(category.name);
+      const slug = category.slug || slugifyProduct(category.name);
       return db!.category.upsert({
         where: { slug },
         update: {
@@ -93,7 +97,7 @@ export async function POST(request: Request) {
       });
     }),
     ...brands.map((brand) => {
-      const slug = slugifyProduct(brand.name);
+      const slug = brand.slug || slugifyProduct(brand.name);
       return db!.brand.upsert({
         where: { slug },
         update: {
