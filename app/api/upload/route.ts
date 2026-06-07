@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
 import { getCurrentUser } from "@/lib/auth-server";
 import { Permissions, hasPermission, type Permission } from "@/lib/permissions";
+import { uploadFile } from "@/lib/storage";
 
 /**
  * Map of upload context to required permissions.
@@ -116,17 +115,17 @@ export async function POST(request: NextRequest) {
     // Generate unique filename preserving the original extension
     const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
 
-    // Ensure uploads directory exists
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    await mkdir(uploadDir, { recursive: true });
+    const uploadResult = await uploadFile(
+      buffer,
+      `images/${filename}`,
+      file.type,
+    );
 
-    // Write file to disk
-    const filePath = path.join(uploadDir, filename);
-    await writeFile(filePath, buffer);
-
-    const url = `/uploads/${filename}`;
-
-    return NextResponse.json({ url, filename });
+    return NextResponse.json({
+      url: uploadResult.url,
+      filename,
+      key: uploadResult.key,
+    });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unknown error";

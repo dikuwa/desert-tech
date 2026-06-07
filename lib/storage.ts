@@ -11,6 +11,24 @@ export interface UploadResult {
   key: string;
 }
 
+function getR2Config() {
+  return {
+    endpoint:
+      process.env.R2_ENDPOINT ?? process.env.CLOUDFLARE_R2_ENDPOINT,
+    accessKeyId:
+      process.env.R2_ACCESS_KEY_ID ??
+      process.env.CLOUDFLARE_R2_ACCESS_KEY_ID,
+    secretAccessKey:
+      process.env.R2_SECRET_ACCESS_KEY ??
+      process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY,
+    bucketName:
+      process.env.R2_BUCKET_NAME ?? process.env.CLOUDFLARE_R2_BUCKET_NAME,
+    publicUrl:
+      process.env.R2_PUBLIC_URL ??
+      process.env.CLOUDFLARE_R2_PUBLIC_DEV_URL,
+  };
+}
+
 /**
  * Upload a file buffer to storage.
  * Falls back to a data URL when R2 is not configured.
@@ -20,13 +38,15 @@ export async function uploadFile(
   filename: string,
   contentType: string,
 ): Promise<UploadResult> {
-  const r2Endpoint = process.env.R2_ENDPOINT;
-  const r2AccessKey = process.env.R2_ACCESS_KEY_ID;
-  const r2SecretKey = process.env.R2_SECRET_ACCESS_KEY;
-  const r2Bucket = process.env.R2_BUCKET_NAME;
+  const config = getR2Config();
 
-  if (r2Endpoint && r2AccessKey && r2SecretKey && r2Bucket) {
-    return uploadToR2(buffer, filename, contentType);
+  if (
+    config.endpoint &&
+    config.accessKeyId &&
+    config.secretAccessKey &&
+    config.bucketName
+  ) {
+    return uploadToR2(buffer, filename, contentType, config);
   }
 
   // Fallback: return a data URL for development
@@ -39,6 +59,7 @@ async function uploadToR2(
   buffer: Buffer,
   filename: string,
   contentType: string,
+  config: ReturnType<typeof getR2Config>,
 ): Promise<UploadResult> {
   // R2 upload uses the S3-compatible API
   const { S3Client, PutObjectCommand } = await import(
@@ -47,27 +68,27 @@ async function uploadToR2(
 
   const client = new S3Client({
     region: "auto",
-    endpoint: process.env.R2_ENDPOINT,
+    endpoint: config.endpoint,
     credentials: {
-      accessKeyId: process.env.R2_ACCESS_KEY_ID!,
-      secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+      accessKeyId: config.accessKeyId!,
+      secretAccessKey: config.secretAccessKey!,
     },
   });
 
-  const key = `receipts/${filename}`;
+  const key = filename.includes("/") ? filename : `receipts/${filename}`;
 
   await client.send(
     new PutObjectCommand({
-      Bucket: process.env.R2_BUCKET_NAME!,
+      Bucket: config.bucketName!,
       Key: key,
       Body: buffer,
       ContentType: contentType,
     }),
   );
 
-  const publicUrl = process.env.R2_PUBLIC_URL
-    ? `${process.env.R2_PUBLIC_URL}/${key}`
-    : `${process.env.R2_ENDPOINT}/${process.env.R2_BUCKET_NAME}/${key}`;
+  const publicUrl = config.publicUrl
+    ? `${config.publicUrl.replace(/\/$/, "")}/${key}`
+    : `${config.endpoint}/${config.bucketName}/${key}`;
 
   return { url: publicUrl, key };
 }
