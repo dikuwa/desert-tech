@@ -6,16 +6,28 @@ import Link from "next/link";
 import { Search, X, ArrowRight } from "lucide-react";
 import { ProductCard } from "@/components/storefront/product-card";
 import type { ProductData } from "@/components/storefront/product-card";
-import { searchProducts } from "@/lib/data";
+import { useDashboardStore } from "@/lib/store/dashboard";
+import { mergeProducts } from "@/lib/data";
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
   const query = searchParams.get("q") || "";
+  
+  const products = useDashboardStore((s) => s.products);
+  const categories = useDashboardStore((s) => s.categories);
 
   const results = useMemo(() => {
     if (!query.trim()) return [];
-    return searchProducts(query.trim());
-  }, [query]);
+    const allProducts = mergeProducts(products, categories);
+    const q = query.toLowerCase();
+    return allProducts.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.brand.toLowerCase().includes(q) ||
+        p.categoryName.toLowerCase().includes(q) ||
+        p.specs.toLowerCase().includes(q),
+    );
+  }, [query, products, categories]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

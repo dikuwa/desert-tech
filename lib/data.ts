@@ -88,6 +88,29 @@ export function getCategoryBySlug(slug: string): CategoryData | undefined {
   return undefined;
 }
 
+"use client";
+
+import { useDashboardStore } from "@/lib/store/dashboard";
+
+export function useSearchProducts(query: string): ProductData[] {
+  const products = useDashboardStore((s) => s.products);
+  const categories = useDashboardStore((s) => s.categories);
+  
+  if (!query.trim()) return [];
+  
+  const q = query.toLowerCase();
+  const mappedProducts = mergeProducts(products, categories);
+  
+  return mappedProducts.filter(
+    (p) =>
+      p.name.toLowerCase().includes(q) ||
+      p.brand.toLowerCase().includes(q) ||
+      p.categoryName.toLowerCase().includes(q) ||
+      p.specs.toLowerCase().includes(q),
+  );
+}
+
+// Keep for compatibility - returns empty array, use useSearchProducts hook instead
 export function searchProducts(query: string): ProductData[] {
   return [];
 }
