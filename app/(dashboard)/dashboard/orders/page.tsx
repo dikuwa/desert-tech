@@ -253,17 +253,17 @@ export default function OrdersPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="font-medium text-foreground">
+                      <div className="font-medium text-foreground truncate max-w-[150px]">
                         {order.customerName}
                       </div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-xs text-muted-foreground truncate max-w-[150px]">
                         {order.customerPhone}
                       </div>
                     </td>
                     <td className="px-4 py-3">
                       <span
                         className={cn(
-                          "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium",
+                          "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
                           getStatusBadgeClass(order.contactStatus),
                         )}
                       >
@@ -273,7 +273,7 @@ export default function OrdersPage() {
                     <td className="px-4 py-3">
                       <span
                         className={cn(
-                          "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium",
+                          "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
                           getStatusBadgeClass(order.paymentStatus),
                         )}
                       >
@@ -283,7 +283,7 @@ export default function OrdersPage() {
                     <td className="px-4 py-3">
                       <span
                         className={cn(
-                          "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium",
+                          "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
                           getStatusBadgeClass(order.fulfillmentStatus),
                         )}
                       >
