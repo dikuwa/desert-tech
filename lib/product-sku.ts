@@ -1,12 +1,47 @@
 const CATEGORY_SKU_CODES: Record<string, string> = {
+  // Apple/Mac products
   Apple: "APP",
+  Mac: "APP",
+  MacBooks: "APP",
+  // Windows laptops
   Windows: "LAP",
+  Laptops: "LAP",
+  // Desktops
+  Desktops: "DESK",
+  // Gaming
   Gaming: "GAME",
+  "Gaming PCs": "GAME",
+  "Gaming PC": "GAME",
+  // Security
   "CCTV & Security": "CCTV",
+  "CCTV Security": "CCTV",
+  CCTV: "CCTV",
+  Security: "CCTV",
+  // Business systems
   "POS Systems": "POS",
+  POS: "POS",
+  // Accessories
   Accessories: "ACC",
+  // Mobile devices
   "Phones & Tablets": "PHT",
+  Phones: "PHT",
+  Tablets: "PHT",
+  // Networking
   Networking: "NET",
+  Network: "NET",
+  // Displays
+  "TVs & Displays": "TV",
+  TVs: "TV",
+  Displays: "TV",
+  Monitors: "TV",
+  // Audio
+  Audio: "AUD",
+  // Components
+  Components: "COMP",
+  // Printers
+  Printers: "PRT",
+  // Services
+  Services: "SVC",
   "Auto Services": "AUTO",
 };
 
