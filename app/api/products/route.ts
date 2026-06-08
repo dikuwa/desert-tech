@@ -96,7 +96,7 @@ export async function POST(request: Request) {
             : data.stockQuantity <= data.lowStockThreshold
               ? "LowStock"
               : "InStock"),
-        warranty: data.warranty || null,
+        warranty: data.warranty?.trim() || "6 Months",
         isFeatured: data.isFeatured,
         isPublished: data.isPublished,
         images: {

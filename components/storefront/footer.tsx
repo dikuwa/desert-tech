@@ -44,7 +44,7 @@ export function StorefrontFooter() {
             <ul className="mt-4 space-y-2">
               {[
                 { href: "/shop", label: "Shop Products" },
-                { href: "/services", label: "Services" },
+                { href: "/services", label: "Our Services" },
                 { href: "/promotions", label: "Promotions" },
                 { href: "/contact", label: "Contact Us" },
               ].map((link) => (

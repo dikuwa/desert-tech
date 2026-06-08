@@ -24,7 +24,7 @@ export default function NewProductPage() {
   const [uploading, setUploading] = useState(false);    const [form, setForm] = useState({
     name: "", brand: "", category: "Apple", condition: "New" as const,
     priceCents: 0, stockQuantity: 0, reorderLimit: 5,
-    description: "", sku: generateProductSku("Apple", products), skuWasManuallyEdited: false, warranty: "", isFeatured: false,
+    description: "", sku: generateProductSku("Apple", products), skuWasManuallyEdited: false, warranty: "6 Months", isFeatured: false,
     priceWas: 0,
   });
 
@@ -217,7 +217,7 @@ export default function NewProductPage() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground">Warranty</label>
-                  <input value={form.warranty} onChange={e => updateField("warranty", e.target.value)} className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" placeholder="1 Year" />
+                  <input value={form.warranty} onChange={e => updateField("warranty", e.target.value)} className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" placeholder="6 Months" />
                 </div>
               </div>
             </div>

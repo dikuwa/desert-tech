@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { ProductCard } from "@/components/storefront/product-card";
 import type { ProductData } from "@/components/storefront/product-card";
+import { cn } from "@/lib/utils";
 import {
   dashboardCategoryToCategoryData,
   ALL_CONDITIONS,
@@ -38,6 +39,71 @@ const SORT_OPTIONS = [
   { value: "price-desc", label: "Price: High to Low" },
   { value: "rating", label: "Highest Rated" },
 ];
+
+function ShopFilterSection({
+  title,
+  isActive,
+  isCollapsed,
+  onToggle,
+  children,
+  scroll = false,
+}: {
+  title: string;
+  isActive: boolean;
+  isCollapsed: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+  scroll?: boolean;
+}) {
+  return (
+    <div className="overflow-hidden rounded-lg border border-border bg-card">
+      <button
+        type="button"
+        onClick={onToggle}
+        className={cn(
+          "flex w-full items-center justify-between px-4 py-3 text-sm font-semibold transition-colors",
+          isActive ? "bg-accent/50 text-primary" : "text-foreground hover:bg-muted",
+        )}
+      >
+        <span>{title}</span>
+        {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+      </button>
+      {!isCollapsed && (
+        <div className={cn("space-y-0.5 px-2 pb-3", scroll && "max-h-60 overflow-y-auto")}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ShopFilterOption({
+  label,
+  count,
+  active,
+  onClick,
+}: {
+  label: string;
+  count?: number;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "flex w-full items-center justify-between rounded-md px-3 py-1.5 text-left text-sm transition-colors",
+        active
+          ? "bg-accent font-semibold text-primary"
+          : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+      )}
+    >
+      <span>{label}</span>
+      {count !== undefined && <span className="text-xs text-muted-foreground">{count}</span>}
+    </button>
+  );
+}
 
 function ShopContent() {
   const router = useRouter();
@@ -195,188 +261,97 @@ function ShopContent() {
   const FilterSidebar = () => (
     <div className="space-y-4">
       {/* Category Filter */}
-      <div className="rounded-lg border border-border bg-card overflow-hidden">
-        <button
-          onClick={() => toggleFilter("category")}
-          className={`flex w-full items-center justify-between px-4 py-3 text-sm font-semibold transition-colors ${
-            selectedCategory !== "all" ? "text-primary bg-accent/50" : "text-foreground hover:bg-muted"
-          }`}
-        >
-          <span>Category</span>
-          {collapsedFilters.category ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-        </button>
-        {!collapsedFilters.category && (
-          <div className="space-y-0.5 px-2 pb-3">
-            <button
-              onClick={() => handleCategoryChange("all")}
-              className={`flex w-full items-center justify-between rounded-md px-3 py-1.5 text-left text-sm transition-colors ${
-                selectedCategory === "all"
-                  ? "bg-accent text-primary font-semibold"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              }`}
-            >
-              <span>All Products</span>
-              <span className="text-xs text-muted-foreground">{categoryCounts.all}</span>
-            </button>
-            {categories.map((cat) => (
-              <button
-                key={cat.slug}
-                onClick={() => handleCategoryChange(cat.slug)}
-                className={`flex w-full items-center justify-between rounded-md px-3 py-1.5 text-left text-sm transition-colors ${
-                  selectedCategory === cat.slug
-                    ? "bg-accent text-primary font-semibold"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                }`}
-              >
-                <span>{cat.name}</span>
-                <span className="text-xs text-muted-foreground">
-                  {categoryCounts[cat.slug] || 0}
-                </span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+      <ShopFilterSection
+        title="Category"
+        isActive={selectedCategory !== "all"}
+        isCollapsed={collapsedFilters.category}
+        onToggle={() => toggleFilter("category")}
+      >
+        <ShopFilterOption
+          label="All Products"
+          count={categoryCounts.all}
+          active={selectedCategory === "all"}
+          onClick={() => handleCategoryChange("all")}
+        />
+        {categories.map((cat) => (
+          <ShopFilterOption
+            key={cat.slug}
+            label={cat.name}
+            count={categoryCounts[cat.slug] || 0}
+            active={selectedCategory === cat.slug}
+            onClick={() => handleCategoryChange(cat.slug)}
+          />
+        ))}
+      </ShopFilterSection>
 
       {/* Brand Filter */}
-      <div className="rounded-lg border border-border bg-card overflow-hidden">
-        <button
-          onClick={() => toggleFilter("brand")}
-          className={`flex w-full items-center justify-between px-4 py-3 text-sm font-semibold transition-colors ${
-            selectedBrand !== "all" ? "text-primary bg-accent/50" : "text-foreground hover:bg-muted"
-          }`}
-        >
-          <span>Brand</span>
-          {collapsedFilters.brand ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-        </button>
-        {!collapsedFilters.brand && (
-          <div className="space-y-0.5 px-2 pb-3 max-h-60 overflow-y-auto">
-            <button
-              onClick={() => handleBrandChange("all")}
-              className={`flex w-full items-center justify-between rounded-md px-3 py-1.5 text-left text-sm transition-colors ${
-                selectedBrand === "all"
-                  ? "bg-accent text-primary font-semibold"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={selectedBrand === "all"}
-                  readOnly
-                  className="h-3.5 w-3.5 rounded border-gray-300 text-primary focus:ring-primary"
-                />
-                <span>All Brands</span>
-              </div>
-              <span className="text-xs text-muted-foreground">{brandCounts.all}</span>
-            </button>
-            {BRANDS.map((brand) => (
-              <button
-                key={brand}
-                onClick={() => handleBrandChange(selectedBrand === brand ? "all" : brand)}
-                className={`flex w-full items-center justify-between rounded-md px-3 py-1.5 text-left text-sm transition-colors ${
-                  selectedBrand === brand
-                    ? "bg-accent text-primary font-semibold"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={selectedBrand === brand}
-                    readOnly
-                    className="h-3.5 w-3.5 rounded border-gray-300 text-primary focus:ring-primary"
-                  />
-                  <span>{brand}</span>
-                </div>
-                <span className="text-xs text-muted-foreground">
-                  {brandCounts[brand] || 0}
-                </span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+      <ShopFilterSection
+        title="Brand"
+        isActive={selectedBrand !== "all"}
+        isCollapsed={collapsedFilters.brand}
+        onToggle={() => toggleFilter("brand")}
+        scroll
+      >
+        <ShopFilterOption
+          label="All Brands"
+          count={brandCounts.all}
+          active={selectedBrand === "all"}
+          onClick={() => handleBrandChange("all")}
+        />
+        {BRANDS.map((brand) => (
+          <ShopFilterOption
+            key={brand}
+            label={brand}
+            count={brandCounts[brand] || 0}
+            active={selectedBrand === brand}
+            onClick={() => handleBrandChange(brand)}
+          />
+        ))}
+      </ShopFilterSection>
 
       {/* Availability Filter */}
-      <div className="rounded-lg border border-border bg-card overflow-hidden">
-        <button
-          onClick={() => toggleFilter("availability")}
-          className={`flex w-full items-center justify-between px-4 py-3 text-sm font-semibold transition-colors ${
-            selectedAvailability !== "all" ? "text-primary bg-accent/50" : "text-foreground hover:bg-muted"
-          }`}
-        >
-          <span>Availability</span>
-          {collapsedFilters.availability ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-        </button>
-        {!collapsedFilters.availability && (
-          <div className="space-y-0.5 px-2 pb-3">
-            <button
-              onClick={() => handleAvailabilityChange("all")}
-              className={`flex w-full items-center rounded-md px-3 py-1.5 text-left text-sm transition-colors ${
-                selectedAvailability === "all"
-                  ? "bg-accent text-primary font-semibold"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              }`}
-            >
-              All Items
-            </button>
-            {ALL_AVAILABILITY.map((avail) => (
-              <button
-                key={avail.value}
-                onClick={() => handleAvailabilityChange(avail.value)}
-                className={`flex w-full items-center rounded-md px-3 py-1.5 text-left text-sm transition-colors ${
-                  selectedAvailability === avail.value
-                    ? "bg-accent text-primary font-semibold"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                }`}
-              >
-                {avail.label}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+      <ShopFilterSection
+        title="Availability"
+        isActive={selectedAvailability !== "all"}
+        isCollapsed={collapsedFilters.availability}
+        onToggle={() => toggleFilter("availability")}
+      >
+        <ShopFilterOption
+          label="All Items"
+          active={selectedAvailability === "all"}
+          onClick={() => handleAvailabilityChange("all")}
+        />
+        {ALL_AVAILABILITY.map((avail) => (
+          <ShopFilterOption
+            key={avail.value}
+            label={avail.label}
+            active={selectedAvailability === avail.value}
+            onClick={() => handleAvailabilityChange(avail.value)}
+          />
+        ))}
+      </ShopFilterSection>
 
       {/* Condition Filter */}
-      <div className="rounded-lg border border-border bg-card overflow-hidden">
-        <button
-          onClick={() => toggleFilter("condition")}
-          className={`flex w-full items-center justify-between px-4 py-3 text-sm font-semibold transition-colors ${
-            selectedCondition !== "all" ? "text-primary bg-accent/50" : "text-foreground hover:bg-muted"
-          }`}
-        >
-          <span>Condition</span>
-          {collapsedFilters.condition ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-        </button>
-        {!collapsedFilters.condition && (
-          <div className="space-y-0.5 px-2 pb-3">
-            <button
-              onClick={() => handleConditionChange("all")}
-              className={`flex w-full items-center rounded-md px-3 py-1.5 text-left text-sm transition-colors ${
-                selectedCondition === "all"
-                  ? "bg-accent text-primary font-semibold"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              }`}
-            >
-              All Conditions
-            </button>
-            {ALL_CONDITIONS.map((cond) => (
-              <button
-                key={cond}
-                onClick={() => handleConditionChange(cond)}
-                className={`flex w-full items-center rounded-md px-3 py-1.5 text-left text-sm transition-colors ${
-                  selectedCondition === cond
-                    ? "bg-accent text-primary font-semibold"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                }`}
-              >
-                {cond}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+      <ShopFilterSection
+        title="Condition"
+        isActive={selectedCondition !== "all"}
+        isCollapsed={collapsedFilters.condition}
+        onToggle={() => toggleFilter("condition")}
+      >
+        <ShopFilterOption
+          label="All Conditions"
+          active={selectedCondition === "all"}
+          onClick={() => handleConditionChange("all")}
+        />
+        {ALL_CONDITIONS.map((cond) => (
+          <ShopFilterOption
+            key={cond}
+            label={cond}
+            active={selectedCondition === cond}
+            onClick={() => handleConditionChange(cond)}
+          />
+        ))}
+      </ShopFilterSection>
 
       {hasActiveFilters && (
         <button

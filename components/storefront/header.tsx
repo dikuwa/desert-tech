@@ -474,7 +474,7 @@ export function StorefrontHeader() {
                 pathname === "/services" ? "text-primary" : "text-muted-foreground hover:text-foreground"
               )}
             >
-              Services
+              Our Services
             </Link>
             <Link
               href="/contact"
