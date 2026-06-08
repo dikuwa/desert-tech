@@ -216,8 +216,8 @@ function CategoriesSection() {
                   </div>
                   <div className="flex items-center gap-1">
                     <button onClick={() => startEdit(cat)} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"><Pencil className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => handleToggle(cat.id)} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                      {cat.isActive ? <X className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
+                    <button onClick={() => handleToggle(cat.id)} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title={cat.isActive ? "Deactivate" : "Activate"}>
+                      {cat.isActive ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                     </button>
                     {deleteConfirm === cat.id ? (
                       <button onClick={() => handleDelete(cat.id)} className="rounded-md p-1.5 text-success hover:bg-success-soft transition-colors" title="Confirm delete"><Trash2 className="h-3.5 w-3.5" /></button>
@@ -427,7 +427,7 @@ function BrandsSection() {
                   <div className="flex items-center gap-1">
                     <button onClick={() => startEdit(br)} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
                     <button onClick={() => handleToggle(br.id)} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title={br.isActive ? "Deactivate" : "Activate"}>
-                      {br.isActive ? <X className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
+                      {br.isActive ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                     </button>
                     {deleteConfirm === br.id ? (
                       <button onClick={() => handleDelete(br.id)} className="rounded-md p-1.5 text-success hover:bg-success-soft transition-colors" title="Confirm delete"><Trash2 className="h-3.5 w-3.5" /></button>
