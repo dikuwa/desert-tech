@@ -102,6 +102,7 @@ export interface DashboardPromotion {
   slug: string;
   description: string;
   imageUrl?: string;
+  images?: string[];
   discountLabel?: string;
   placement: string;
   isActive: boolean;
