@@ -7,13 +7,12 @@ import {
   ArrowLeft,
   Plus,
   Trash2,
-  DollarSign,
-  Save,
   User,
   ShoppingBag,
   CreditCard,
   Search,
   Check,
+  Save,
 } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
@@ -37,6 +36,140 @@ interface LineItem {
 
 const PAYMENT_METHODS = ["BankTransfer", "Cash", "PhoneTransfer", "Card", "Other"] as const;
 const CONTACT_METHODS = ["WhatsApp", "Phone", "Email"] as const;
+
+// Section card component
+function SectionCard({ 
+  children, 
+  className 
+}: { 
+  children: React.ReactNode; 
+  className?: string;
+}) {
+  return (
+    <div className={cn("rounded-xl border border-border bg-card", className)}>
+      {children}
+    </div>
+  );
+}
+
+// Section header with icon - using original icons with orange accent
+function SectionHeader({ 
+  icon: Icon, 
+  title,
+  action
+}: { 
+  icon: React.ElementType; 
+  title: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between pb-4 mb-4 border-b border-border">
+      <div className="flex items-center gap-2.5">
+        <Icon className="h-5 w-5 text-primary" />
+        <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+      </div>
+      {action}
+    </div>
+  );
+}
+
+// Form field label
+function FieldLabel({ 
+  children, 
+  required,
+  hint
+}: { 
+  children: React.ReactNode; 
+  required?: boolean;
+  hint?: string;
+}) {
+  return (
+    <label className="block text-sm font-medium text-foreground mb-1.5">
+      {children}
+      {required && <span className="text-destructive ml-0.5">*</span>}
+      {hint && <span className="text-muted-foreground font-normal ml-1">{hint}</span>}
+    </label>
+  );
+}
+
+// Text input with search icon
+function SearchInput({ 
+  value,
+  onChange,
+  onFocus,
+  onBlur,
+  placeholder,
+  inputRef
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
+  placeholder?: string;
+  inputRef?: React.RefObject<HTMLInputElement | null>;
+}) {
+  return (
+    <div className="relative">
+      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <input
+        ref={inputRef}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onFocus={onFocus}
+        onBlur={onBlur}
+        className="h-11 w-full rounded-lg border border-border bg-background pl-10 pr-3 text-sm placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20 transition-colors"
+        placeholder={placeholder}
+      />
+    </div>
+  );
+}
+
+// Standard text input
+function TextInput({ 
+  className, 
+  ...props 
+}: React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input
+      className={cn(
+        "h-11 w-full rounded-lg border border-border bg-background px-3 text-sm",
+        "placeholder:text-muted-foreground/60",
+        "focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20",
+        "transition-colors",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+// Contact method toggle button
+function ContactToggle({
+  method,
+  label,
+  isSelected,
+  onToggle
+}: {
+  method: string;
+  label: string;
+  isSelected: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className={cn(
+        "rounded-lg px-4 py-2 text-sm font-medium transition-colors",
+        isSelected
+          ? "bg-primary text-primary-foreground"
+          : "border border-border text-foreground hover:bg-muted"
+      )}
+    >
+      {label}
+    </button>
+  );
+}
 
 export default function NewWalkinOrderPage() {
   const router = useRouter();
@@ -145,8 +278,6 @@ export default function NewWalkinOrderPage() {
       });
 
       toast.success(`Order ${newOrder.orderNumber} created`);
-
-      // Navigate to the receipt page
       router.push(`/dashboard/orders/${newOrder.id}/receipt`);
     } catch (err) {
       toast.error("Failed to create order");
@@ -155,25 +286,37 @@ export default function NewWalkinOrderPage() {
     }
   };
 
+  // Toggle contact method
+  const toggleContact = (method: string) => {
+    setPreferredContact(prev =>
+      prev.includes(method)
+        ? prev.filter(c => c !== method)
+        : [...prev, method]
+    );
+  };
+
   return (
-    <div className="space-y-6 max-w-3xl mx-auto">
-      {/* Back */}
+    <div className="space-y-5 max-w-3xl mx-auto">
+      {/* Back link */}
       <Link
         href="/dashboard/orders"
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
         Orders
       </Link>
 
-      <h1 className="text-2xl font-bold tracking-tight text-foreground">
-        {sourceQuotation ? `Create Order from ${sourceQuotation.quotationNumber}` : "New Walk-in Order"}
-      </h1>
-      <p className="text-sm text-muted-foreground -mt-4">
-        {sourceQuotation
-          ? "Quotation details are prefilled. Review and edit anything needed before creating the order."
-          : "Record an in-store or WhatsApp purchase manually."}
-      </p>
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          {sourceQuotation ? `Create Order from ${sourceQuotation.quotationNumber}` : "New Walk-in Order"}
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          {sourceQuotation
+            ? "Quotation details are prefilled. Review and edit anything needed before creating the order."
+            : "Record an in-store or WhatsApp purchase manually."}
+        </p>
+      </div>
 
       <form
         onSubmit={(e) => {
@@ -183,34 +326,28 @@ export default function NewWalkinOrderPage() {
         className="space-y-5"
       >
         {/* Customer Details */}
-        <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-            <User className="h-4 w-4 text-muted-foreground" />
-            Customer Details
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="sm:col-span-2 relative" ref={customerSearchRef}>
-              <label className="text-sm font-medium text-foreground">
-                Full Name <span className="text-destructive">*</span>
-              </label>
-              <div className="relative mt-1.5">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  ref={customerInputRef}
-                  value={customerName}
-                  onChange={(e) => {
-                    setCustomerName(e.target.value);
-                    setShowCustomerSearch(true);
-                  }}
-                  onFocus={() => setShowCustomerSearch(true)}
-                  onBlur={() => setTimeout(() => setShowCustomerSearch(false), 200)}
-                  className="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-                  placeholder="Search existing customer or type new name"
-                />
-              </div>
+        <SectionCard className="p-5">
+          <SectionHeader icon={User} title="Customer Details" />
+          
+          <div className="space-y-4">
+            {/* Full Name */}
+            <div ref={customerSearchRef} className="relative">
+              <FieldLabel required>Full Name</FieldLabel>
+              <SearchInput
+                inputRef={customerInputRef}
+                value={customerName}
+                onChange={(value) => {
+                  setCustomerName(value);
+                  setShowCustomerSearch(true);
+                }}
+                onFocus={() => setShowCustomerSearch(true)}
+                onBlur={() => setTimeout(() => setShowCustomerSearch(false), 200)}
+                placeholder="Search existing customer or type new name"
+              />
+              
               {/* Customer search dropdown */}
               {showCustomerSearch && matchingCustomers.length > 0 && (
-                <div className="absolute z-50 mt-1 w-full rounded-lg border border-border bg-card shadow-lg overflow-hidden">
+                <div className="absolute z-50 mt-1.5 w-full rounded-lg border border-border bg-card shadow-lg overflow-hidden">
                   {matchingCustomers.map((c) => (
                     <button
                       key={c.id}
@@ -226,7 +363,9 @@ export default function NewWalkinOrderPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-foreground">{c.fullName}</p>
-                        <p className="text-xs text-muted-foreground">{c.phone} &middot; {Array.isArray(c.preferredContact) ? c.preferredContact.join(", ") : c.preferredContact}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {c.phone} &middot; {Array.isArray(c.preferredContact) ? c.preferredContact.join(", ") : c.preferredContact}
+                        </p>
                       </div>
                       <div className="text-xs text-muted-foreground">
                         {c.orderCount} order{c.orderCount !== 1 ? "s" : ""}
@@ -237,90 +376,105 @@ export default function NewWalkinOrderPage() {
                 </div>
               )}
             </div>
-            <div>
-              <label className="text-sm font-medium text-foreground">
-                Phone <span className="text-destructive">*</span>
-              </label>
-              <input
-                value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value)}
-                className="mt-1.5 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-                placeholder="+264 81 234 5678"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground">
-                Preferred Contact <span className="text-[10px] text-muted-foreground">(select all that apply)</span>
-              </label>
-              <div className="mt-1.5 flex flex-wrap gap-1.5">
-                {CONTACT_METHODS.map((m) => {
-                  const isSelected = preferredContact.includes(m);
-                  return (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => {
-                        setPreferredContact(
-                          isSelected
-                            ? preferredContact.filter((c) => c !== m)
-                            : [...preferredContact, m],
-                        );
-                      }}
-                      className={cn(
-                        "rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors",
-                        isSelected
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "border-border text-muted-foreground hover:text-foreground hover:bg-muted",
-                      )}
-                    >
-                      {m === "WhatsApp" ? "WhatsApp" : m === "Phone" ? "Phone Call" : "Email"}
-                    </button>
-                  );
-                })}
+
+            {/* Phone and Preferred Contact */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <FieldLabel required>Phone</FieldLabel>
+                <TextInput
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  placeholder="0814942473"
+                />
+              </div>
+              <div>
+                <FieldLabel hint="(select all that apply)">Preferred Contact</FieldLabel>
+                <div className="flex flex-wrap gap-2 mt-1.5">
+                  <ContactToggle
+                    method="WhatsApp"
+                    label="WhatsApp"
+                    isSelected={preferredContact.includes("WhatsApp")}
+                    onToggle={() => toggleContact("WhatsApp")}
+                  />
+                  <ContactToggle
+                    method="Phone"
+                    label="Phone Call"
+                    isSelected={preferredContact.includes("Phone")}
+                    onToggle={() => toggleContact("Phone")}
+                  />
+                  <ContactToggle
+                    method="Email"
+                    label="Email"
+                    isSelected={preferredContact.includes("Email")}
+                    onToggle={() => toggleContact("Email")}
+                  />
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </SectionCard>
 
         {/* Items */}
-        <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-              <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-              Items
-            </h2>
-            <button
-              type="button"
-              onClick={addItem}
-              className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Add Item
-            </button>
+        <SectionCard className="p-5">
+          <SectionHeader 
+            icon={ShoppingBag} 
+            title="Items"
+            action={
+              <button
+                type="button"
+                onClick={addItem}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/5 transition-colors"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add Item
+              </button>
+            }
+          />
+
+          {/* Items Table Header */}
+          <div className="grid grid-cols-12 gap-3 mb-2 px-1">
+            <div className="col-span-5">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Item Name
+              </span>
+            </div>
+            <div className="col-span-2">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Qty
+              </span>
+            </div>
+            <div className="col-span-4">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Price
+              </span>
+            </div>
+            <div className="col-span-1" />
           </div>
 
+          {/* Items List */}
           <div className="space-y-2">
             {items.map((item, idx) => (
               <div
                 key={idx}
-                className="grid grid-cols-12 gap-2 items-end rounded-lg bg-muted/30 p-3 relative"
+                className="grid grid-cols-12 gap-3 items-start relative"
               >
-                <div className="col-span-5">
-                  <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">
-                    Item Name
-                  </label>
-                  <Search className="absolute left-3 top-[34px] h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-                  <input
-                    value={item.name}
-                    onChange={(e) => {
-                      updateItem(idx, "name", e.target.value);
-                      setActiveProductSearch(idx);
-                    }}
-                    onFocus={() => setActiveProductSearch(idx)}
-                    onBlur={() => setTimeout(() => setActiveProductSearch(null), 200)}
-                    className="h-9 w-full rounded-lg border border-border bg-background pl-8 pr-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-                    placeholder="Search product or type name"
-                  />
+                {/* Item Name with Search */}
+                <div className="col-span-5 relative">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                    <input
+                      value={item.name}
+                      onChange={(e) => {
+                        updateItem(idx, "name", e.target.value);
+                        setActiveProductSearch(idx);
+                      }}
+                      onFocus={() => setActiveProductSearch(idx)}
+                      onBlur={() => setTimeout(() => setActiveProductSearch(null), 200)}
+                      className="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20"
+                      placeholder="Search product or type name"
+                    />
+                  </div>
+                  
                   {/* Product search dropdown */}
                   {activeProductSearch === idx && (() => {
                     const q = item.name.toLowerCase();
@@ -331,7 +485,7 @@ export default function NewWalkinOrderPage() {
                     ).slice(0, 6);
                     if (!q || matches.length === 0) return null;
                     return (
-                      <div className="absolute left-0 right-0 top-full z-50 mt-0.5 rounded-lg border border-border bg-card shadow-lg overflow-hidden">
+                      <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-lg border border-border bg-card shadow-lg overflow-hidden">
                         {matches.map((p) => (
                           <button
                             key={p.id}
@@ -356,10 +510,9 @@ export default function NewWalkinOrderPage() {
                     );
                   })()}
                 </div>
+
+                {/* Quantity */}
                 <div className="col-span-2">
-                  <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">
-                    Qty
-                  </label>
                   <input
                     type="number"
                     min={1}
@@ -367,25 +520,26 @@ export default function NewWalkinOrderPage() {
                     onChange={(e) =>
                       updateItem(idx, "quantity", parseInt(e.target.value) || 1)
                     }
-                    className="h-9 w-full rounded-lg border border-border bg-background px-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    className="h-10 w-full rounded-lg border border-border bg-background px-2.5 text-sm text-center focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20"
                   />
                 </div>
+
+                {/* Price */}
                 <div className="col-span-4">
-                  <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">
-                    Price
-                  </label>
                   <MoneyInput
                     value={item.unitPriceCents}
                     onChange={(v) => updateItem(idx, "unitPriceCents", v)}
-                    className="h-9 text-sm"
+                    className="h-10"
                   />
                 </div>
-                <div className="col-span-1 flex items-end pb-0.5">
+
+                {/* Remove Button */}
+                <div className="col-span-1 flex justify-end">
                   <button
                     type="button"
                     onClick={() => removeItem(idx)}
                     disabled={items.length <= 1}
-                    className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -395,66 +549,53 @@ export default function NewWalkinOrderPage() {
           </div>
 
           {/* Subtotal */}
-          <div className="flex items-center justify-between border-t border-border pt-3">
+          <div className="flex items-center justify-between border-t border-border pt-4 mt-4">
             <span className="text-sm text-muted-foreground">
               {itemCount} item{itemCount !== 1 ? "s" : ""}
             </span>
-            <span className="text-lg font-bold text-foreground">
+            <span className="text-xl font-bold text-foreground">
               {formatCents(subtotalCents)}
             </span>
           </div>
-        </div>
+        </SectionCard>
 
         {/* Payment */}
-        <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-              <CreditCard className="h-4 w-4 text-muted-foreground" />
-              Payment
-            </h2>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <span className="text-xs text-muted-foreground">Record payment now</span>
-              <input
-                type="checkbox"
-                checked={recordPayment}
-                onChange={(e) => setRecordPayment(e.target.checked)}
-                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-              />
-            </label>
-          </div>
+        <SectionCard className="p-5">
+          <SectionHeader 
+            icon={CreditCard} 
+            title="Payment"
+            action={
+              <label className="flex items-center gap-2 cursor-pointer">
+                <span className="text-sm text-muted-foreground">Record payment now</span>
+                <input
+                  type="checkbox"
+                  checked={recordPayment}
+                  onChange={(e) => setRecordPayment(e.target.checked)}
+                  className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                />
+              </label>
+            }
+          />
 
-          {recordPayment && (
-            <div className="space-y-3 p-3 rounded-lg bg-muted/30">
-              <p className="text-xs text-muted-foreground">
-                Total: <strong className="text-foreground">{formatCents(subtotalCents)}</strong>
-                {paymentAmountCents > 0 && (
-                  <span className="ml-2">
-                    &rarr; {paymentAmountCents >= subtotalCents ? "Paid in full" : `Deposit: ${formatCents(paymentAmountCents)}`}
-                    {paymentAmountCents > 0 && paymentAmountCents < subtotalCents && (
-                      <span className="text-destructive ml-1">
-                        (Balance: {formatCents(subtotalCents - paymentAmountCents)})
-                      </span>
-                    )}
-                  </span>
-                )}
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {recordPayment ? (
+            <div className="space-y-4 pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">
+                  <label className="text-xs font-medium text-foreground mb-1.5 block">
                     Amount
                   </label>
                   <MoneyInput
                     value={paymentAmountCents}
                     onChange={setPaymentAmountCents}
-                    className="h-9 text-sm"
+                    className="h-10"
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">
+                  <label className="text-xs font-medium text-foreground mb-1.5 block">
                     Method
                   </label>
                   <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                    <SelectTrigger className="h-9 text-xs rounded-lg border border-border bg-background px-3 focus:border-primary focus:ring-1 focus:ring-primary/30">
+                    <SelectTrigger className="h-10 text-sm rounded-lg border-border bg-background focus:border-primary focus:ring-1 focus:ring-primary/20">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-card border-border shadow-lg z-[80]">
@@ -467,32 +608,50 @@ export default function NewWalkinOrderPage() {
                   </Select>
                 </div>
                 <div>
-                  <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">
-                    Note (optional)
+                  <label className="text-xs font-medium text-foreground mb-1.5 block">
+                    Note <span className="text-muted-foreground font-normal">(optional)</span>
                   </label>
-                  <input
+                  <TextInput
                     value={paymentNote}
                     onChange={(e) => setPaymentNote(e.target.value)}
                     placeholder="e.g. Cash at store"
-                    className="h-9 w-full rounded-lg border border-border bg-background px-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
                   />
                 </div>
               </div>
+              
+              {/* Payment summary */}
+              {paymentAmountCents > 0 && (
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-muted-foreground">Total: <strong className="text-foreground">{formatCents(subtotalCents)}</strong></span>
+                  <span className="text-muted-foreground">&rarr;</span>
+                  <span className={paymentAmountCents >= subtotalCents ? "text-success" : "text-foreground"}>
+                    {paymentAmountCents >= subtotalCents ? "Paid in full" : `Deposit: ${formatCents(paymentAmountCents)}`}
+                  </span>
+                  {paymentAmountCents > 0 && paymentAmountCents < subtotalCents && (
+                    <span className="text-destructive">
+                      (Balance: {formatCents(subtotalCents - paymentAmountCents)})
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
-          )}
-
-          {!recordPayment && (
-            <p className="text-xs text-muted-foreground">
+          ) : (
+            <p className="text-sm text-muted-foreground">
               A receipt will still be generated showing the amount due. Payment can be recorded later from the order detail page.
             </p>
           )}
-        </div>
+        </SectionCard>
 
         {/* Submit */}
         <button
           type="submit"
           disabled={!canSubmit || submitting}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className={cn(
+            "flex w-full items-center justify-center gap-2 rounded-xl",
+            "bg-primary px-6 py-4 text-sm font-semibold text-primary-foreground",
+            "hover:bg-primary/90 active:scale-[0.98]",
+            "transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+          )}
         >
           {submitting ? (
             <>
@@ -502,7 +661,7 @@ export default function NewWalkinOrderPage() {
           ) : (
             <>
               <Save className="h-4 w-4" />
-              Create Order{recordPayment ? " & Record Payment" : ""}
+              Create Order
             </>
           )}
         </button>
