@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Save, ImagePlus, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, ImagePlus, Loader2, Tag, DollarSign, FileText, Upload, Star } from "lucide-react";
 import Link from "next/link";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { MoneyInput } from "@/components/ui/money-input";
@@ -12,19 +12,142 @@ import { cn } from "@/lib/utils";
 import { ProductImage } from "@/components/ui/product-image";
 import { toast } from "sonner";
 
+// Section card component for consistent styling
+function SectionCard({ 
+  children, 
+  className 
+}: { 
+  children: React.ReactNode; 
+  className?: string;
+}) {
+  return (
+    <div className={cn("rounded-xl border border-border bg-card", className)}>
+      {children}
+    </div>
+  );
+}
+
+// Section header with icon
+function SectionHeader({ 
+  icon: Icon, 
+  title 
+}: { 
+  icon: React.ElementType; 
+  title: string;
+}) {
+  return (
+    <div className="flex items-center gap-2.5 pb-4 mb-4 border-b border-border">
+      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-primary">
+        <Icon className="h-4 w-4" />
+      </div>
+      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+    </div>
+  );
+}
+
+// Form field label
+function FieldLabel({ 
+  children, 
+  required 
+}: { 
+  children: React.ReactNode; 
+  required?: boolean;
+}) {
+  return (
+    <label className="block text-xs font-medium text-foreground mb-1.5">
+      {children}
+      {required && <span className="text-destructive ml-0.5">*</span>}
+    </label>
+  );
+}
+
+// Text input with consistent styling
+function TextInput({ 
+  className, 
+  ...props 
+}: React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input
+      className={cn(
+        "h-10 w-full rounded-lg border border-border bg-background px-3 text-sm",
+        "placeholder:text-muted-foreground/60",
+        "focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20",
+        "transition-colors",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+// Textarea with consistent styling
+function TextArea({ 
+  className, 
+  ...props 
+}: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return (
+    <textarea
+      className={cn(
+        "w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm",
+        "placeholder:text-muted-foreground/60",
+        "focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20",
+        "transition-colors resize-none",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+// Select wrapper with consistent spacing
+function FormSelect({ 
+  value, 
+  onValueChange, 
+  placeholder, 
+  children 
+}: { 
+  value: string; 
+  onValueChange: (value: string) => void; 
+  placeholder: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Select value={value} onValueChange={onValueChange}>
+      <SelectTrigger className="h-10 w-full rounded-lg border-border bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20">
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent className="bg-card border-border shadow-lg z-[80]">
+        {children}
+      </SelectContent>
+    </Select>
+  );
+}
+
 export default function NewProductPage() {
   const router = useRouter();
   const syncProducts = useDashboardStore((s) => s.syncProducts);
   const products = useDashboardStore((s) => s.products);
   const brands = useDashboardStore((s) => s.brands);
   const categories = useDashboardStore((s) => s.categories);
+  
   const [submitting, setSubmitting] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [selectedImage, setSelectedImage] = useState(0);
-  const [uploading, setUploading] = useState(false);    const [form, setForm] = useState({
-    name: "", brand: "", category: "Apple", condition: "New" as const,
-    priceCents: 0, stockQuantity: 0, reorderLimit: 5,
-    description: "", sku: generateProductSku("Apple", products), skuWasManuallyEdited: false, warranty: "6 Months", isFeatured: false,
+  const [uploading, setUploading] = useState(false);
+  
+  const [form, setForm] = useState({
+    name: "",
+    brand: "",
+    category: "Apple",
+    condition: "New" as const,
+    priceCents: 0,
+    stockQuantity: 0,
+    reorderLimit: 5,
+    description: "",
+    sku: generateProductSku("Apple", products),
+    skuWasManuallyEdited: false,
+    warranty: "6 Months",
+    isFeatured: false,
     priceWas: 0,
   });
 
@@ -48,13 +171,16 @@ export default function NewProductPage() {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
+    
     setUploading(true);
     let successCount = 0;
     let failCount = 0;
+    
     for (const file of Array.from(files)) {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("context", "product");
+      
       try {
         const res = await fetch("/api/upload", { method: "POST", body: formData });
         const data = await res.json();
@@ -70,8 +196,10 @@ export default function NewProductPage() {
         console.error("Upload failed:", err);
       }
     }
+    
     setUploading(false);
     if (e.target) e.target.value = "";
+    
     if (successCount > 0) {
       toast.success(`${successCount} image${successCount !== 1 ? "s" : ""} uploaded`);
     }
@@ -87,12 +215,15 @@ export default function NewProductPage() {
 
   const onSubmit = async () => {
     if (!form.name.trim() || !form.brand.trim() || !form.priceCents) return;
+    
     // Validate SKU uniqueness
     if (form.sku && products.some(p => p.sku?.toLowerCase() === form.sku.toLowerCase())) {
       toast.error(`SKU "${form.sku}" already exists. Please use a unique SKU.`);
       return;
     }
+    
     setSubmitting(true);
+    
     const payload = {
       name: form.name.trim(),
       brand: form.brand.trim(),
@@ -111,6 +242,7 @@ export default function NewProductPage() {
       warranty: form.warranty.trim() || undefined,
       compareAtPriceCents: form.priceWas || undefined,
     };
+    
     try {
       const response = await fetch("/api/products", {
         method: "POST",
@@ -130,158 +262,299 @@ export default function NewProductPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
+      {/* Header */}
       <div className="flex items-center gap-3">
-        <Link href="/dashboard/products" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" /> Products
+        <Link 
+          href="/dashboard/products" 
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Products
         </Link>
-      </div>          <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }}>
-        <div className="grid lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <div className="rounded-xl border border-border bg-card p-6 space-y-5">
-              <h2 className="text-base font-semibold text-foreground">Product Information</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="sm:col-span-2">
-                  <label className="text-sm font-medium text-foreground">Name <span className="text-destructive">*</span></label>
-                  <input value={form.name} onChange={e => updateField("name", e.target.value)} className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" placeholder="Product name" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground">Brand <span className="text-destructive">*</span></label>
-                  <Select value={form.brand} onValueChange={v => updateField("brand", v)}>
-                    <SelectTrigger className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/30">
-                      <SelectValue placeholder="Select a brand" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card border-border shadow-lg z-[80]">
-                      {brands.filter(b => b.isActive).sort((a, b) => a.sortOrder - b.sortOrder).map(br => (
-                        <SelectItem key={br.id} value={br.name} className="text-sm cursor-pointer focus:bg-accent">{br.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground">Category <span className="text-destructive">*</span></label>
-                  <Select value={form.category} onValueChange={v => updateField("category", v)}>
-                    <SelectTrigger className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/30">
-                      <SelectValue placeholder="Category" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card border-border shadow-lg z-[80]">
-                      {categories.filter((category) => category.isActive).sort((a, b) => a.sortOrder - b.sortOrder).map((category) => (
-                        <SelectItem key={category.id} value={category.name} className="text-sm cursor-pointer focus:bg-accent">{category.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
+      </div>
 
-            <div className="rounded-xl border border-border bg-card p-6 space-y-5">
-              <h2 className="text-base font-semibold text-foreground">Pricing & Stock</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">                  <div>
-                  <label className="text-sm font-medium text-foreground">Price *</label>
-                  <MoneyInput value={form.priceCents} onChange={v => updateField("priceCents", v)} className="h-11" />
-                </div>
+      <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }}>
+        <div className="grid lg:grid-cols-12 gap-5">
+          {/* Main Content - Left Column */}
+          <div className="lg:col-span-8 space-y-5">
+            {/* Product Information */}
+            <SectionCard className="p-5">
+              <SectionHeader icon={Tag} title="Product Information" />
+              
+              <div className="space-y-4">
+                {/* Product Name */}
                 <div>
-                  <label className="text-sm font-medium text-foreground">Stock Quantity</label>
-                  <input value={form.stockQuantity} onChange={e => updateField("stockQuantity", parseInt(e.target.value) || 0)} type="number" className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                  <FieldLabel required>Name</FieldLabel>
+                  <TextInput
+                    value={form.name}
+                    onChange={e => updateField("name", e.target.value)}
+                    placeholder="Product name"
+                  />
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground">Reorder Limit</label>
-                  <input value={form.reorderLimit} onChange={e => updateField("reorderLimit", e.target.value)} type="number" className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground">Price Was</label>
-                  <MoneyInput value={form.priceWas} onChange={v => updateField("priceWas", v)} className="h-11" placeholder="0" />
+                
+                {/* Brand & Category Row */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <FieldLabel required>Brand</FieldLabel>
+                    <FormSelect
+                      value={form.brand}
+                      onValueChange={v => updateField("brand", v)}
+                      placeholder="Select a brand"
+                    >
+                      {brands.filter(b => b.isActive).sort((a, b) => a.sortOrder - b.sortOrder).map(br => (
+                        <SelectItem key={br.id} value={br.name} className="text-sm cursor-pointer focus:bg-accent">
+                          {br.name}
+                        </SelectItem>
+                      ))}
+                    </FormSelect>
+                  </div>
+                  <div>
+                    <FieldLabel required>Category</FieldLabel>
+                    <FormSelect
+                      value={form.category}
+                      onValueChange={v => updateField("category", v)}
+                      placeholder="Select a category"
+                    >
+                      {categories.filter((category) => category.isActive).sort((a, b) => a.sortOrder - b.sortOrder).map((category) => (
+                        <SelectItem key={category.id} value={category.name} className="text-sm cursor-pointer focus:bg-accent">
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </FormSelect>
+                  </div>
                 </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-foreground">Condition</label>
-                  <Select value={form.condition} onValueChange={v => updateField("condition", v)}>
-                    <SelectTrigger className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/30">
-                      <SelectValue placeholder="Condition" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card border-border shadow-lg z-[80]">
+            </SectionCard>
+
+            {/* Pricing & Stock */}
+            <SectionCard className="p-5">
+              <SectionHeader icon={DollarSign} title="Pricing & Stock" />
+              
+              <div className="space-y-4">
+                {/* First Row: Price, Stock, Reorder, Price Was */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div>
+                    <FieldLabel required>Price</FieldLabel>
+                    <MoneyInput 
+                      value={form.priceCents} 
+                      onChange={v => updateField("priceCents", v)} 
+                      className="h-10"
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel>Stock Quantity</FieldLabel>
+                    <TextInput
+                      type="number"
+                      min={0}
+                      value={form.stockQuantity}
+                      onChange={e => updateField("stockQuantity", parseInt(e.target.value) || 0)}
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel>Reorder Limit</FieldLabel>
+                    <TextInput
+                      type="number"
+                      min={0}
+                      value={form.reorderLimit}
+                      onChange={e => updateField("reorderLimit", parseInt(e.target.value) || 0)}
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel>Price Was</FieldLabel>
+                    <MoneyInput 
+                      value={form.priceWas} 
+                      onChange={v => updateField("priceWas", v)} 
+                      className="h-10"
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+                
+                {/* Second Row: Condition, SKU, Warranty */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <FieldLabel>Condition</FieldLabel>
+                    <FormSelect
+                      value={form.condition}
+                      onValueChange={v => updateField("condition", v)}
+                      placeholder="Condition"
+                    >
                       <SelectItem value="New" className="text-sm cursor-pointer focus:bg-accent">New</SelectItem>
                       <SelectItem value="Refurbished" className="text-sm cursor-pointer focus:bg-accent">Refurbished</SelectItem>
                       <SelectItem value="Pre-Owned" className="text-sm cursor-pointer focus:bg-accent">Pre-Owned</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground">SKU</label>
-                  <input value={form.sku} onChange={e => {
-                    updateField("sku", e.target.value);
-                    setForm(prev => ({ ...prev, skuWasManuallyEdited: true }));
-                  }} className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" placeholder="DT-APP-0001" />
-                  <p className="mt-1 text-[10px] text-muted-foreground">Auto-generated from category. Edit to set manually.</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground">Warranty</label>
-                  <input value={form.warranty} onChange={e => updateField("warranty", e.target.value)} className="mt-1.5 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" placeholder="6 Months" />
+                    </FormSelect>
+                  </div>
+                  <div>
+                    <FieldLabel>SKU</FieldLabel>
+                    <TextInput
+                      value={form.sku}
+                      onChange={e => {
+                        updateField("sku", e.target.value);
+                        setForm(prev => ({ ...prev, skuWasManuallyEdited: true }));
+                      }}
+                      placeholder="DT-APP-0001"
+                    />
+                    <p className="mt-1.5 text-[10px] text-muted-foreground">
+                      Auto-generated from category. Edit to set manually.
+                    </p>
+                  </div>
+                  <div>
+                    <FieldLabel>Warranty</FieldLabel>
+                    <TextInput
+                      value={form.warranty}
+                      onChange={e => updateField("warranty", e.target.value)}
+                      placeholder="6 Months"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
+            </SectionCard>
 
-            <div className="rounded-xl border border-border bg-card p-6 space-y-4">
-              <h2 className="text-base font-semibold text-foreground">Description</h2>
-              <textarea value={form.description} onChange={e => updateField("description", e.target.value)} rows={5} className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" placeholder="Product description..." />
-            </div>
+            {/* Description */}
+            <SectionCard className="p-5">
+              <SectionHeader icon={FileText} title="Description" />
+              <TextArea
+                value={form.description}
+                onChange={e => updateField("description", e.target.value)}
+                rows={5}
+                placeholder="Product description..."
+              />
+            </SectionCard>
           </div>
 
-          <div className="space-y-6">
-            <div className="rounded-xl border border-border bg-card p-6 space-y-5">
-              <h2 className="text-sm font-semibold text-foreground">Publishing</h2>
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" checked={form.isFeatured} onChange={e => updateField("isFeatured", e.target.checked)} className="h-4 w-4 rounded border-border text-primary focus:ring-primary" />
-                <span className="text-sm text-foreground">Featured product</span>
+          {/* Sidebar - Right Column */}
+          <div className="lg:col-span-4 space-y-5">
+            {/* Publishing */}
+            <SectionCard className="p-5">
+              <SectionHeader icon={Star} title="Publishing" />
+              
+              <label className="flex items-start gap-3 cursor-pointer group">
+                <div className="relative flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={form.isFeatured}
+                    onChange={e => updateField("isFeatured", e.target.checked)}
+                    className="peer h-4 w-4 rounded border-border text-primary focus:ring-primary focus:ring-offset-0"
+                  />
+                </div>
+                <div className="flex-1">
+                  <span className="text-sm font-medium text-foreground group-hover:text-foreground/80 transition-colors">
+                    Featured product
+                  </span>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Display this product on the featured section.
+                  </p>
+                </div>
               </label>
-            </div>
+            </SectionCard>
 
-            <div className="rounded-xl border border-border bg-card p-6 space-y-4">
-              <h2 className="text-sm font-semibold text-foreground">Product Images</h2>
-              <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" id="product-image-upload" />
-              <label htmlFor="product-image-upload" className={cn("flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 text-center transition-colors cursor-pointer", uploading ? "border-primary/50 bg-accent/30" : "border-border hover:border-primary/50")}>
+            {/* Product Images */}
+            <SectionCard className="p-5">
+              <SectionHeader icon={Upload} title="Product Images" />
+              
+              <input 
+                type="file" 
+                accept="image/*" 
+                multiple 
+                onChange={handleImageUpload} 
+                className="hidden" 
+                id="product-image-upload" 
+              />
+              
+              <label 
+                htmlFor="product-image-upload" 
+                className={cn(
+                  "flex flex-col items-center justify-center rounded-xl border-2 border-dashed",
+                  "p-6 text-center transition-all cursor-pointer",
+                  uploading 
+                    ? "border-primary/40 bg-accent/30" 
+                    : "border-border hover:border-primary/40 hover:bg-accent/20"
+                )}
+              >
                 {uploading ? (
                   <>
                     <Loader2 className="h-8 w-8 text-primary animate-spin mb-2" />
-                    <p className="text-xs text-primary">Uploading...</p>
+                    <p className="text-xs font-medium text-primary">Uploading...</p>
                   </>
                 ) : (
                   <>
-                    <ImagePlus className="h-8 w-8 text-muted-foreground mb-2" />
-                    <p className="text-xs text-muted-foreground">Click to upload images</p>
-                    <p className="text-[10px] text-muted-foreground mt-1">You can select multiple images</p>
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent mb-3">
+                      <ImagePlus className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <p className="text-sm font-medium text-foreground mb-0.5">
+                      Upload product images
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Click to browse or drag and drop
+                    </p>
+                    <p className="text-[10px] text-muted-foreground/70 mt-2">
+                      You can select multiple images.
+                    </p>
                   </>
                 )}
               </label>
+              
+              <p className="mt-3 text-[10px] text-center text-muted-foreground/70">
+                Supported formats: JPG, PNG, WEBP (Max 10MB each)
+              </p>
+              
               {images.length > 0 && (
-                <div className="space-y-3">
+                <div className="mt-4 space-y-3 pt-4 border-t border-border">
                   <div className="aspect-[4/3] overflow-hidden rounded-lg border border-border bg-muted">
                     <ProductImage src={images[selectedImage]} alt="Selected product preview" />
                   </div>
                   <div className="flex flex-wrap gap-2">
-                  {images.map((url, idx) => (
-                    <div key={url} className={cn("relative group h-16 w-16 rounded-lg border-2 overflow-hidden", selectedImage === idx ? "border-primary" : "border-border")}>
-                      <button type="button" onClick={() => setSelectedImage(idx)} className="h-full w-full">
-                      <img src={url} alt={`Product image ${idx + 1}`} className="h-full w-full object-cover" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => removeImage(idx)}
-                        className="absolute right-0 top-0 bg-black/60 px-1.5 py-0.5 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                    {images.map((url, idx) => (
+                      <div 
+                        key={url} 
+                        className={cn(
+                          "relative group h-14 w-14 rounded-lg border-2 overflow-hidden cursor-pointer",
+                          selectedImage === idx ? "border-primary" : "border-border hover:border-primary/50"
+                        )}
+                        onClick={() => setSelectedImage(idx)}
                       >
-                        <span className="text-[10px] font-semibold">Remove</span>
-                      </button>
-                    </div>
-                  ))}
+                        <img 
+                          src={url} 
+                          alt={`Product image ${idx + 1}`} 
+                          className="h-full w-full object-cover" 
+                        />
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); removeImage(idx); }}
+                          className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <span className="text-[10px] font-medium text-white">Remove</span>
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
-            </div>
+            </SectionCard>
 
-            <button type="submit" disabled={submitting}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-all disabled:opacity-60">
-              {submitting ? "Saving..." : <><Save className="h-4 w-4" /> Save Product</>}
+            {/* Save Button */}
+            <button 
+              type="submit" 
+              disabled={submitting}
+              className={cn(
+                "flex w-full items-center justify-center gap-2 rounded-xl",
+                "bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground",
+                "hover:bg-primary/90 active:scale-[0.98]",
+                "transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100"
+              )}
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  Save Product
+                </>
+              )}
             </button>
           </div>
         </div>
