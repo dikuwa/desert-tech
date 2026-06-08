@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronDown, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useDashboardStore } from "@/lib/store/dashboard";
 
 interface FilterOption {
   value: string;
@@ -15,69 +16,27 @@ interface FilterGroup {
   options: FilterOption[];
 }
 
-const filterGroups: FilterGroup[] = [
-  {
-    id: "category",
-    label: "All Products",
-    options: [
-      { value: "all", label: "All Products" },
-      { value: "apple", label: "Apple" },
-      { value: "windows", label: "Windows" },
-      { value: "gaming", label: "Gaming" },
-      { value: "cctv", label: "CCTV & Security" },
-      { value: "networking", label: "Networking" },
-      { value: "pos", label: "POS Systems" },
-      { value: "accessories", label: "Accessories" },
-      { value: "mechanics", label: "Mechanics" },
-      { value: "general", label: "General" },
-    ],
-  },
-  {
-    id: "brand",
-    label: "All Brands",
-    options: [
-      { value: "all", label: "All Brands" },
-      { value: "apple", label: "Apple" },
-      { value: "dell", label: "Dell" },
-      { value: "hp", label: "HP" },
-      { value: "lenovo", label: "Lenovo" },
-      { value: "asus", label: "ASUS" },
-      { value: "samsung", label: "Samsung" },
-      { value: "hikvision", label: "Hikvision" },
-    ],
-  },
-  {
-    id: "price",
-    label: "Price Range",
-    options: [
-      { value: "all", label: "All Prices" },
-      { value: "0-5000", label: "Under N$ 5,000" },
-      { value: "5000-10000", label: "N$ 5,000 - N$ 10,000" },
-      { value: "10000-20000", label: "N$ 10,000 - N$ 20,000" },
-      { value: "20000+", label: "Over N$ 20,000" },
-    ],
-  },
-  {
-    id: "availability",
-    label: "Availability",
-    options: [
-      { value: "all", label: "All Items" },
-      { value: "in_stock", label: "In Stock" },
-      { value: "low_stock", label: "Low Stock" },
-      { value: "sold_out", label: "Out of Stock" },
-      ],
-  },
-  {
-    id: "sort",
-    label: "Sort by Featured",
-    options: [
-      { value: "featured", label: "Featured" },
-      { value: "newest", label: "Newest" },
-      { value: "price-asc", label: "Price: Low to High" },
-      { value: "price-desc", label: "Price: High to Low" },
-      { value: "rating", label: "Highest Rated" },
-    ],
-  },
+const priceOptions: FilterOption[] = [
+  { value: "all", label: "All Prices" },
+  { value: "0-5000", label: "Under N$ 5,000" },
+  { value: "5000-10000", label: "N$ 5,000 - N$ 10,000" },
+  { value: "10000-20000", label: "N$ 10,000 - N$ 20,000" },
+  { value: "20000+", label: "Over N$ 20,000" },
+];
+
+const availabilityOptions: FilterOption[] = [
+  { value: "all", label: "All Items" },
+  { value: "in_stock", label: "In Stock" },
+  { value: "low_stock", label: "Low Stock" },
+  { value: "sold_out", label: "Out of Stock" },
+];
+
+const sortOptions: FilterOption[] = [
+  { value: "featured", label: "Featured" },
+  { value: "newest", label: "Newest" },
+  { value: "price-asc", label: "Price: Low to High" },
+  { value: "price-desc", label: "Price: High to Low" },
+  { value: "rating", label: "Highest Rated" },
 ];
 
 interface ProductFiltersProps {
@@ -93,6 +52,35 @@ export function ProductFilters({ onFilterChange }: ProductFiltersProps) {
     availability: "all",
     sort: "featured",
   });
+
+  // Get categories and brands from dashboard store
+  const categories = useDashboardStore((s) => s.categories);
+  const brands = useDashboardStore((s) => s.brands);
+
+  // Build dynamic filter groups from dashboard data
+  const categoryOptions: FilterOption[] = [
+    { value: "all", label: "All Products" },
+    ...categories
+      .filter((c) => c.isActive)
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((c) => ({ value: c.slug, label: c.name })),
+  ];
+
+  const brandOptions: FilterOption[] = [
+    { value: "all", label: "All Brands" },
+    ...brands
+      .filter((b) => b.isActive)
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((b) => ({ value: b.slug, label: b.name })),
+  ];
+
+  const filterGroups: FilterGroup[] = [
+    { id: "category", label: "All Products", options: categoryOptions },
+    { id: "brand", label: "All Brands", options: brandOptions },
+    { id: "price", label: "Price Range", options: priceOptions },
+    { id: "availability", label: "Availability", options: availabilityOptions },
+    { id: "sort", label: "Sort by Featured", options: sortOptions },
+  ];
 
   const handleSelect = (groupId: string, value: string) => {
     const newSelected = { ...selected, [groupId]: value };
