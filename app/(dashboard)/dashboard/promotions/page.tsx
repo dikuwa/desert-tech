@@ -28,25 +28,34 @@ export default function DashboardPromotionsPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const [form, setForm] = useState({ title: "", description: "", imageUrl: "", discountLabel: "", placement: "FeaturedSection", type: "general" as string, isFeatured: true });
+  const [form, setForm] = useState({ title: "", description: "", imageUrl: "", images: [] as string[], discountLabel: "", placement: "FeaturedSection", type: "general" as string, isFeatured: true });
   const [uploading, setUploading] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(0);
   const addImageInputRef = useRef<HTMLInputElement>(null);
   const editImageInputRef = useRef<HTMLInputElement>(null);
 
-  const resetForm = () => setForm({ title: "", description: "", imageUrl: "", discountLabel: "", placement: "FeaturedSection", type: "general", isFeatured: true });
+  const resetForm = () => { setForm({ title: "", description: "", imageUrl: "", images: [], discountLabel: "", placement: "FeaturedSection", type: "general", isFeatured: true }); setSelectedImage(0); };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: "imageUrl") => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, isMultiple = false) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("context", "promotion");
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
-      const data = await res.json();
-      if (data.url) {
-        setForm((f) => ({ ...f, [field]: data.url }));
+      const uploadedUrls: string[] = [];
+      for (const file of Array.from(files)) {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("context", "promotion");
+        const res = await fetch("/api/upload", { method: "POST", body: formData });
+        const data = await res.json();
+        if (data.url) uploadedUrls.push(data.url);
+      }
+      if (uploadedUrls.length > 0) {
+        setForm((f) => {
+          const currentImages = f.images || [];
+          const newImages = isMultiple ? [...currentImages, ...uploadedUrls] : uploadedUrls;
+          return { ...f, images: newImages, imageUrl: newImages[0] || "" };
+        });
       }
     } catch (err) {
       console.error("Upload failed:", err);
@@ -62,6 +71,7 @@ export default function DashboardPromotionsPage() {
       title: form.title.trim(),
       description: form.description.trim(),
       imageUrl: form.imageUrl || undefined,
+      images: form.images.length > 0 ? form.images : undefined,
       discountLabel: form.discountLabel || undefined,
       placement: form.placement,
       type: form.type as any,
@@ -80,6 +90,7 @@ export default function DashboardPromotionsPage() {
       title: form.title.trim(),
       description: form.description.trim(),
       imageUrl: form.imageUrl || undefined,
+      images: form.images.length > 0 ? form.images : undefined,
       discountLabel: form.discountLabel || undefined,
       placement: form.placement,
       type: form.type as any,
@@ -91,15 +102,18 @@ export default function DashboardPromotionsPage() {
 
   const startEdit = (promo: typeof promotions[0]) => {
     setEditId(promo.id);
+    const promoImages = promo.images || (promo.imageUrl ? [promo.imageUrl] : []);
     setForm({
       title: promo.title,
       description: promo.description,
       imageUrl: promo.imageUrl || "",
+      images: promoImages,
       discountLabel: promo.discountLabel || "",
       placement: promo.placement,
       type: promo.type || "general",
       isFeatured: promo.isFeatured !== false,
     });
+    setSelectedImage(0);
   };
 
   return (
@@ -122,33 +136,71 @@ export default function DashboardPromotionsPage() {
           <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Description"
             className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
           
-          {/* Image */}
-          <div>
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <input value={form.imageUrl} onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))} placeholder="Image URL or upload"
-                  className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm font-mono focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
-              </div>
-              <input ref={addImageInputRef} type="file" accept="image/*" onChange={e => handleImageUpload(e, "imageUrl")} className="hidden" />
-              <button
-                onClick={() => addImageInputRef.current?.click()}
-                disabled={uploading}
-                className="flex h-10 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50"
-              >
-                <Upload className="h-3.5 w-3.5" />
-                Upload
-              </button>
+          {/* Images */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-foreground">Images</label>
+              <span className="text-xs text-muted-foreground">{form.images.length} image{form.images.length !== 1 ? "s" : ""}</span>
             </div>
-            {form.imageUrl && (
-              <div className="mt-2 flex items-center gap-2">
-                <div className="h-12 w-20 overflow-hidden rounded-md border border-border bg-muted">
-                  <img src={form.imageUrl} alt="" className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+            
+            {/* Image Gallery */}
+            {form.images.length > 0 && (
+              <div className="space-y-2">
+                {/* Main Image Preview */}
+                <div className="aspect-video w-full max-w-md rounded-lg border border-border bg-muted overflow-hidden">
+                  <img 
+                    src={form.images[selectedImage]} 
+                    alt={`Preview ${selectedImage + 1}`}
+                    className="w-full h-full object-contain"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                  />
                 </div>
-                <button onClick={() => setForm(f => ({ ...f, imageUrl: "" }))} className="text-[11px] text-muted-foreground hover:text-destructive transition-colors">
-                  Remove
-                </button>
+                
+                {/* Thumbnail Grid */}
+                <div className="flex flex-wrap gap-2">
+                  {form.images.map((img, idx) => (
+                    <div key={idx} className={cn(
+                      "relative w-16 h-16 rounded-lg border overflow-hidden cursor-pointer transition-all",
+                      selectedImage === idx 
+                        ? "border-primary ring-1 ring-primary" 
+                        : "border-border hover:border-primary/50"
+                    )}>
+                      <img 
+                        src={img} 
+                        alt={`Thumbnail ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                        onClick={() => setSelectedImage(idx)}
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                      />
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const newImages = form.images.filter((_, i) => i !== idx);
+                          setForm(f => ({ ...f, images: newImages, imageUrl: newImages[0] || "" }));
+                          if (selectedImage >= newImages.length) setSelectedImage(Math.max(0, newImages.length - 1));
+                        }}
+                        className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-destructive text-white flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+                        title="Remove image"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
+            
+            {/* Upload Button */}
+            <input ref={addImageInputRef} type="file" accept="image/*" multiple onChange={e => handleImageUpload(e, true)} className="hidden" />
+            <button
+              onClick={() => addImageInputRef.current?.click()}
+              disabled={uploading}
+              className="flex items-center gap-2 rounded-lg border border-dashed border-border px-4 py-3 text-sm text-muted-foreground hover:text-foreground hover:border-primary/50 hover:bg-muted/50 transition-all w-full justify-center"
+            >
+              <Upload className={cn("h-4 w-4", uploading && "animate-spin")} />
+              {uploading ? "Uploading..." : "Upload Images"}
+            </button>
+            <p className="text-xs text-muted-foreground">Click to browse or drag and drop. You can upload multiple images.</p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -201,29 +253,70 @@ export default function DashboardPromotionsPage() {
                 <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                   className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
                 
-                {/* Image in edit */}
-                <div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <input value={form.imageUrl} onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))} placeholder="Image URL"
-                        className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm font-mono focus:border-primary focus:outline-none" />
-                    </div>
-                    <input ref={editImageInputRef} type="file" accept="image/*" onChange={e => handleImageUpload(e, "imageUrl")} className="hidden" />
-                    <button
-                      onClick={() => editImageInputRef.current?.click()}
-                      disabled={uploading}
-                      className="flex h-10 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50"
-                    >
-                      <Upload className="h-3.5 w-3.5" />
-                    </button>
+                {/* Images in edit */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-foreground">Images</label>
+                    <span className="text-xs text-muted-foreground">{form.images.length} image{form.images.length !== 1 ? "s" : ""}</span>
                   </div>
-                  {form.imageUrl && (
-                    <div className="mt-2 flex items-center gap-2">
-                      <div className="h-12 w-20 overflow-hidden rounded-md border border-border bg-muted">
-                        <img src={form.imageUrl} alt="" className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                  
+                  {/* Image Gallery */}
+                  {form.images.length > 0 && (
+                    <div className="space-y-2">
+                      {/* Main Image Preview */}
+                      <div className="aspect-video w-full max-w-md rounded-lg border border-border bg-muted overflow-hidden">
+                        <img 
+                          src={form.images[selectedImage]} 
+                          alt={`Preview ${selectedImage + 1}`}
+                          className="w-full h-full object-contain"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                        />
+                      </div>
+                      
+                      {/* Thumbnail Grid */}
+                      <div className="flex flex-wrap gap-2">
+                        {form.images.map((img, idx) => (
+                          <div key={idx} className={cn(
+                            "relative w-16 h-16 rounded-lg border overflow-hidden cursor-pointer transition-all",
+                            selectedImage === idx 
+                              ? "border-primary ring-1 ring-primary" 
+                              : "border-border hover:border-primary/50"
+                          )}>
+                            <img 
+                              src={img} 
+                              alt={`Thumbnail ${idx + 1}`}
+                              className="w-full h-full object-cover"
+                              onClick={() => setSelectedImage(idx)}
+                              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                            />
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const newImages = form.images.filter((_, i) => i !== idx);
+                                setForm(f => ({ ...f, images: newImages, imageUrl: newImages[0] || "" }));
+                                if (selectedImage >= newImages.length) setSelectedImage(Math.max(0, newImages.length - 1));
+                              }}
+                              className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-destructive text-white flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+                              title="Remove image"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
+                  
+                  {/* Upload Button */}
+                  <input ref={editImageInputRef} type="file" accept="image/*" multiple onChange={e => handleImageUpload(e, true)} className="hidden" />
+                  <button
+                    onClick={() => editImageInputRef.current?.click()}
+                    disabled={uploading}
+                    className="flex items-center gap-2 rounded-lg border border-dashed border-border px-4 py-3 text-sm text-muted-foreground hover:text-foreground hover:border-primary/50 hover:bg-muted/50 transition-all w-full justify-center"
+                  >
+                    <Upload className={cn("h-4 w-4", uploading && "animate-spin")} />
+                    {uploading ? "Uploading..." : "Add Images"}
+                  </button>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
