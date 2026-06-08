@@ -112,6 +112,13 @@ export default function SettingsPage() {
             lastActiveAt: data.user.lastActiveAt || undefined,
             createdAt: data.user.createdAt || undefined,
           });
+          // Initialize profile form from session data
+          setProfileForm({
+            displayName: data.user.name || "",
+            contactNumber: data.user.phone || "",
+            profileEmail: data.user.profileEmail || data.user.email || "",
+            profileImage: data.user.profileImage || "",
+          });
         }
       })
       .catch(() => {})
@@ -122,6 +129,14 @@ export default function SettingsPage() {
   const [form, setForm] = useState(settings);
 
   const [uploading, setUploading] = useState(false);
+  const [profileUploading, setProfileUploading] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    displayName: "",
+    contactNumber: "",
+    profileEmail: "",
+    profileImage: "",
+  });
   const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
   const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
   const [passwordSaving, setPasswordSaving] = useState(false);
@@ -139,6 +154,7 @@ export default function SettingsPage() {
   const [disable2FAOpen, setDisable2FAOpen] = useState(false);
   const [disabling2FA, setDisabling2FA] = useState(false);
   const heroImageInputRef = useRef<HTMLInputElement>(null);
+  const profileImageInputRef = useRef<HTMLInputElement>(null);
 
   // Contact detail form
   const [showContactForm, setShowContactForm] = useState(false);
@@ -213,6 +229,59 @@ export default function SettingsPage() {
     } finally {
       setUploading(false);
       if (heroImageInputRef.current) heroImageInputRef.current.value = "";
+    }
+  };
+
+  const handleProfileImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setProfileUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("context", "profile");
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
+      if (data.url) {
+        setProfileForm((prev) => ({ ...prev, profileImage: data.url }));
+        toast.success("Profile image uploaded");
+      }
+    } catch (err) {
+      console.error("Upload failed:", err);
+      toast.error("Failed to upload image");
+    } finally {
+      setProfileUploading(false);
+      if (profileImageInputRef.current) profileImageInputRef.current.value = "";
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      const res = await fetch("/api/auth/update-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: profileForm.displayName,
+          phone: profileForm.contactNumber,
+          profileEmail: profileForm.profileEmail,
+          profileImage: profileForm.profileImage,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || data.error || "Failed to update profile");
+      }
+      // Update local session state
+      setUserSession((prev) => prev ? {
+        ...prev,
+        name: profileForm.displayName,
+        phone: profileForm.contactNumber,
+      } : prev);
+      setIsEditingProfile(false);
+      toast.success("Profile updated successfully");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update profile");
     }
   };
 
@@ -1200,12 +1269,23 @@ export default function SettingsPage() {
           <div className="space-y-6">
             {/* Profile Card */}
             <div className="rounded-xl border border-border bg-card p-6 space-y-5">
-              <div className="flex items-center gap-2 border-b border-border pb-3">
-                <User className="h-5 w-5 text-primary" />
-                <div>
-                  <h2 className="text-base font-semibold text-foreground">Profile</h2>
-                  <p className="text-xs text-muted-foreground">Your personal account details</p>
+              <div className="flex items-center justify-between border-b border-border pb-3">
+                <div className="flex items-center gap-2">
+                  <User className="h-5 w-5 text-primary" />
+                  <div>
+                    <h2 className="text-base font-semibold text-foreground">Profile</h2>
+                    <p className="text-xs text-muted-foreground">Your personal account details</p>
+                  </div>
                 </div>
+                {!isEditingProfile && !sessionLoading && (
+                  <button
+                    onClick={() => setIsEditingProfile(true)}
+                    className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    Edit Profile
+                  </button>
+                )}
               </div>
               {sessionLoading ? (
                 <div className="flex items-center gap-5 animate-pulse">
@@ -1215,15 +1295,148 @@ export default function SettingsPage() {
                     <div className="h-3 w-48 bg-muted rounded" />
                   </div>
                 </div>
+              ) : isEditingProfile ? (
+                <div className="space-y-5">
+                  {/* Profile Image Upload */}
+                  <div className="flex items-start gap-5">
+                    <div className="relative">
+                      <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-2xl font-bold overflow-hidden">
+                        {profileForm.profileImage ? (
+                          <img
+                            src={profileForm.profileImage}
+                            alt="Profile"
+                            className="h-full w-full object-cover"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                          />
+                        ) : (
+                          <span>
+                            {(profileForm.displayName || userSession?.name || "U")
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")
+                              .toUpperCase()
+                              .slice(0, 2)}
+                          </span>
+                        )}
+                      </div>
+                      {profileUploading && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full">
+                          <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 space-y-2">
+                      <input
+                        ref={profileImageInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleProfileImageUpload}
+                        className="hidden"
+                      />
+                      <button
+                        onClick={() => profileImageInputRef.current?.click()}
+                        disabled={profileUploading}
+                        className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                      >
+                        <Upload className="h-3.5 w-3.5" />
+                        {profileForm.profileImage ? "Change Photo" : "Upload Photo"}
+                      </button>
+                      {profileForm.profileImage && (
+                        <button
+                          onClick={() => setProfileForm((f) => ({ ...f, profileImage: "" }))}
+                          className="ml-2 text-xs text-destructive hover:text-destructive/80 transition-colors"
+                        >
+                          Remove
+                        </button>
+                      )}
+                      <p className="text-[10px] text-muted-foreground">
+                        Recommended: Square image, at least 200×200px
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Profile Form Fields */}
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="text-sm font-medium text-foreground">Display Name</label>
+                      <input
+                        value={profileForm.displayName}
+                        onChange={(e) => setProfileForm((f) => ({ ...f, displayName: e.target.value }))}
+                        placeholder="Your display name"
+                        className="mt-1.5 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground">Contact Number</label>
+                      <input
+                        value={profileForm.contactNumber}
+                        onChange={(e) => setProfileForm((f) => ({ ...f, contactNumber: e.target.value }))}
+                        placeholder="Your phone number"
+                        className="mt-1.5 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="text-sm font-medium text-foreground">Profile Email</label>
+                      <input
+                        type="email"
+                        value={profileForm.profileEmail}
+                        onChange={(e) => setProfileForm((f) => ({ ...f, profileEmail: e.target.value }))}
+                        placeholder="Email for profile display (separate from login)"
+                        className="mt-1.5 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                      />
+                      <p className="mt-1 text-[10px] text-muted-foreground">
+                        This email is for display purposes only. Your login email remains unchanged for security.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      onClick={handleSaveProfile}
+                      className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                      Save Changes
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsEditingProfile(false);
+                        // Reset form to current session values
+                        setProfileForm({
+                          displayName: userSession?.name || "",
+                          contactNumber: userSession?.phone || "",
+                          profileEmail: userSession?.email || "",
+                          profileImage: userSession?.profileImage || "",
+                        });
+                      }}
+                      className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      Cancel
+                    </button>
+                  </div>
+                </div>
               ) : (
                 <div className="flex items-start gap-5">
-                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-2xl font-bold">
-                    {(userSession?.name || "U")
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")
-                      .toUpperCase()
-                      .slice(0, 2)}
+                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-2xl font-bold overflow-hidden">
+                    {userSession?.profileImage ? (
+                      <img
+                        src={userSession.profileImage}
+                        alt="Profile"
+                        className="h-full w-full object-cover"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                      />
+                    ) : (
+                      <span>
+                        {(userSession?.name || "U")
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")
+                          .toUpperCase()
+                          .slice(0, 2)}
+                      </span>
+                    )}
                   </div>
                   <div className="space-y-3 flex-1">
                     <div className="grid gap-4 sm:grid-cols-2">
