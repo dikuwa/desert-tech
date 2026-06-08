@@ -449,8 +449,10 @@ export function dashboardProductToProductData(
 ): ProductData {
   // Look up the actual category from provided categories
   const category = categories.find(c => c.name === p.category);
+  const hasCategory = p.category && p.category.trim() !== "";
   const categorySlug = category?.slug || CATEGORY_SLUG_MAP[p.category] || "general";
   const categoryId = category?.id || CATEGORY_ID_MAP[p.category] || "cat-general";
+  const categoryName = hasCategory ? p.category : "General";
   const stockCount = p.stockQuantity > 0 ? p.stockQuantity : undefined;
   const fallbackProduct = products.find((product) => product.slug === p.slug);
   const images = p.images && p.images.length > 0
@@ -460,13 +462,17 @@ export function dashboardProductToProductData(
       : fallbackProduct?.images ?? [];
   const imageUrl = p.imageUrl || images[0] || fallbackProduct?.imageUrl || "";
 
+  // Use General for unknown/empty brands
+  const hasBrand = p.brand && p.brand.trim() !== "" && p.brand !== "Unknown";
+  const brandName = hasBrand ? p.brand : "General";
+
   return {
     id: p.id,
     name: p.name,
     slug: p.slug,
-    brand: p.brand,
+    brand: brandName,
     categoryId,
-    categoryName: p.category,
+    categoryName,
     categorySlug,
     condition: (p.condition === "New" || p.condition === "Refurbished" || p.condition === "Pre-Owned") ? p.condition : "New",
     description: p.description || fallbackProduct?.description || "",

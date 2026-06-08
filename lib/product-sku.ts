@@ -43,6 +43,10 @@ const CATEGORY_SKU_CODES: Record<string, string> = {
   // Services
   Services: "SVC",
   "Auto Services": "AUTO",
+  // General/Uncategorized - always fallback to GEN
+  General: "GEN",
+  Other: "GEN",
+  Uncategorized: "GEN",
 };
 
 export function generateProductSku(

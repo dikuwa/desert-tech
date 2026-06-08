@@ -138,13 +138,13 @@ export default function NewProductPage() {
   const [form, setForm] = useState({
     name: "",
     brand: "",
-    category: "Apple",
+    category: "",
     condition: "New" as const,
     priceCents: 0,
     stockQuantity: 0,
     reorderLimit: 5,
     description: "",
-    sku: generateProductSku("Apple", products),
+    sku: generateProductSku("General", products),
     skuWasManuallyEdited: false,
     warranty: "6 Months",
     isFeatured: false,
@@ -154,7 +154,7 @@ export default function NewProductPage() {
   useEffect(() => {
     setForm((prev) => prev.skuWasManuallyEdited
       ? prev
-      : { ...prev, sku: generateProductSku(prev.category, products) });
+      : { ...prev, sku: generateProductSku(prev.category || "General", products) });
   }, [products]);
 
   const updateField = (field: string, value: string | boolean | number) => {
@@ -162,7 +162,7 @@ export default function NewProductPage() {
       const updated = { ...prev, [field]: value };
       // Auto-generate SKU when category changes and SKU hasn't been manually edited
       if (field === "category" && typeof value === "string" && !prev.skuWasManuallyEdited) {
-        updated.sku = generateProductSku(value, products);
+        updated.sku = generateProductSku(value || "General", products);
       }
       return updated;
     });

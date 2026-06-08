@@ -29,6 +29,7 @@ const filterGroups: FilterGroup[] = [
       { value: "pos", label: "POS Systems" },
       { value: "accessories", label: "Accessories" },
       { value: "mechanics", label: "Mechanics" },
+      { value: "general", label: "General" },
     ],
   },
   {
