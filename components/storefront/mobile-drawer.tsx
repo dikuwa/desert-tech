@@ -5,54 +5,21 @@ import { usePathname } from "next/navigation";
 import {
   ShoppingCart,
   X,
-  Home,
   ShoppingBag,
   Wrench,
   Phone,
-  LayoutGrid,
-  Apple,
-  Laptop,
-  Gamepad2,
-  ShieldCheck,
-  Receipt,
-  Headphones,
   Search,
   ArrowRight,
   Tag,
+  ChevronDown,
 } from "lucide-react";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { useMobileMenu } from "@/lib/store/mobile-menu";
 import { useCart } from "@/lib/store/cart";
 import { searchProducts, formatNAD } from "@/lib/data";
 import { useDashboardStore } from "@/lib/store/dashboard";
-
-const navIcons: Record<string, React.ComponentType<{ className?: string }>> = {
-  "/": Home,
-  "/shop": ShoppingBag,
-  "/promotions": Tag,
-  "/services": Wrench,
-  "/contact": Phone,
-};
-
-const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
-  "All Products": LayoutGrid,
-  "Apple": Apple,
-  "Windows": Laptop,
-  "Gaming": Gamepad2,
-  "CCTV & Security": ShieldCheck,
-  "POS Systems": Receipt,
-  "Accessories": Headphones,
-  "Auto Services": Wrench,
-};
-
-const navLinks = [
-  { href: "/", label: "Home" },
-  { href: "/shop", label: "Shop" },
-  { href: "/promotions", label: "Promotions" },
-  { href: "/services", label: "Services" },
-  { href: "/contact", label: "Contact" },
-];
+import { buildShopUrl, getActiveBrands, groupActiveCategories } from "@/lib/storefront-navigation";
 
 export function MobileDrawer() {
   const pathname = usePathname();
@@ -60,13 +27,13 @@ export function MobileDrawer() {
   const { getItemCount } = useCart();
   const itemCount = getItemCount();
   const managedCategories = useDashboardStore((state) => state.categories);
-  const categories = [
-    { href: "/shop", label: "All Products" },
-    ...managedCategories
-      .filter((category) => category.isActive)
-      .sort((a, b) => a.sortOrder - b.sortOrder)
-      .map((category) => ({ href: `/shop?category=${category.slug}`, label: category.name })),
-  ];
+  const managedBrands = useDashboardStore((state) => state.brands);
+  const [shopExpanded, setShopExpanded] = useState(false);
+  const [activeSubgroup, setActiveSubgroup] = useState<string | null>(null);
+
+  const categoryGroups = groupActiveCategories(managedCategories);
+  const displayBrands = getActiveBrands(managedBrands).slice(0, 12);
+
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => { setHydrated(true); }, []);
   const [searchQuery, setSearchQuery] = useState("");
@@ -102,6 +69,13 @@ export function MobileDrawer() {
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
   }, [isOpen, close]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setShopExpanded(false);
+      setActiveSubgroup(null);
+    }
+  }, [isOpen]);
 
   return (
     <div
@@ -208,60 +182,243 @@ export function MobileDrawer() {
 
         {/* Navigation content */}
         <div className="flex-1 px-5 pb-6">
-          {/* Main links */}
-          <p className="px-3 pb-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
-            Menu
+          <p className="px-3 pb-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
+            Navigation
           </p>
-          <nav className="space-y-0.5">
-            {navLinks.map((link) => {
-              const Icon = navIcons[link.href];
-              const isActive =
-                (link.href === "/" && pathname === "/") ||
-                (link.href !== "/" && pathname.startsWith(link.href));
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={close}
-                  className={cn(
-                    "flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors",
-                    isActive
-                      ? "bg-[#f5e6d0] text-primary"
-                      : "text-muted-foreground hover:bg-[#f5e6d0] hover:text-primary",
-                  )}
-                >
-                  {Icon && <Icon className="h-5 w-5" />}
-                  <span>{link.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
+          <nav className="space-y-0.5 text-left">
+            {/* Top-level Shop accordion trigger */}
+            <div className="border border-[#e7dfd5] rounded-xl overflow-hidden mb-2 bg-white">
+              <button
+                type="button"
+                aria-expanded={shopExpanded}
+                onClick={() => {
+                  setShopExpanded(!shopExpanded);
+                  setActiveSubgroup(null);
+                }}
+                className={cn(
+                  "flex w-full items-center justify-between px-4 py-3.5 text-sm font-semibold transition-colors",
+                  shopExpanded ? "text-primary bg-primary/5" : "text-foreground hover:bg-muted"
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <ShoppingBag className="h-5 w-5 text-primary" />
+                  <span>Shop</span>
+                </div>
+                <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform duration-200", shopExpanded && "rotate-180")} />
+              </button>
 
-          {/* Categories */}
-          <div className="mt-6 pt-4 border-t border-[#e7dfd5]">
-            <p className="px-3 pb-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
-              Categories
-            </p>
-            <nav className="space-y-0.5">
-              {categories.map((cat) => {
-                const Icon = categoryIcons[cat.label];
-                return (
+              {/* Subgroups */}
+              {shopExpanded && (
+                <div className="border-t border-[#e7dfd5] divide-y divide-[#e7dfd5]/40 bg-[#fbf8f3]">
+                  {/* Sub-item: All Products */}
                   <Link
-                    key={cat.label}
-                    href={cat.href}
+                    href="/shop"
                     onClick={close}
-                    className={cn(
-                      "flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors",
-                      "text-muted-foreground hover:bg-[#f5e6d0] hover:text-primary",
-                    )}
+                    className="flex items-center justify-between px-6 py-3 text-xs font-semibold text-muted-foreground hover:text-primary transition-colors"
                   >
-                    {Icon && <Icon className="h-5 w-5" />}
-                    <span>{cat.label}</span>
+                    <span>All Products</span>
+                    <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/50" />
                   </Link>
-                );
-              })}
-            </nav>
-          </div>
+
+                  {/* Subgroup: Computers */}
+                  <div>
+                    <button
+                      type="button"
+                      aria-expanded={activeSubgroup === "computers"}
+                      onClick={() => setActiveSubgroup(activeSubgroup === "computers" ? null : "computers")}
+                      className={cn(
+                        "flex w-full items-center justify-between px-6 py-3 text-xs font-semibold transition-colors",
+                        activeSubgroup === "computers" ? "text-primary bg-primary/5" : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <span>Computers</span>
+                      <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground/60 transition-transform duration-200", activeSubgroup === "computers" && "rotate-180")} />
+                    </button>
+                    {activeSubgroup === "computers" && (
+                      <div className="bg-white/50 px-8 py-2 space-y-2 border-t border-[#e7dfd5]/20">
+                        {categoryGroups.computers.map(cat => (
+                          <Link
+                            key={cat.id}
+                            href={buildShopUrl("category", cat.slug)}
+                            onClick={close}
+                            className="block py-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                          >
+                            {cat.name}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Subgroup: Mobile & Entertainment */}
+                  <div>
+                    <button
+                      type="button"
+                      aria-expanded={activeSubgroup === "mobile"}
+                      onClick={() => setActiveSubgroup(activeSubgroup === "mobile" ? null : "mobile")}
+                      className={cn(
+                        "flex w-full items-center justify-between px-6 py-3 text-xs font-semibold transition-colors",
+                        activeSubgroup === "mobile" ? "text-primary bg-primary/5" : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <span>Mobile & Entertainment</span>
+                      <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground/60 transition-transform duration-200", activeSubgroup === "mobile" && "rotate-180")} />
+                    </button>
+                    {activeSubgroup === "mobile" && (
+                      <div className="bg-white/50 px-8 py-2 space-y-2 border-t border-[#e7dfd5]/20">
+                        {categoryGroups.mobile.map(cat => (
+                          <Link
+                            key={cat.id}
+                            href={buildShopUrl("category", cat.slug)}
+                            onClick={close}
+                            className="block py-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                          >
+                            {cat.name}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Subgroup: Business & Security */}
+                  <div>
+                    <button
+                      type="button"
+                      aria-expanded={activeSubgroup === "business"}
+                      onClick={() => setActiveSubgroup(activeSubgroup === "business" ? null : "business")}
+                      className={cn(
+                        "flex w-full items-center justify-between px-6 py-3 text-xs font-semibold transition-colors",
+                        activeSubgroup === "business" ? "text-primary bg-primary/5" : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <span>Business & Security</span>
+                      <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground/60 transition-transform duration-200", activeSubgroup === "business" && "rotate-180")} />
+                    </button>
+                    {activeSubgroup === "business" && (
+                      <div className="bg-white/50 px-8 py-2 space-y-2 border-t border-[#e7dfd5]/20">
+                        {categoryGroups.business.map(cat => (
+                          <Link
+                            key={cat.id}
+                            href={buildShopUrl("category", cat.slug)}
+                            onClick={close}
+                            className="block py-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                          >
+                            {cat.name}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {categoryGroups.other.length > 0 && (
+                    <div>
+                      <button
+                        type="button"
+                        aria-expanded={activeSubgroup === "other"}
+                        onClick={() => setActiveSubgroup(activeSubgroup === "other" ? null : "other")}
+                        className={cn(
+                          "flex w-full items-center justify-between px-6 py-3 text-xs font-semibold transition-colors",
+                          activeSubgroup === "other" ? "text-primary bg-primary/5" : "text-muted-foreground hover:text-foreground",
+                        )}
+                      >
+                        <span>Other Categories</span>
+                        <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground/60 transition-transform duration-200", activeSubgroup === "other" && "rotate-180")} />
+                      </button>
+                      {activeSubgroup === "other" && (
+                        <div className="bg-white/50 px-8 py-2 space-y-2 border-t border-[#e7dfd5]/20">
+                          {categoryGroups.other.map((cat) => (
+                            <Link
+                              key={cat.id}
+                              href={buildShopUrl("category", cat.slug)}
+                              onClick={close}
+                              className="block py-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                            >
+                              {cat.name}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Subgroup: Brands */}
+                  <div>
+                    <button
+                      type="button"
+                      aria-expanded={activeSubgroup === "brands"}
+                      onClick={() => setActiveSubgroup(activeSubgroup === "brands" ? null : "brands")}
+                      className={cn(
+                        "flex w-full items-center justify-between px-6 py-3 text-xs font-semibold transition-colors",
+                        activeSubgroup === "brands" ? "text-primary bg-primary/5" : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <span>Brands</span>
+                      <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground/60 transition-transform duration-200", activeSubgroup === "brands" && "rotate-180")} />
+                    </button>
+                    {activeSubgroup === "brands" && (
+                      <div className="bg-white/50 px-8 py-3 grid grid-cols-2 gap-x-4 gap-y-2 border-t border-[#e7dfd5]/20">
+                        {displayBrands.map(brand => (
+                          <Link
+                            key={brand.id}
+                            href={buildShopUrl("brand", brand.name)}
+                            onClick={close}
+                            className="py-0.5 text-xs text-muted-foreground hover:text-primary transition-colors truncate"
+                          >
+                            {brand.name}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Promotions Link */}
+            <Link
+              href="/promotions"
+              onClick={close}
+              className={cn(
+                "flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-semibold transition-colors mb-2 border border-[#e7dfd5] bg-white",
+                pathname === "/promotions"
+                  ? "text-primary border-primary/20 bg-primary/5"
+                  : "text-foreground hover:bg-muted"
+              )}
+            >
+              <Tag className="h-5 w-5 text-primary" />
+              <span>Promotions</span>
+            </Link>
+
+            {/* Services Link */}
+            <Link
+              href="/services"
+              onClick={close}
+              className={cn(
+                "flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-semibold transition-colors mb-2 border border-[#e7dfd5] bg-white",
+                pathname === "/services"
+                  ? "text-primary border-primary/20 bg-primary/5"
+                  : "text-foreground hover:bg-muted"
+              )}
+            >
+              <Wrench className="h-5 w-5 text-primary" />
+              <span>Services</span>
+            </Link>
+
+            {/* Contact Link */}
+            <Link
+              href="/contact"
+              onClick={close}
+              className={cn(
+                "flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-semibold transition-colors mb-2 border border-[#e7dfd5] bg-white",
+                pathname === "/contact"
+                  ? "text-primary border-primary/20 bg-primary/5"
+                  : "text-foreground hover:bg-muted"
+              )}
+            >
+              <Phone className="h-5 w-5 text-primary" />
+              <span>Contact</span>
+            </Link>
+          </nav>
         </div>
       </div>
     </div>

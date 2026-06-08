@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   Search,
@@ -20,6 +21,7 @@ import {
   mergeProducts,
 } from "@/lib/data";
 import { useDashboardStore } from "@/lib/store/dashboard";
+import { getActiveCategories } from "@/lib/storefront-navigation";
 
 const ALL_AVAILABILITY = [
   { value: "in_stock", label: "In Stock" },
@@ -37,7 +39,8 @@ const SORT_OPTIONS = [
   { value: "rating", label: "Highest Rated" },
 ];
 
-export default function ShopPage() {
+function ShopContent() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const managedBrands = useDashboardStore((s) => s.brands);
@@ -48,16 +51,14 @@ export default function ShopPage() {
   // Merge static products with dashboard-created products
   const allProducts = useMemo(() => mergeProducts(dashboardProducts), [dashboardProducts]);
   const categories = useMemo(
-    () => managedCategories.filter((category) => category.isActive).sort((a, b) => a.sortOrder - b.sortOrder).map(dashboardCategoryToCategoryData),
+    () => getActiveCategories(managedCategories).map(dashboardCategoryToCategoryData),
     [managedCategories],
   );
 
-  // Use managed active brands, fall back to all unique brands from products
+  // Use active dashboard-managed brands as the public filter source.
   const BRANDS = useMemo(() => {
-    const activeManagedBrands = managedBrands.filter(b => b.isActive).sort((a, b) => a.sortOrder - b.sortOrder).map(b => b.name);
-    if (activeManagedBrands.length > 0) return activeManagedBrands;
-    return [...new Set(allProducts.map(p => p.brand))].sort();
-  }, [managedBrands, allProducts]);
+    return managedBrands.filter(b => b.isActive).sort((a, b) => a.sortOrder - b.sortOrder).map(b => b.name);
+  }, [managedBrands]);
   const [selectedAvailability, setSelectedAvailability] = useState("all");
   const [selectedCondition, setSelectedCondition] = useState("all");
   const [selectedSort, setSelectedSort] = useState("featured");
@@ -70,6 +71,30 @@ export default function ShopPage() {
     availability: false,
     condition: false,
   });
+
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const category = searchParams.get("category");
+    setSelectedCategory(category || "all");
+
+    const brand = searchParams.get("brand");
+    setSelectedBrand(brand || "all");
+
+    const condition = searchParams.get("condition");
+    setSelectedCondition(condition || "all");
+
+    const sort = searchParams.get("sort");
+    setSelectedSort(sort || "featured");
+
+    const availability = searchParams.get("availability");
+    setSelectedAvailability(availability || "all");
+
+    const q = searchParams.get("q");
+    setSearchQuery(q || "");
+
+    setCurrentPage(1);
+  }, [searchParams]);
 
   const toggleFilter = (key: string) => {
     setCollapsedFilters((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -99,17 +124,54 @@ export default function ShopPage() {
     selectedCondition !== "all";
 
   const clearFilters = useCallback(() => {
+    router.push("/shop");
     setSelectedCategory("all");
     setSelectedBrand("all");
     setSelectedAvailability("all");
     setSelectedCondition("all");
     setSearchQuery("");
     setCurrentPage(1);
-  }, []);
+  }, [router]);
+
+  const updateQuery = useCallback((key: string, value: string, defaultValue = "all") => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value === defaultValue || !value) params.delete(key);
+    else params.set(key, value);
+    router.push(params.size ? `/shop?${params.toString()}` : "/shop", { scroll: false });
+  }, [router, searchParams]);
 
   const handleCategoryChange = (slug: string) => {
+    updateQuery("category", slug);
     setSelectedCategory(slug);
     setCurrentPage(1);
+  };
+
+  const handleBrandChange = (brand: string) => {
+    updateQuery("brand", brand);
+    setSelectedBrand(brand);
+    setCurrentPage(1);
+  };
+
+  const handleAvailabilityChange = (avail: string) => {
+    updateQuery("availability", avail);
+    setSelectedAvailability(avail);
+    setCurrentPage(1);
+  };
+
+  const handleConditionChange = (cond: string) => {
+    updateQuery("condition", cond);
+    setSelectedCondition(cond);
+    setCurrentPage(1);
+  };
+
+  const handleSortChange = (sort: string) => {
+    updateQuery("sort", sort, "featured");
+    setSelectedSort(sort);
+  };
+
+  const handleSearchChange = (query: string) => {
+    updateQuery("q", query, "");
+    setSearchQuery(query);
   };
 
   // Category stats
@@ -119,7 +181,16 @@ export default function ShopPage() {
       counts[cat.slug] = allProducts.filter((p) => p.categorySlug === cat.slug).length;
     });
     return counts;
-  }, [allProducts]);
+  }, [allProducts, categories]);
+
+  // Brand stats
+  const brandCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: allProducts.length };
+    BRANDS.forEach((brand) => {
+      counts[brand] = allProducts.filter((p) => p.brand.toLowerCase() === brand.toLowerCase()).length;
+    });
+    return counts;
+  }, [allProducts, BRANDS]);
 
   const FilterSidebar = () => (
     <div className="space-y-4">
@@ -138,7 +209,7 @@ export default function ShopPage() {
           <div className="space-y-0.5 px-2 pb-3">
             <button
               onClick={() => handleCategoryChange("all")}
-              className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors ${
+              className={`flex w-full items-center justify-between rounded-md px-3 py-1.5 text-left text-sm transition-colors ${
                 selectedCategory === "all"
                   ? "bg-accent text-primary font-semibold"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -151,7 +222,7 @@ export default function ShopPage() {
               <button
                 key={cat.slug}
                 onClick={() => handleCategoryChange(cat.slug)}
-                className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors ${
+                className={`flex w-full items-center justify-between rounded-md px-3 py-1.5 text-left text-sm transition-colors ${
                   selectedCategory === cat.slug
                     ? "bg-accent text-primary font-semibold"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -179,28 +250,48 @@ export default function ShopPage() {
           {collapsedFilters.brand ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
         </button>
         {!collapsedFilters.brand && (
-          <div className="space-y-0.5 px-2 pb-3">
+          <div className="space-y-0.5 px-2 pb-3 max-h-60 overflow-y-auto">
             <button
-              onClick={() => { setSelectedBrand("all"); setCurrentPage(1); }}
-              className={`flex w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors ${
+              onClick={() => handleBrandChange("all")}
+              className={`flex w-full items-center justify-between rounded-md px-3 py-1.5 text-left text-sm transition-colors ${
                 selectedBrand === "all"
                   ? "bg-accent text-primary font-semibold"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               }`}
             >
-              All Brands
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={selectedBrand === "all"}
+                  readOnly
+                  className="h-3.5 w-3.5 rounded border-gray-300 text-primary focus:ring-primary"
+                />
+                <span>All Brands</span>
+              </div>
+              <span className="text-xs text-muted-foreground">{brandCounts.all}</span>
             </button>
             {BRANDS.map((brand) => (
               <button
                 key={brand}
-                onClick={() => { setSelectedBrand(brand); setCurrentPage(1); }}
-                className={`flex w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors ${
+                onClick={() => handleBrandChange(selectedBrand === brand ? "all" : brand)}
+                className={`flex w-full items-center justify-between rounded-md px-3 py-1.5 text-left text-sm transition-colors ${
                   selectedBrand === brand
                     ? "bg-accent text-primary font-semibold"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 }`}
               >
-                {brand}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedBrand === brand}
+                    readOnly
+                    className="h-3.5 w-3.5 rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  <span>{brand}</span>
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  {brandCounts[brand] || 0}
+                </span>
               </button>
             ))}
           </div>
@@ -221,8 +312,8 @@ export default function ShopPage() {
         {!collapsedFilters.availability && (
           <div className="space-y-0.5 px-2 pb-3">
             <button
-              onClick={() => { setSelectedAvailability("all"); setCurrentPage(1); }}
-              className={`flex w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors ${
+              onClick={() => handleAvailabilityChange("all")}
+              className={`flex w-full items-center rounded-md px-3 py-1.5 text-left text-sm transition-colors ${
                 selectedAvailability === "all"
                   ? "bg-accent text-primary font-semibold"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -233,8 +324,8 @@ export default function ShopPage() {
             {ALL_AVAILABILITY.map((avail) => (
               <button
                 key={avail.value}
-                onClick={() => { setSelectedAvailability(avail.value); setCurrentPage(1); }}
-                className={`flex w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors ${
+                onClick={() => handleAvailabilityChange(avail.value)}
+                className={`flex w-full items-center rounded-md px-3 py-1.5 text-left text-sm transition-colors ${
                   selectedAvailability === avail.value
                     ? "bg-accent text-primary font-semibold"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -261,8 +352,8 @@ export default function ShopPage() {
         {!collapsedFilters.condition && (
           <div className="space-y-0.5 px-2 pb-3">
             <button
-              onClick={() => { setSelectedCondition("all"); setCurrentPage(1); }}
-              className={`flex w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors ${
+              onClick={() => handleConditionChange("all")}
+              className={`flex w-full items-center rounded-md px-3 py-1.5 text-left text-sm transition-colors ${
                 selectedCondition === "all"
                   ? "bg-accent text-primary font-semibold"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -273,8 +364,8 @@ export default function ShopPage() {
             {ALL_CONDITIONS.map((cond) => (
               <button
                 key={cond}
-                onClick={() => { setSelectedCondition(cond); setCurrentPage(1); }}
-                className={`flex w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors ${
+                onClick={() => handleConditionChange(cond)}
+                className={`flex w-full items-center rounded-md px-3 py-1.5 text-left text-sm transition-colors ${
                   selectedCondition === cond
                     ? "bg-accent text-primary font-semibold"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -342,9 +433,8 @@ export default function ShopPage() {
                     <button
                       key={opt.value}
                       onClick={() => {
-                        setSelectedSort(opt.value);
+                        handleSortChange(opt.value);
                         setShowSort(false);
-                        setCurrentPage(1);
                       }}
                       className={`flex w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors ${
                         selectedSort === opt.value
@@ -399,14 +489,17 @@ export default function ShopPage() {
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
-                setCurrentPage(1);
+                handleSearchChange(e.target.value);
               }}
               placeholder="Search by name, brand, or category..."
               className="h-11 w-full rounded-lg border border-border bg-background pl-10 pr-4 text-sm placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"
             />
             {searchQuery && (
               <button
-                onClick={() => setSearchQuery("")}
+                onClick={() => {
+                  setSearchQuery("");
+                  handleSearchChange("");
+                }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
                 <X className="h-4 w-4" />
@@ -426,19 +519,19 @@ export default function ShopPage() {
               {selectedBrand !== "all" && (
                 <span className="inline-flex items-center gap-1 rounded-md bg-accent text-primary px-2.5 py-1 text-xs font-medium">
                   {selectedBrand}
-                  <button onClick={() => { setSelectedBrand("all"); setCurrentPage(1); }}><X className="h-3 w-3" /></button>
+                  <button onClick={() => handleBrandChange("all")}><X className="h-3 w-3" /></button>
                 </span>
               )}
               {selectedAvailability !== "all" && (
                 <span className="inline-flex items-center gap-1 rounded-md bg-accent text-primary px-2.5 py-1 text-xs font-medium">
                   {ALL_AVAILABILITY.find((a) => a.value === selectedAvailability)?.label}
-                  <button onClick={() => { setSelectedAvailability("all"); setCurrentPage(1); }}><X className="h-3 w-3" /></button>
+                  <button onClick={() => handleAvailabilityChange("all")}><X className="h-3 w-3" /></button>
                 </span>
               )}
               {selectedCondition !== "all" && (
                 <span className="inline-flex items-center gap-1 rounded-md bg-accent text-primary px-2.5 py-1 text-xs font-medium">
                   {selectedCondition}
-                  <button onClick={() => { setSelectedCondition("all"); setCurrentPage(1); }}><X className="h-3 w-3" /></button>
+                  <button onClick={() => handleConditionChange("all")}><X className="h-3 w-3" /></button>
                 </span>
               )}
             </div>
@@ -489,7 +582,7 @@ export default function ShopPage() {
                       })
                       .map((page, idx, arr) => {
                         const content = (
-                          <>
+                           <>
                             {idx > 0 && arr[idx - 1] !== page - 1 && (
                               <span className="px-2 text-muted-foreground">...</span>
                             )}
@@ -524,5 +617,18 @@ export default function ShopPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ShopPage() {
+  return (
+    <Suspense fallback={
+      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 text-center text-muted-foreground">
+        <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent mb-4"></div>
+        <p>Loading catalog...</p>
+      </div>
+    }>
+      <ShopContent />
+    </Suspense>
   );
 }

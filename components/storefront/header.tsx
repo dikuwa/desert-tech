@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
-  ShoppingCart,
   Menu,
   X,
   Phone,
@@ -12,6 +11,7 @@ import {
   Search,
   BadgeCheck,
   ArrowRight,
+  ChevronDown,
 } from "lucide-react";
 import { useState, useCallback, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -20,40 +20,33 @@ import { useMobileMenu } from "@/lib/store/mobile-menu";
 import { searchProducts, formatNAD } from "@/lib/data";
 import { CartDropdown } from "@/components/storefront/cart-dropdown";
 import { useDashboardStore } from "@/lib/store/dashboard";
+import { buildShopUrl, getActiveBrands, groupActiveCategories } from "@/lib/storefront-navigation";
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
 const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
 
-const navLinks = [
-  { href: "/", label: "Home" },
-  { href: "/shop", label: "Shop" },
-  { href: "/promotions", label: "Promotions" },
-  { href: "/services", label: "Services" },
-  { href: "/contact", label: "Contact" },
-];
-
 export function StorefrontHeader() {
   const router = useRouter();
+  const pathname = usePathname();
   const settings = useDashboardStore((s) => s.settings);
   const contactDetails = useDashboardStore((s) => s.contactDetails);
   const paymentMethods = useDashboardStore((s) => s.paymentMethods);
-  const bankDetails = useDashboardStore((s) => s.bankDetails);
   const managedCategories = useDashboardStore((s) => s.categories);
-  const categories = [
-    { href: "/shop", label: "All Products" },
-    ...managedCategories
-      .filter((category) => category.isActive)
-      .sort((a, b) => a.sortOrder - b.sortOrder)
-      .map((category) => ({ href: `/shop?category=${category.slug}`, label: category.name })),
-    { href: "/promotions", label: "Promotions" },
-    { href: "/services", label: "Services" },
-    { href: "/contact", label: "Contact" },
-  ];
+  const managedBrands = useDashboardStore((s) => s.brands);
+  const dashboardPromotions = useDashboardStore((s) => s.promotions);
+
+  const categoryGroups = groupActiveCategories(managedCategories);
+  const displayBrands = getActiveBrands(managedBrands).slice(0, 10);
+
+  const activePromo = dashboardPromotions.find(p => p.isActive && p.placement === "HomeHero")
+    || dashboardPromotions.find(p => p.isActive);
+
+  const [megaMenuOpen, setMegaMenuOpen] = useState(false);
+  const megaMenuRef = useRef<HTMLDivElement>(null);
   const whatsapp = settings.whatsapp || WHATSAPP_NUMBER;
   const phone = settings.phone || PHONE_NUMBER;
   const activePayments = paymentMethods.filter((p) => p.isActive);
   const { isOpen: mobileMenuOpen, toggle: toggleMobileMenu, close: closeMobileMenu } = useMobileMenu();
-  const [activeCategory, setActiveCategory] = useState("All Products");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<ReturnType<typeof searchProducts>>([]);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
@@ -101,6 +94,22 @@ export function StorefrontHeader() {
       document.body.classList.remove("mobile-menu-open");
     };
   }, [mobileMenuOpen]);
+
+  useEffect(() => {
+    if (!megaMenuOpen) return;
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (!megaMenuRef.current?.contains(event.target as Node)) setMegaMenuOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMegaMenuOpen(false);
+    };
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [megaMenuOpen]);
 
   const handleSearch = useCallback((e: React.FormEvent | React.KeyboardEvent) => {
     e.preventDefault();
@@ -279,24 +288,203 @@ export function StorefrontHeader() {
         </div>
       </div>
 
-      <div className="hidden md:block border-t border-border bg-card">
+      <div className="hidden md:block border-t border-border bg-card relative">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <nav className="flex items-center gap-1 overflow-x-auto py-0">
-            {categories.map((cat) => (
-              <Link
-                key={cat.label}
-                href={cat.href}
-                onClick={() => setActiveCategory(cat.label)}
+          <nav className="flex items-center justify-center gap-8 py-0">
+            {/* Shop Link with Mega Menu Trigger */}
+            <div
+              ref={megaMenuRef}
+              className="relative py-3"
+              onMouseEnter={() => setMegaMenuOpen(true)}
+              onMouseLeave={() => setMegaMenuOpen(false)}
+            >
+              <button
+                type="button"
+                onClick={() => setMegaMenuOpen((open) => !open)}
+                aria-expanded={megaMenuOpen}
+                aria-controls="storefront-shop-menu"
+                aria-haspopup="menu"
                 className={cn(
-                  "relative whitespace-nowrap px-3 py-3 text-sm font-medium transition-colors",
-                  activeCategory === cat.label
-                    ? "text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/70",
+                  "flex items-center gap-1 text-sm font-medium transition-colors cursor-pointer",
+                  megaMenuOpen || pathname === "/shop"
+                    ? "text-primary"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                {cat.label}
-              </Link>
-            ))}
+                <span>Shop</span>
+                <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", megaMenuOpen && "rotate-180")} />
+              </button>
+
+              {/* Mega Menu Dropdown */}
+              {megaMenuOpen && (
+                <div
+                  id="storefront-shop-menu"
+                  className="absolute top-full left-1/2 z-50 mt-0.5 w-[92vw] max-w-6xl -translate-x-1/2 rounded-b-xl border border-border bg-background p-6 shadow-xl"
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-6 text-left">
+                    {/* Column 1: Shop All */}
+                    <div>
+                      <h4 className="font-bold text-foreground mb-3 uppercase tracking-wider text-[11px]">Shop All</h4>
+                      <ul className="space-y-2 text-sm text-muted-foreground font-normal">
+                        <li>
+                          <Link href="/shop" onClick={() => setMegaMenuOpen(false)} className="hover:text-primary transition-colors flex items-center gap-1.5">
+                            All Products
+                          </Link>
+                        </li>
+                        <li>
+                          <Link href="/shop?sort=newest" onClick={() => setMegaMenuOpen(false)} className="hover:text-primary transition-colors flex items-center gap-1.5">
+                            New Arrivals
+                          </Link>
+                        </li>
+                        <li>
+                          <Link href="/shop?condition=Pre-Owned" onClick={() => setMegaMenuOpen(false)} className="hover:text-primary transition-colors flex items-center gap-1.5">
+                            Pre-Owned
+                          </Link>
+                        </li>
+                        <li>
+                          <Link href="/promotions" onClick={() => setMegaMenuOpen(false)} className="hover:text-primary transition-colors flex items-center gap-1.5">
+                            Promotions
+                          </Link>
+                        </li>
+                      </ul>
+                    </div>
+
+                    {/* Column 2: Computers */}
+                    <div>
+                      <h4 className="font-bold text-foreground mb-3 uppercase tracking-wider text-[11px]">Computers</h4>
+                      <ul className="space-y-2 text-sm text-muted-foreground font-normal">
+                        {categoryGroups.computers.map((cat) => (
+                          <li key={cat.id}>
+                            <Link href={buildShopUrl("category", cat.slug)} onClick={() => setMegaMenuOpen(false)} className="hover:text-primary transition-colors">
+                              {cat.name}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Column 3: Mobile & Entertainment */}
+                    <div>
+                      <h4 className="font-bold text-foreground mb-3 uppercase tracking-wider text-[11px]">Mobile & Entertainment</h4>
+                      <ul className="space-y-2 text-sm text-muted-foreground font-normal">
+                        {categoryGroups.mobile.map((cat) => (
+                          <li key={cat.id}>
+                            <Link href={buildShopUrl("category", cat.slug)} onClick={() => setMegaMenuOpen(false)} className="hover:text-primary transition-colors">
+                              {cat.name}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Column 4: Business & Security */}
+                    <div>
+                      <h4 className="font-bold text-foreground mb-3 uppercase tracking-wider text-[11px]">Business & Security</h4>
+                      <ul className="space-y-2 text-sm text-muted-foreground font-normal">
+                        {categoryGroups.business.map((cat) => (
+                          <li key={cat.id}>
+                            <Link href={buildShopUrl("category", cat.slug)} onClick={() => setMegaMenuOpen(false)} className="hover:text-primary transition-colors">
+                              {cat.name}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {categoryGroups.other.length > 0 && (
+                      <div>
+                        <h4 className="font-bold text-foreground mb-3 uppercase tracking-wider text-[11px]">Other Categories</h4>
+                        <ul className="space-y-2 text-sm text-muted-foreground font-normal">
+                          {categoryGroups.other.map((cat) => (
+                            <li key={cat.id}>
+                              <Link href={buildShopUrl("category", cat.slug)} onClick={() => setMegaMenuOpen(false)} className="hover:text-primary transition-colors">
+                                {cat.name}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Column 5: Brands & Promo Card */}
+                    {activePromo ? (
+                      <div className="grid grid-cols-2 col-span-2 gap-6 border-l border-border pl-6">
+                        <div>
+                          <h4 className="font-bold text-foreground mb-3 uppercase tracking-wider text-[11px]">Popular Brands</h4>
+                          <ul className="space-y-2 text-sm text-muted-foreground font-normal">
+                            {displayBrands.slice(0, 5).map((brand) => (
+                              <li key={brand.id}>
+                                <Link href={buildShopUrl("brand", brand.name)} onClick={() => setMegaMenuOpen(false)} className="hover:text-primary transition-colors">
+                                  {brand.name}
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div className="bg-muted/30 rounded-lg p-4 flex flex-col justify-between h-full border border-border/50">
+                          <div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                              Featured Deal
+                            </span>
+                            <h5 className="font-bold text-foreground mt-2 text-xs line-clamp-1">{activePromo.title}</h5>
+                            <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2 leading-relaxed">{activePromo.description}</p>
+                          </div>
+                          <Link
+                            href={activePromo.linkedCategory ? buildShopUrl("category", activePromo.linkedCategory) : "/promotions"}
+                            onClick={() => setMegaMenuOpen(false)}
+                            className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+                          >
+                            Shop Deals <ArrowRight className="h-3 w-3" />
+                          </Link>
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <h4 className="font-bold text-foreground mb-3 uppercase tracking-wider text-[11px]">Popular Brands</h4>
+                        <ul className="space-y-2 text-sm text-muted-foreground font-normal">
+                          {displayBrands.slice(0, 8).map((brand) => (
+                            <li key={brand.id}>
+                              <Link href={buildShopUrl("brand", brand.name)} onClick={() => setMegaMenuOpen(false)} className="hover:text-primary transition-colors">
+                                {brand.name}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Other nav links */}
+            <Link
+              href="/promotions"
+              className={cn(
+                "relative whitespace-nowrap px-3 py-3 text-sm font-medium transition-colors",
+                pathname === "/promotions" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Promotions
+            </Link>
+            <Link
+              href="/services"
+              className={cn(
+                "relative whitespace-nowrap px-3 py-3 text-sm font-medium transition-colors",
+                pathname === "/services" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Services
+            </Link>
+            <Link
+              href="/contact"
+              className={cn(
+                "relative whitespace-nowrap px-3 py-3 text-sm font-medium transition-colors",
+                pathname === "/contact" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Contact
+            </Link>
           </nav>
         </div>
       </div>
