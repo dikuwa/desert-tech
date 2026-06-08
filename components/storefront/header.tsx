@@ -13,11 +13,11 @@ import {
   ArrowRight,
   ChevronDown,
 } from "lucide-react";
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/lib/store/cart";
 import { useMobileMenu } from "@/lib/store/mobile-menu";
-import { searchProducts, formatNAD } from "@/lib/data";
+import { formatNAD, mergeProducts } from "@/lib/data";
 import { CartDropdown } from "@/components/storefront/cart-dropdown";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { buildShopUrl, getActiveBrands, groupActiveCategories } from "@/lib/storefront-navigation";
@@ -48,7 +48,6 @@ export function StorefrontHeader() {
   const activePayments = paymentMethods.filter((p) => p.isActive);
   const { isOpen: mobileMenuOpen, toggle: toggleMobileMenu, close: closeMobileMenu } = useMobileMenu();
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<ReturnType<typeof searchProducts>>([]);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const [hydrated, setHydrated] = useState(false);
@@ -56,13 +55,29 @@ export function StorefrontHeader() {
   const { getItemCount } = useCart();
   const itemCount = getItemCount();
 
+  // Get products from dashboard store for search
+  const dashboardProducts = useDashboardStore((s) => s.products);
+  const dashboardCategories = useDashboardStore((s) => s.categories);
+  
+  // Compute search results from dashboard products
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const allProducts = mergeProducts(dashboardProducts, dashboardCategories);
+    const q = searchQuery.toLowerCase();
+    return allProducts.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.brand.toLowerCase().includes(q) ||
+        p.categoryName.toLowerCase().includes(q) ||
+        p.specs.toLowerCase().includes(q),
+    ).slice(0, 8); // Limit to 8 results
+  }, [searchQuery, dashboardProducts, dashboardCategories]);
+
   // Live search as user types
   useEffect(() => {
     if (searchQuery.trim()) {
-      setSearchResults(searchProducts(searchQuery.trim()));
       setShowSearchDropdown(true);
     } else {
-      setSearchResults([]);
       setShowSearchDropdown(false);
     }
   }, [searchQuery]);

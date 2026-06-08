@@ -13,11 +13,11 @@ import {
   Tag,
   ChevronDown,
 } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { useMobileMenu } from "@/lib/store/mobile-menu";
 import { useCart } from "@/lib/store/cart";
-import { searchProducts, formatNAD } from "@/lib/data";
+import { formatNAD, mergeProducts, type ProductData } from "@/lib/data";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { buildShopUrl, getActiveBrands, groupActiveCategories } from "@/lib/storefront-navigation";
 
@@ -37,17 +37,25 @@ export function MobileDrawer() {
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => { setHydrated(true); }, []);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<ReturnType<typeof searchProducts>>([]);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  // Live search
-  useEffect(() => {
-    if (searchQuery.trim()) {
-      setSearchResults(searchProducts(searchQuery.trim()));
-    } else {
-      setSearchResults([]);
-    }
-  }, [searchQuery]);
+  // Get products from dashboard store for search
+  const dashboardProducts = useDashboardStore((s) => s.products);
+  const dashboardCategories = useDashboardStore((s) => s.categories);
+
+  // Compute search results from dashboard products
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const allProducts = mergeProducts(dashboardProducts, dashboardCategories);
+    const q = searchQuery.toLowerCase();
+    return allProducts.filter(
+      (p: ProductData) =>
+        p.name.toLowerCase().includes(q) ||
+        p.brand.toLowerCase().includes(q) ||
+        p.categoryName.toLowerCase().includes(q) ||
+        p.specs.toLowerCase().includes(q),
+    ).slice(0, 8);
+  }, [searchQuery, dashboardProducts, dashboardCategories]);
 
   // Close search dropdown on outside click
   useEffect(() => {
