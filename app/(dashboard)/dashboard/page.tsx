@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { ShoppingBag, Users, Bell, CalendarClock, AlertTriangle, ArrowRight, TrendingUp } from "lucide-react";
+import { ShoppingBag, Users, Bell, CalendarClock, AlertTriangle, ArrowRight, TrendingUp, Package, Inbox } from "lucide-react";
 import { FadeIn } from "@/components/ui/fade-in";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { formatCents } from "@/lib/dashboard-data";
 import { Permissions } from "@/lib/permissions";
+import { cn } from "@/lib/utils";
 
 export default function DashboardPage() {
   const [profile, setProfile] = useState<{
@@ -105,84 +106,123 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Stats Grid - compact */}
-      <div className={stats.length === 5 ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3" : "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3"}>
+      {/* Stats Grid - compact, equal height cards */}
+      <div className={cn(
+        "grid gap-3",
+        stats.length === 5 
+          ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-5" 
+          : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-6"
+      )}>
         {stats.map((stat, i) => {
           const Icon = stat.icon;
           return (
             <FadeIn key={stat.label} delay={i * 0.04}>
-            <Link
-              key={stat.label}
-              href={stat.href}
-              className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 transition-all hover:shadow-sm hover:border-primary/20 group"
-            >
-              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${stat.bg}`}>
-                <Icon className={`h-4 w-4 ${stat.color}`} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-2xl font-bold text-foreground tabular-nums truncate leading-none">{stat.value}</p>
-                <p className="text-[10px] text-muted-foreground truncate mt-1">{stat.label}</p>
-              </div>
-            </Link>
+              <Link
+                href={stat.href}
+                className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 transition-all hover:shadow-sm hover:border-primary/20 group h-full"
+              >
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${stat.bg}`}>
+                  <Icon className={`h-4 w-4 ${stat.color}`} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-2xl font-bold text-foreground tabular-nums truncate leading-none">{stat.value}</p>
+                  <p className="text-[10px] text-muted-foreground truncate mt-1">{stat.label}</p>
+                </div>
+              </Link>
             </FadeIn>
           );
         })}
       </div>
 
+      {/* Main Content Grid */}
       <FadeIn delay={0.2}>
-      <div className="grid lg:grid-cols-2 gap-6 bg-noise rounded-xl p-4">
-        <div className="rounded-xl border border-border bg-card">
-          <div className="flex items-center justify-between p-5 border-b border-border">
-            <h2 className="text-base font-semibold text-foreground">Recent Orders</h2>
-            <Link href="/dashboard/orders" className="text-xs font-semibold text-primary hover:text-primary/80 flex items-center gap-1">
-              View All <ArrowRight className="h-3 w-3" />
-            </Link>
-          </div>
-          <div className="divide-y divide-border">
-            {recentOrders.slice(0, 5).map((order) => (
-              <Link key={order.id} href={`/dashboard/orders/${order.id}`} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">{order.orderNumber}</p>
-                  <p className="text-xs text-muted-foreground">{order.customerName}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-bold text-foreground">{formatCents(order.subtotalCents)}</p>
-                  <span className={`inline-block rounded-md border px-2 py-0.5 text-[10px] font-semibold ${order.paymentStatus === "PaidInFull" ? "bg-success-soft text-success border-success/20" : "bg-warning-soft text-warning border-warning/20"}`}>
-                    {order.paymentStatus}
-                  </span>
-                </div>
+        <div className="grid lg:grid-cols-2 gap-6">
+          {/* Recent Orders */}
+          <div className="rounded-xl border border-border bg-card flex flex-col">
+            <div className="flex items-center justify-between p-5 border-b border-border">
+              <h2 className="text-base font-semibold text-foreground">Recent Orders</h2>
+              <Link href="/dashboard/orders" className="text-xs font-semibold text-primary hover:text-primary/80 flex items-center gap-1">
+                View All <ArrowRight className="h-3 w-3" />
               </Link>
-            ))}
+            </div>
+            <div className="divide-y divide-border flex-1">
+              {recentOrders.length > 0 ? (
+                recentOrders.slice(0, 5).map((order) => (
+                  <Link 
+                    key={order.id} 
+                    href={`/dashboard/orders/${order.id}`} 
+                    className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-foreground truncate">{order.orderNumber}</p>
+                      <p className="text-xs text-muted-foreground truncate">{order.customerName}</p>
+                    </div>
+                    <div className="text-right ml-4 shrink-0">
+                      <p className="text-sm font-bold text-foreground">{formatCents(order.subtotalCents)}</p>
+                      <span className={cn(
+                        "inline-block rounded-md border px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap",
+                        order.paymentStatus === "PaidInFull" 
+                          ? "bg-success-soft text-success border-success/20" 
+                          : "bg-warning-soft text-warning border-warning/20"
+                      )}>
+                        {order.paymentStatus}
+                      </span>
+                    </div>
+                  </Link>
+                ))
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <Package className="h-10 w-10 text-muted-foreground/30 mb-3" />
+                  <p className="text-sm font-medium text-muted-foreground">No orders yet</p>
+                  <p className="text-xs text-muted-foreground/70 mt-1">New orders will appear here</p>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
 
-        <div className="rounded-xl border border-border bg-card">
-          <div className="flex items-center justify-between p-5 border-b border-border">
-            <h2 className="text-base font-semibold text-foreground">Notifications</h2>
-            <Link href="/dashboard/notifications" className="text-xs font-semibold text-primary hover:text-primary/80 flex items-center gap-1">
-              View All <ArrowRight className="h-3 w-3" />
-            </Link>
-          </div>
-          <div className="divide-y divide-border">
-            {notifications.slice(0, 5).map((note) => (
-              <div key={note.id} className={`flex items-start gap-3 p-4 ${!note.isRead ? "bg-accent/30" : ""}`}>
-                <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${
-                  note.type === "order" ? "bg-primary/10 text-primary" :
-                  note.type === "payment" ? "bg-success-soft text-success" :
-                  note.type === "stock" ? "bg-warning-soft text-warning" : "bg-info-soft text-info"
-                }`}>
-                  <Bell className="h-4 w-4" />
+          {/* Notifications */}
+          <div className="rounded-xl border border-border bg-card flex flex-col">
+            <div className="flex items-center justify-between p-5 border-b border-border">
+              <h2 className="text-base font-semibold text-foreground">Notifications</h2>
+              <Link href="/dashboard/notifications" className="text-xs font-semibold text-primary hover:text-primary/80 flex items-center gap-1">
+                View All <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+            <div className="divide-y divide-border flex-1">
+              {notifications.length > 0 ? (
+                notifications.slice(0, 5).map((note) => (
+                  <div 
+                    key={note.id} 
+                    className={cn(
+                      "flex items-start gap-3 p-4",
+                      !note.isRead ? "bg-accent/30" : ""
+                    )}
+                  >
+                    <div className={cn(
+                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
+                      note.type === "order" ? "bg-primary/10 text-primary" :
+                      note.type === "payment" ? "bg-success-soft text-success" :
+                      note.type === "stock" ? "bg-warning-soft text-warning" : "bg-info-soft text-info"
+                    )}>
+                      <Bell className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">{note.title}</p>
+                      <p className="text-xs text-muted-foreground line-clamp-2">{note.message}</p>
+                    </div>
+                    {!note.isRead && <span className="h-2 w-2 rounded-full bg-primary mt-1.5 shrink-0" />}
+                  </div>
+                ))
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <Inbox className="h-10 w-10 text-muted-foreground/30 mb-3" />
+                  <p className="text-sm font-medium text-muted-foreground">No notifications</p>
+                  <p className="text-xs text-muted-foreground/70 mt-1">You&apos;re all caught up</p>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground">{note.title}</p>
-                  <p className="text-xs text-muted-foreground">{note.message}</p>
-                </div>
-                {!note.isRead && <span className="h-2 w-2 rounded-full bg-primary mt-1.5" />}
-              </div>
-            ))}
+              )}
+            </div>
           </div>
         </div>
-      </div>
       </FadeIn>
     </div>
   );
