@@ -37,8 +37,9 @@ export default function ProductDetailPage() {
   const params = useParams();
   const slug = params.slug as string;
   const dashboardProducts = useDashboardStore((s) => s.products);
+  const managedCategories = useDashboardStore((s) => s.categories);
   // Merge static + dashboard products and search for the slug
-  const allProductsMerged = mergeProducts(dashboardProducts);
+  const allProductsMerged = mergeProducts(dashboardProducts, managedCategories);
   const localProduct = allProductsMerged.find((p) => p.slug === slug) || getProductBySlug(slug);
   const [remoteProduct, setRemoteProduct] = useState<ProductData | null | undefined>(undefined);
   const product = localProduct || remoteProduct;
@@ -52,10 +53,10 @@ export default function ProductDetailPage() {
       .then((response) => response.json())
       .then((data: { products?: DashboardProduct[] }) => {
         const match = data.products?.find((candidate) => candidate.slug === slug);
-        setRemoteProduct(match ? dashboardProductToProductData(match) : null);
+        setRemoteProduct(match ? dashboardProductToProductData(match, managedCategories) : null);
       })
       .catch(() => setRemoteProduct(null));
-  }, [localProduct, slug]);
+  }, [localProduct, slug, managedCategories]);
   const [addedToCart, setAddedToCart] = useState(false);
   const { toggleItem, isWishlisted } = useWishlist();
   

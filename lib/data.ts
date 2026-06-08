@@ -441,10 +441,16 @@ function mapAvailability(avail: string): "in_stock" | "low_stock" | "sold_out" {
 
 /**
  * Map a DashboardProduct to the storefront ProductData interface.
+ * Uses real category data to get correct slug and ID.
  */
-export function dashboardProductToProductData(p: DashboardProduct): ProductData {
-  const categorySlug = CATEGORY_SLUG_MAP[p.category] || "general";
-  const categoryId = CATEGORY_ID_MAP[p.category] || "cat-general";
+export function dashboardProductToProductData(
+  p: DashboardProduct,
+  categories: DashboardCategory[] = []
+): ProductData {
+  // Look up the actual category from provided categories
+  const category = categories.find(c => c.name === p.category);
+  const categorySlug = category?.slug || CATEGORY_SLUG_MAP[p.category] || "general";
+  const categoryId = category?.id || CATEGORY_ID_MAP[p.category] || "cat-general";
   const stockCount = p.stockQuantity > 0 ? p.stockQuantity : undefined;
   const fallbackProduct = products.find((product) => product.slug === p.slug);
   const images = p.images && p.images.length > 0
@@ -483,9 +489,13 @@ export function dashboardProductToProductData(p: DashboardProduct): ProductData 
 /**
  * Merge static products with dashboard-managed products.
  * Dashboard products with matching slugs override static ones.
+ * Uses real category data for correct slug mapping.
  */
-export function mergeProducts(dashboardProducts: DashboardProduct[]): ProductData[] {
-  const mapped = dashboardProducts.map(dashboardProductToProductData);
+export function mergeProducts(
+  dashboardProducts: DashboardProduct[],
+  categories: DashboardCategory[] = []
+): ProductData[] {
+  const mapped = dashboardProducts.map(p => dashboardProductToProductData(p, categories));
   const dashboardSlugs = new Set(mapped.map((p) => p.slug));
   // Start with static products that don't have a dashboard override
   const merged = products.filter((p) => !dashboardSlugs.has(p.slug));

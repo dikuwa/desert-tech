@@ -114,8 +114,11 @@ function ShopContent() {
   const dashboardProducts = useDashboardStore((s) => s.products);
   const [selectedBrand, setSelectedBrand] = useState("all");
 
-  // Merge static products with dashboard-created products
-  const allProducts = useMemo(() => mergeProducts(dashboardProducts), [dashboardProducts]);
+  // Merge static products with dashboard-created products using real category data
+  const allProducts = useMemo(
+    () => mergeProducts(dashboardProducts, managedCategories),
+    [dashboardProducts, managedCategories]
+  );
   const categories = useMemo(
     () => getActiveCategories(managedCategories).map(dashboardCategoryToCategoryData),
     [managedCategories],

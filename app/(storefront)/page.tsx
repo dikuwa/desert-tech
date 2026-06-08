@@ -21,7 +21,11 @@ const serviceNotes = [
 
 export default function HomePage() {
   const dashboardProducts = useDashboardStore((s) => s.products);
-  const allProducts = useMemo(() => mergeProducts(dashboardProducts), [dashboardProducts]);
+  const managedCategories = useDashboardStore((s) => s.categories);
+  const allProducts = useMemo(
+    () => mergeProducts(dashboardProducts, managedCategories),
+    [dashboardProducts, managedCategories]
+  );
   const featuredProducts = allProducts.filter(p => p.isFeatured).slice(0, 8);
   return (
     <div>
