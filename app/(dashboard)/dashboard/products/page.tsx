@@ -118,12 +118,13 @@ export default function ProductsPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/50">
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Product</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">SKU</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Category</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Price</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Stock</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Status</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Product</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">SKU</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Category</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Price</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Stock</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Condition</th>
               <th className="px-4 py-3" />
             </tr>
           </thead>
