@@ -140,11 +140,11 @@ export const auth = betterAuth({
         required: false,
         input: false,
       },
-      // profileEmail is NOT added here because the column hasn't been
-      // created on production yet. It's stored and returned by the
-      // update-profile route directly. To include it in session responses,
-      // run the migration first, then uncomment below.
-      // profileEmail: { type: "string", required: false, input: false },
+      profileEmail: {
+        type: "string",
+        required: false,
+        input: false,
+      },
     },
   },
 
