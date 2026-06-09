@@ -125,11 +125,31 @@ export default function ReceiptsPage() {
     }
   };
 
-  const handleSendViaWhatsApp = (orderNumber: string, customerName: string) => {
-    const msg = encodeURIComponent(
-      `Hi ${customerName}, here is your receipt for order ${orderNumber}. You can download it here: ${window.location.origin}/api/receipts/generate?orderId=${orderNumber}`,
-    );
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
+  const handleSendViaWhatsApp = async (orderNumber: string, customerName: string) => {
+    try {
+      // Generate document token for public URL
+      const res = await fetch("/api/documents/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "receipt",
+          referenceId: orderNumber,
+          documentNumber: `RCP-${orderNumber.replace("DT-", "")}`,
+        }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        toast.error("Failed to generate shareable link");
+        return;
+      }
+      const msg = encodeURIComponent(
+        `Hi ${customerName}, here is your receipt for order ${orderNumber}.\n\nView it here: ${data.url}\n\nThank you for choosing Desert Technology!`,
+      );
+      window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
+    } catch (err) {
+      console.error("WhatsApp share failed:", err);
+      toast.error("Failed to generate shareable link");
+    }
   };
 
   const handleSendViaEmail = async (orderNumber: string) => {
@@ -161,11 +181,31 @@ export default function ReceiptsPage() {
     }
   };
 
-  const handleCopyLink = (orderNumber: string) => {
-    const link = `${window.location.origin}/api/receipts/generate?orderId=${orderNumber}`;
-    navigator.clipboard.writeText(link);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2000);
+  const handleCopyLink = async (orderNumber: string) => {
+    try {
+      // Generate document token for public URL
+      const res = await fetch("/api/documents/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "receipt",
+          referenceId: orderNumber,
+          documentNumber: `RCP-${orderNumber.replace("DT-", "")}`,
+        }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        toast.error("Failed to generate shareable link");
+        return;
+      }
+      await navigator.clipboard.writeText(data.url);
+      setCopiedLink(true);
+      toast.success("Link copied to clipboard");
+      setTimeout(() => setCopiedLink(false), 2000);
+    } catch (err) {
+      console.error("Copy link failed:", err);
+      toast.error("Failed to copy link");
+    }
   };
 
   const onSearchChange = (val: string) => {

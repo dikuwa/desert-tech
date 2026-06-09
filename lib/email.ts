@@ -19,6 +19,16 @@ interface EmailOptions {
   text?: string;
 }
 
+interface EmailAttachment {
+  filename: string;
+  content: string; // base64 encoded
+  contentType: string;
+}
+
+interface EmailWithAttachmentOptions extends EmailOptions {
+  attachments: EmailAttachment[];
+}
+
 /**
  * Send an email using Resend.
  * Falls back to console logging in development without API key.
@@ -53,6 +63,47 @@ export async function sendEmail(options: EmailOptions): Promise<void> {
   } catch (error) {
     console.error("[Email] Failed to send:", error);
     throw error;    }
+}
+
+/**
+ * Send an email with attachments using Resend.
+ * Falls back to console logging in development without API key.
+ */
+export async function sendEmailWithAttachment(options: EmailWithAttachmentOptions): Promise<void> {
+  const { to, subject, html, text, attachments } = options;
+
+  // Log email in development
+  if (!resend) {
+    console.log("\n========== EMAIL WITH ATTACHMENT (Development Mode) ==========");
+    console.log(`To: ${to}`);
+    console.log(`Subject: ${subject}`);
+    console.log(`Attachments: ${attachments.map((a) => a.filename).join(", ")}`);
+    console.log("==============================================================\n");
+    return;
+  }
+
+  try {
+    const result = await resend.emails.send({
+      from: fromEmail,
+      to,
+      subject,
+      html,
+      text,
+      attachments: attachments.map((att) => ({
+        filename: att.filename,
+        content: att.content, // base64
+      })),
+    });
+
+    if (result.error) {
+      throw new Error(`Email failed: ${result.error.message}`);
+    }
+
+    console.log(`[Email] Sent with attachments to ${to}: ${subject}`);
+  } catch (error) {
+    console.error("[Email] Failed to send with attachments:", error);
+    throw error;
+  }
 }
 
 // ============== WELCOME EMAIL ==============

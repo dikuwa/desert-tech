@@ -19,6 +19,7 @@ interface ReceiptEmailProps {
   orderNumber: string;
   receiptNumber: string;
   totalAmount: string;
+  publicUrl?: string;
   storeName?: string;
   storePhone?: string;
   storeEmail?: string;
@@ -31,11 +32,12 @@ export function ReceiptEmail({
   orderNumber,
   receiptNumber,
   totalAmount,
+  publicUrl,
   storeName = "Desert Technology Consultant",
   storePhone = "+264 85 277 5140",
   storeEmail = "sales@desertechnam.com",
 }: ReceiptEmailProps) {
-  const receiptUrl = `${baseUrl}/api/receipts/generate?orderId=${orderNumber}&view=1`;
+  const receiptUrl = publicUrl || `${baseUrl}/api/receipts/generate?orderId=${orderNumber}&view=1`;
 
   return (
     <Html>
