@@ -58,14 +58,8 @@ export async function POST(request: NextRequest) {
       updateData.image = profileImage || null;
     }
 
-    // profileEmail is display-only — never update the login email here
-    // Store it in a custom field or simply ignore for security
-    // For now, we just log it but don't change the login email
     if (typeof profileEmail === "string" && profileEmail.trim()) {
-      // Profile email is display-only — intentionally NOT persisted here
-      // The auth model has no separate profile email field, and we must not
-      // overwrite the login email. A future migration could add a dedicated
-      // profileEmail column to the User model.
+      updateData.profileEmail = profileEmail.trim();
     }
 
     if (Object.keys(updateData).length === 0) {
@@ -87,6 +81,7 @@ export async function POST(request: NextRequest) {
         status: true,
         image: true,
         phone: true,
+        profileEmail: true,
         jobTitle: true,
         twoFactorEnabled: true,
         permissions: true,

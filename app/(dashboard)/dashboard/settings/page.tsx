@@ -108,6 +108,7 @@ export default function SettingsPage() {
             status: data.user.status || "ACTIVE",
             jobTitle: data.user.jobTitle || undefined,
             phone: data.user.phone || undefined,
+            profileImage: data.user.image || "",
             twoFactorEnabled: data.user.twoFactorEnabled || false,
             permissions: data.user.permissions || [],
             lastActiveAt: data.user.lastActiveAt || undefined,
@@ -118,7 +119,7 @@ export default function SettingsPage() {
             displayName: data.user.name || "",
             contactNumber: data.user.phone || "",
             profileEmail: data.user.profileEmail || data.user.email || "",
-            profileImage: data.user.profileImage || "",
+            profileImage: data.user.image || "",
           });
         }
       })
@@ -282,13 +283,24 @@ export default function SettingsPage() {
         throw new Error(data?.error || data?.message || "Failed to update profile");
       }
 
-      // Update local session state
+      // Update local session state from server response
       setUserSession((prev) => prev ? {
         ...prev,
-        name: profileForm.displayName,
-        phone: profileForm.contactNumber,
-        profileImage: profileForm.profileImage || prev.profileImage,
+        name: data?.user?.displayName || profileForm.displayName,
+        email: data?.user?.email || prev.email,
+        phone: data?.user?.contactNumber || profileForm.contactNumber,
+        profileImage: data?.user?.profileImage || profileForm.profileImage || prev.profileImage,
       } : prev);
+
+      // Re-initialize profile form from server response for accuracy
+      if (data?.user) {
+        setProfileForm({
+          displayName: data.user.displayName || profileForm.displayName,
+          contactNumber: data.user.contactNumber || profileForm.contactNumber,
+          profileEmail: data.user.profileEmail || data.user.email || profileForm.profileEmail,
+          profileImage: data.user.profileImage || profileForm.profileImage,
+        });
+      }
       setIsEditingProfile(false);
       toast.success("Profile updated successfully");
     } catch (err) {

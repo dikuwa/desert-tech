@@ -84,6 +84,7 @@ interface DashboardSidebarProps {
     name: string;
     role: UserRole;
     permissions: Permission[];
+    image?: string | null;
   };
 }
 
@@ -294,6 +295,9 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
       <div className={cn("border-t border-border p-4", collapsed && "flex justify-center")}>
         <div className={cn("flex items-center gap-3", collapsed && "flex-col")}>
           <Avatar className="h-8 w-8">
+            {user.image ? (
+              <img src={user.image} alt="" className="h-full w-full rounded-full object-cover" />
+            ) : null}
             <AvatarFallback className="bg-primary/10 text-primary text-xs">
               {user.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
             </AvatarFallback>

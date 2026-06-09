@@ -851,17 +851,17 @@ export function StaffList({ staff, pendingInvitations = [], currentUserRole, onU
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
               Pending Invitations
             </h3>
-            <span className="rounded-full bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+            <span className="rounded-full bg-amber-200 dark:bg-amber-800/50 px-2.5 py-0.5 text-[11px] font-extrabold text-amber-900 dark:text-amber-200 border border-amber-400 dark:border-amber-600 shadow-sm">
               {pendingInvitations.length}
             </span>
           </div>
           {pendingInvitations.map((inv) => (              <div
               key={inv.id}
-              className="rounded-xl border border-dashed border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-900/10 p-4 transition-all hover:shadow-sm"
+              className="rounded-xl border border-dashed border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/20 p-4 transition-all hover:shadow-sm hover:border-amber-400 dark:hover:border-amber-600"
             >
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 font-bold text-sm border border-amber-300 dark:border-amber-700">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-amber-200 dark:bg-amber-800/40 text-amber-900 dark:text-amber-200 font-extrabold text-base border-2 border-amber-400 dark:border-amber-600 shadow-sm">
                     {inv.name
                       .split(" ")
                       .map((n) => n[0])
@@ -871,7 +871,7 @@ export function StaffList({ staff, pendingInvitations = [], currentUserRole, onU
                   <div>
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-sm font-semibold text-foreground">{inv.name}</span>
-                      <span className="rounded-[3px] border border-amber-300 dark:border-amber-700 bg-amber-100 dark:bg-amber-900/30 px-1.5 py-[2px] text-[9px] font-bold leading-none text-amber-800 dark:text-amber-300">
+                      <span className="rounded-[4px] border border-amber-400 dark:border-amber-600 bg-amber-200 dark:bg-amber-800/40 px-2 py-[3px] text-[10px] font-extrabold leading-none text-amber-900 dark:text-amber-200 uppercase tracking-wide">
                         PENDING
                       </span>
                       <span className={`rounded-[3px] border px-1.5 py-[2px] text-[10px] font-bold leading-none select-none ${

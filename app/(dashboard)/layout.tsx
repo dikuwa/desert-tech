@@ -27,6 +27,7 @@ export default async function DashboardLayout({
           name: user.name,
           role: user.role,
           permissions: user.permissions,
+          image: user.image,
         }}
       />
       <main className="dashboard-main flex-1 overflow-auto bg-muted bg-noise">

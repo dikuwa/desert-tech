@@ -23,6 +23,7 @@ model User {
   mustChangePassword  Boolean    @default(false)
   jobTitle            String?
   phone               String?
+  profileEmail        String?
   passwordChangedAt   DateTime?
   lastActiveAt        DateTime?
   invitedById         String?

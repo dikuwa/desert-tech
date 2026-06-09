@@ -2331,6 +2331,7 @@ export const UserScalarFieldEnum = {
   mustChangePassword: 'mustChangePassword',
   jobTitle: 'jobTitle',
   phone: 'phone',
+  profileEmail: 'profileEmail',
   passwordChangedAt: 'passwordChangedAt',
   lastActiveAt: 'lastActiveAt',
   invitedById: 'invitedById',

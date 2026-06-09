@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 
 export default function DashboardPage() {
   const [profile, setProfile] = useState<{
-    name: string; email: string; role: string; status: string;
+    name: string; email: string; role: string; status: string; image?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -24,6 +24,7 @@ export default function DashboardPage() {
             email: data.user.email || "",
             role: data.user.role || "—",
             status: data.user.status || "—",
+            image: data.user.image || undefined,
           });
         }
       })
@@ -86,13 +87,19 @@ export default function DashboardPage() {
             href="/dashboard/settings"
             className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-2.5 transition-all hover:shadow-sm hover:border-primary/20 shrink-0"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-bold">
-              {profile.name
-                .split(" ")
-                .map((n) => n[0])
-                .join("")
-                .toUpperCase()
-                .slice(0, 2)}
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-bold overflow-hidden">
+              {profile.image ? (
+                <img src={profile.image} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <span>
+                  {profile.name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .toUpperCase()
+                    .slice(0, 2)}
+                </span>
+              )}
             </div>
             <div className="min-w-0">
               <p className="text-sm font-semibold text-foreground truncate leading-tight">
