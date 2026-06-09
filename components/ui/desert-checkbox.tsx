@@ -1,7 +1,6 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Check } from "lucide-react";
 import { forwardRef, InputHTMLAttributes, type ReactNode } from "react";
 
 export interface DesertCheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
@@ -51,13 +50,18 @@ export const DesertCheckbox = forwardRef<HTMLInputElement, DesertCheckboxProps>(
               "flex items-center justify-center"
             )}
           >
-            <Check
+            {/* Filled check mark — strokes with round caps create a blob at the vertex on small icons,
+                so we use a solid-filled path that stays crisp at any size */}
+            <svg
+              viewBox="0 0 24 24"
+              fill="currentColor"
               className={cn(
-                "h-3 w-3 text-primary-foreground transition-transform duration-150",
+                "h-3.5 w-3.5 text-primary-foreground transition-transform duration-150",
                 "scale-0 peer-checked:scale-100"
               )}
-              strokeWidth={2}
-            />
+            >
+              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
+            </svg>
           </div>
         </div>
         {label && (
