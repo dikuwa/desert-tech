@@ -10,6 +10,7 @@ import { useDashboardStore } from "@/lib/store/dashboard";
 import { generateProductSku } from "@/lib/product-sku";
 import { toast } from "sonner";
 import { ProductImage } from "@/components/ui/product-image";
+import { DesertCheckbox } from "@/components/ui/desert-checkbox";
 
 export default function EditProductPage() {
   const router = useRouter();
@@ -288,11 +289,11 @@ export default function EditProductPage() {
             {/* Publishing */}
             <div className="rounded-xl border border-border bg-card p-6 space-y-5">
               <h2 className="text-sm font-semibold text-foreground">Publishing</h2>
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" checked={form.isFeatured} onChange={e => updateField("isFeatured", e.target.checked)}
-                  className="h-4 w-4 rounded border-border text-primary focus:ring-primary" />
-                <span className="text-sm text-foreground">Featured product</span>
-              </label>
+              <DesertCheckbox
+                checked={form.isFeatured}
+                onChange={(e) => updateField("isFeatured", e.target.checked)}
+                label="Featured product"
+              />
             </div>
 
             {/* Images */}

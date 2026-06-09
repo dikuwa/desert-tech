@@ -10,6 +10,7 @@ import { useDashboardStore } from "@/lib/store/dashboard";
 import { generateProductSku } from "@/lib/product-sku";
 import { cn } from "@/lib/utils";
 import { ProductImage } from "@/components/ui/product-image";
+import { DesertCheckbox } from "@/components/ui/desert-checkbox";
 import { toast } from "sonner";
 
 // Section card component for consistent styling
@@ -429,24 +430,21 @@ export default function NewProductPage() {
             <SectionCard className="p-5">
               <SectionHeader icon={Star} title="Publishing" />
               
-              <label className="flex items-start gap-3 cursor-pointer group">
-                <div className="relative flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={form.isFeatured}
-                    onChange={e => updateField("isFeatured", e.target.checked)}
-                    className="peer h-4 w-4 rounded border-border text-primary focus:ring-primary focus:ring-offset-0"
-                  />
-                </div>
-                <div className="flex-1">
-                  <span className="text-sm font-medium text-foreground group-hover:text-foreground/80 transition-colors">
-                    Featured product
-                  </span>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Display this product on the featured section.
-                  </p>
-                </div>
-              </label>
+              <DesertCheckbox
+                checked={form.isFeatured}
+                onChange={(e) => updateField("isFeatured", e.target.checked)}
+                label={
+                  <div className="flex-1">
+                    <span className="text-sm font-medium text-foreground">
+                      Featured product
+                    </span>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Display this product on the featured section.
+                    </p>
+                  </div>
+                }
+                wrapperClassName="items-start"
+              />
             </SectionCard>
 
             {/* Product Images */}

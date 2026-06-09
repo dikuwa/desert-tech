@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DesertCheckbox } from "@/components/ui/desert-checkbox";
 import { toast } from "sonner";
 
 interface LineItem {
@@ -565,15 +566,11 @@ export default function NewWalkinOrderPage() {
             icon={CreditCard} 
             title="Payment"
             action={
-              <label className="flex items-center gap-2 cursor-pointer">
-                <span className="text-sm text-muted-foreground">Record payment now</span>
-                <input
-                  type="checkbox"
-                  checked={recordPayment}
-                  onChange={(e) => setRecordPayment(e.target.checked)}
-                  className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-                />
-              </label>
+              <DesertCheckbox
+                checked={recordPayment}
+                onChange={(e) => setRecordPayment(e.target.checked)}
+                label={<span className="text-sm text-muted-foreground">Record payment now</span>}
+              />
             }
           />
 

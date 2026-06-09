@@ -17,6 +17,7 @@ import { FadeIn } from "@/components/ui/fade-in";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { DesertCheckbox } from "@/components/ui/desert-checkbox";
 
 export default function DashboardPromotionsPage() {
   const promotions = useDashboardStore((s) => s.promotions);
@@ -229,11 +230,13 @@ export default function DashboardPromotionsPage() {
                 <SelectItem value="service" className="text-sm cursor-pointer focus:bg-accent">Service Offer</SelectItem>
               </SelectContent>
             </Select>
-            <label className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 h-10 text-sm">
-              <input type="checkbox" checked={form.isFeatured} onChange={e => setForm(f => ({ ...f, isFeatured: e.target.checked }))}
-                className="h-4 w-4 rounded border-border text-primary focus:ring-primary/30" />
-              <span className="text-xs font-medium text-foreground">Featured</span>
-            </label>
+            <div className="flex items-center h-10">
+              <DesertCheckbox
+                checked={form.isFeatured}
+                onChange={(e) => setForm(f => ({ ...f, isFeatured: e.target.checked }))}
+                label="Featured"
+              />
+            </div>
           </div>
           <div className="flex gap-2">
             <button onClick={handleAdd} className="flex items-center gap-1 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground"><Check className="h-3 w-3" /> Create</button>
@@ -345,11 +348,13 @@ export default function DashboardPromotionsPage() {
                       <SelectItem value="service" className="text-sm cursor-pointer focus:bg-accent">Service Offer</SelectItem>
                     </SelectContent>
                   </Select>
-                  <label className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 h-10 text-sm">
-                    <input type="checkbox" checked={form.isFeatured} onChange={e => setForm(f => ({ ...f, isFeatured: e.target.checked }))}
-                      className="h-4 w-4 rounded border-border text-primary focus:ring-primary/30" />
-                    <span className="text-xs font-medium text-foreground">Featured</span>
-                  </label>
+                  <div className="flex items-center h-10">
+                    <DesertCheckbox
+                      checked={form.isFeatured}
+                      onChange={(e) => setForm(f => ({ ...f, isFeatured: e.target.checked }))}
+                      label="Featured"
+                    />
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => handleEdit(promo.id)} className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"><Check className="h-3 w-3" /> Save</button>
