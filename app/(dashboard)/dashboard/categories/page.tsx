@@ -8,6 +8,7 @@ import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import type { DashboardBrand } from "@/lib/dashboard-data";
+import { DesertCheckbox } from "@/components/ui/desert-checkbox";
 
 async function saveCatalog(categories: unknown[], brands: unknown[]) {
   const response = await fetch("/api/catalog", {
@@ -86,20 +87,23 @@ function CategoriesSection() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
+  const [editSortOrder, setEditSortOrder] = useState(0);
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
+  const [newSortOrder, setNewSortOrder] = useState(categories.length + 1);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   const startEdit = (cat: typeof categories[0]) => {
     setEditingId(cat.id);
     setEditName(cat.name);
     setEditDescription(cat.description);
+    setEditSortOrder(cat.sortOrder);
   };
 
   const saveEdit = async (id: string) => {
     try {
-      const next = categories.map((cat) => cat.id === id ? { ...cat, name: editName, description: editDescription } : cat);
+      const next = categories.map((cat) => cat.id === id ? { ...cat, name: editName, description: editDescription, sortOrder: editSortOrder } : cat);
       const data = await saveCatalog(next, brands);
       syncCategories(data.categories);
       syncBrands(data.brands);
@@ -113,12 +117,13 @@ function CategoriesSection() {
   const handleAdd = async () => {
     if (!newName.trim()) return;
     try {
-      const next = [...categories, { name: newName.trim(), description: newDesc.trim(), isActive: true, sortOrder: categories.length + 1 }];
+      const next = [...categories, { name: newName.trim(), description: newDesc.trim(), isActive: true, sortOrder: newSortOrder }];
       const data = await saveCatalog(next, brands);
       syncCategories(data.categories);
       syncBrands(data.brands);
       setNewName("");
       setNewDesc("");
+      setNewSortOrder(categories.length + 2);
       setShowAdd(false);
       toast.success("Category created");
     } catch (error) {
@@ -173,6 +178,11 @@ function CategoriesSection() {
             className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm font-semibold focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
           <input value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="Description (optional)"
             className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
+          <div>
+            <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Sort Order</label>
+            <input type="number" value={newSortOrder} onChange={e => setNewSortOrder(parseInt(e.target.value) || 0)}
+              className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
+          </div>
           <div className="flex gap-2">
             <button onClick={handleAdd} className="flex items-center gap-1 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground"><Check className="h-3 w-3" /> Create</button>
             <button onClick={() => { setShowAdd(false); setNewName(""); setNewDesc(""); }} className="flex items-center gap-1 rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground"><X className="h-3 w-3" /> Cancel</button>
@@ -190,6 +200,11 @@ function CategoriesSection() {
                   className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm font-semibold focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
                 <input value={editDescription} onChange={e => setEditDescription(e.target.value)}
                   className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                <div>
+                  <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Sort Order</label>
+                  <input type="number" value={editSortOrder} onChange={e => setEditSortOrder(parseInt(e.target.value) || 0)}
+                    className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                </div>
                 <div className="flex gap-2">
                   <button onClick={() => saveEdit(cat.id)} className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"><Check className="h-3 w-3" /> Save</button>
                   <button onClick={() => setEditingId(null)} className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground"><X className="h-3 w-3" /> Cancel</button>
@@ -360,11 +375,11 @@ function BrandsSection() {
                 className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
             </div>
             <div className="flex items-end pb-2">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={newIsFeatured} onChange={e => setNewIsFeatured(e.target.checked)}
-                  className="h-4 w-4 rounded border-border text-primary focus:ring-primary" />
-                <span className="text-xs text-foreground">Featured</span>
-              </label>
+              <DesertCheckbox 
+                checked={newIsFeatured} 
+                onChange={(e) => setNewIsFeatured(e.target.checked)}
+                label="Featured"
+              />
             </div>
           </div>
           <div className="flex gap-2">
@@ -391,11 +406,11 @@ function BrandsSection() {
                       className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
                   </div>
                   <div className="flex items-end pb-1">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={editIsFeatured} onChange={e => setEditIsFeatured(e.target.checked)}
-                        className="h-4 w-4 rounded border-border text-primary focus:ring-primary" />
-                      <span className="text-xs text-foreground">Featured</span>
-                    </label>
+                    <DesertCheckbox 
+                      checked={editIsFeatured} 
+                      onChange={(e) => setEditIsFeatured(e.target.checked)}
+                      label="Featured"
+                    />
                   </div>
                 </div>
                 <div className="flex gap-2">
