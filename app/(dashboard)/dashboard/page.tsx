@@ -89,7 +89,7 @@ export default function DashboardPage() {
           >
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-bold overflow-hidden">
               {profile.image ? (
-                <img src={profile.image} alt="" className="h-full w-full object-cover" />
+                <img src={profile.image} alt="" className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
               ) : (
                 <span>
                   {profile.name

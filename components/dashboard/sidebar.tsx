@@ -296,7 +296,7 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
         <div className={cn("flex items-center gap-3", collapsed && "flex-col")}>
           <Avatar className="h-8 w-8">
             {user.image ? (
-              <img src={user.image} alt="" className="h-full w-full rounded-full object-cover" />
+              <img src={user.image} alt="" className="h-full w-full rounded-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
             ) : null}
             <AvatarFallback className="bg-primary/10 text-primary text-xs">
               {user.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
