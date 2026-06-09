@@ -36,33 +36,33 @@ export default function FollowUpsPage() {
         ))}
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         {paginated.map((f, i) => (
           <FadeIn key={f.id} delay={i * 0.03}>
-          <div className={cn("rounded-xl border bg-card p-4 transition-all hover:shadow-sm", f.status === "Done" && "opacity-60")}>
+          <div className={cn("rounded-xl border border-border bg-card p-4 transition-all hover:shadow-sm", f.status === "Done" && "opacity-50")}>
             <div className="flex items-start justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg",
+              <div className="flex items-start gap-3 min-w-0 flex-1">
+                <div className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
                   f.type === "WhatsApp" ? "bg-whatsapp/10 text-whatsapp" :
                   f.type === "Phone" ? "bg-primary/10 text-primary" : "bg-info-soft text-info")}>
                   {f.type === "WhatsApp" ? <MessageCircle className="h-4 w-4" /> :
                    f.type === "Phone" ? <Phone className="h-4 w-4" /> : <Mail className="h-4 w-4" />}
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-semibold text-foreground">{f.customerName}</p>
                     <span className={cn("rounded-md border px-1.5 py-0.5 text-[10px] font-semibold", getStatusBadgeClass(f.status))}>{f.status}</span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">{f.orderNumber} · {f.type}</p>
-                  <p className="text-xs text-foreground mt-1">{f.note}</p>
-                  <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">
-                    {f.assignedTo && <span>Assigned to: {f.assignedTo}</span>}
-                    {f.dueAt && <span>Due: {new Date(f.dueAt).toLocaleDateString()}</span>}
+                  {f.note && <p className="text-xs text-foreground mt-1 line-clamp-2">{f.note}</p>}
+                  <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground flex-wrap">
+                    {f.assignedTo && <span>{f.assignedTo}</span>}
+                    {f.dueAt && <span>Due {new Date(f.dueAt).toLocaleDateString()}</span>}
                   </div>
                 </div>
               </div>
               {f.status === "Pending" && (
-                <button onClick={() => markFollowUpDone(f.id)} className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-success hover:bg-success-soft transition-colors">
+                <button onClick={() => markFollowUpDone(f.id)} className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-success hover:bg-success-soft transition-colors shrink-0">
                   <CheckCircle2 className="h-3.5 w-3.5" /> Mark Done
                 </button>
               )}

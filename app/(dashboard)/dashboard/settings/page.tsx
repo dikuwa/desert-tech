@@ -197,8 +197,10 @@ export default function SettingsPage() {
           revokeOtherSessions: true,
         }),
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || data.error || "Could not change password");
+      // Defensive JSON parsing
+      const contentType = response.headers.get("content-type");
+      const data = contentType?.includes("application/json") ? await response.json() : null;
+      if (!response.ok) throw new Error(data?.message || data?.error || "Could not change password");
       setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
       setPasswordMessage("Password changed successfully. Other sessions were revoked.");
     } catch (error) {
@@ -269,15 +271,23 @@ export default function SettingsPage() {
           profileImage: profileForm.profileImage,
         }),
       });
+
+      // Defensive JSON parsing — check content type before calling .json()
+      const contentType = res.headers.get("content-type");
+      const data = contentType?.includes("application/json")
+        ? await res.json()
+        : null;
+
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || data.error || "Failed to update profile");
+        throw new Error(data?.error || data?.message || "Failed to update profile");
       }
+
       // Update local session state
       setUserSession((prev) => prev ? {
         ...prev,
         name: profileForm.displayName,
         phone: profileForm.contactNumber,
+        profileImage: profileForm.profileImage || prev.profileImage,
       } : prev);
       setIsEditingProfile(false);
       toast.success("Profile updated successfully");
@@ -485,16 +495,17 @@ export default function SettingsPage() {
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({ password: tfaPassword }),
                           });
+                          // Defensive JSON parsing
+                          const contentType = res.headers.get("content-type");
+                          const data = contentType?.includes("application/json") ? await res.json() : null;
                           if (!res.ok) {
-                            const data = await res.json();
-                            throw new Error(data.message || data.error || "Failed to enable 2FA");
+                            throw new Error(data?.message || data?.error || "Failed to enable 2FA");
                           }
-                          const data = await res.json();
                           setTfaState({
                             step: "setup",
-                            qrCode: data.totpQR || data.qrCode || data.data?.totpQR || "",
-                            secret: data.secret || data.data?.secret || "",
-                            backupCodes: data.backupCodes || data.data?.backupCodes || [],
+                            qrCode: data?.totpQR || data?.qrCode || data?.data?.totpQR || "",
+                            secret: data?.secret || data?.data?.secret || "",
+                            backupCodes: data?.backupCodes || data?.data?.backupCodes || [],
                           });
                           setTfaCode("");
                           setTfaPassword("");
@@ -590,9 +601,11 @@ export default function SettingsPage() {
                               headers: { "Content-Type": "application/json" },
                               body: JSON.stringify({ code: tfaCode }),
                             });
+                            // Defensive JSON parsing
+                            const contentType = res.headers.get("content-type");
+                            const data = contentType?.includes("application/json") ? await res.json() : null;
                             if (!res.ok) {
-                              const data = await res.json();
-                              throw new Error(data.message || data.error || "Verification failed");
+                              throw new Error(data?.message || data?.error || "Verification failed");
                             }
                             setTfaState({ step: "done" });
                             setTfaMessage("Two-factor authentication has been enabled.");
@@ -671,9 +684,11 @@ export default function SettingsPage() {
                                   method: "POST",
                                   headers: { "Content-Type": "application/json" },
                                 });
+                                // Defensive JSON parsing
+                                const contentType = res.headers.get("content-type");
+                                const data = contentType?.includes("application/json") ? await res.json() : null;
                                 if (!res.ok) {
-                                  const data = await res.json();
-                                  throw new Error(data.message || data.error || "Failed to disable 2FA");
+                                  throw new Error(data?.message || data?.error || "Failed to disable 2FA");
                                 }
                                 setTfaState({ step: "idle" });
                                 toast.success("Two-factor authentication has been disabled.");

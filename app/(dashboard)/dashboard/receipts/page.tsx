@@ -30,6 +30,7 @@ export default function ReceiptsPage() {
   const [sending, setSending] = useState<string | null>(null);
   const [showSendModal, setShowSendModal] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [viewingPdf, setViewingPdf] = useState<string | null>(null);
 
   const addNotification = useDashboardStore((s) => s.addNotification);
   const storeOrders = useDashboardStore((s) => s.orders);
@@ -195,27 +196,131 @@ export default function ReceiptsPage() {
     if (!order) return;
     setSending(orderNumber);
     try {
-      const res = await fetch("/api/receipts/send", {
+      // Generate a share token with data snapshot
+      const orderPayments = payments.filter((payment) => payment.orderNumber === order.orderNumber);
+      const { totalPaidCents, balanceDueCents } = computePaymentFields(
+        order.subtotalCents,
+        order.paymentStatus,
+        orderPayments,
+        { fulfillmentMethod: order.fulfillmentMethod, courierFeeCents: order.courierFeeCents },
+      );
+
+      const items = order.items?.length
+        ? order.items.map((item) => ({
+            name: item.name,
+            quantity: item.quantity,
+            unitPrice: item.unitPriceCents,
+            total: item.unitPriceCents * item.quantity,
+            sku: item.sku,
+          }))
+        : [];
+
+      const res = await fetch("/api/documents/token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          orderNumber: order.orderNumber,
-          customerEmail: order.customerName.toLowerCase().replace(/\s+/g, ".") + "@customer.com",
-          customerName: order.customerName,
+          type: "receipt",
+          referenceId: orderNumber,
+          documentNumber: `RCP-${orderNumber.replace("DT-", "")}`,
+          data: {
+            orderNumber: order.orderNumber,
+            customerName: order.customerName,
+            customerPhone: order.customerPhone,
+            items,
+            subtotalCents: order.subtotalCents,
+            paymentStatus: order.paymentStatus,
+            totalPaidCents,
+            balanceDueCents,
+            createdAt: order.createdAt,
+            fulfillmentMethod: order.fulfillmentMethod,
+            courierFeeCents: order.courierFeeCents,
+            shipping: order.shipping,
+          },
         }),
       });
-      if (res.ok) {
-        addNotification({
-          type: "order",
-          title: "Receipt Sent",
-          message: `Receipt for ${order.orderNumber} sent via email`,
-        });
+      const data = await res.json();
+      if (!data.success) {
+        toast.error("Failed to generate shareable link");
+        return;
       }
+
+      // Open email client with the share link
+      const subject = encodeURIComponent(`Receipt for ${order.orderNumber}`);
+      const body = encodeURIComponent(
+        `Hi ${order.customerName},\n\nPlease find your receipt for ${order.orderNumber} below.\n\n${data.url}\n\nThank you for choosing Desert Technology!`,
+      );
+      window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
     } catch (err) {
-      console.error("Send failed:", err);
+      console.error("Send via email failed:", err);
+      toast.error("Failed to open email client");
     } finally {
       setSending(null);
       setShowSendModal(null);
+    }
+  };
+
+  const handleViewPdf = async (orderNumber: string) => {
+    const order = paidOrders.find((o) => o.orderNumber === orderNumber);
+    if (!order) {
+      toast.error("Order not found");
+      return;
+    }
+    setViewingPdf(orderNumber);
+    try {
+      const orderPayments = payments.filter((payment) => payment.orderNumber === order.orderNumber);
+      const { totalPaidCents, balanceDueCents } = computePaymentFields(
+        order.subtotalCents,
+        order.paymentStatus,
+        orderPayments,
+        { fulfillmentMethod: order.fulfillmentMethod, courierFeeCents: order.courierFeeCents },
+      );
+
+      const items = order.items?.length
+        ? order.items.map((item) => ({
+            name: item.name,
+            quantity: item.quantity,
+            unitPrice: item.unitPriceCents,
+            total: item.unitPriceCents * item.quantity,
+            sku: item.sku,
+          }))
+        : [];
+
+      // Generate document token with data snapshot
+      const res = await fetch("/api/documents/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "receipt",
+          referenceId: orderNumber,
+          documentNumber: `RCP-${orderNumber.replace("DT-", "")}`,
+          data: {
+            orderNumber: order.orderNumber,
+            customerName: order.customerName,
+            customerPhone: order.customerPhone,
+            items,
+            subtotalCents: order.subtotalCents,
+            paymentStatus: order.paymentStatus,
+            totalPaidCents,
+            balanceDueCents,
+            createdAt: order.createdAt,
+            fulfillmentMethod: order.fulfillmentMethod,
+            courierFeeCents: order.courierFeeCents,
+            shipping: order.shipping,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        toast.error("Failed to generate PDF link");
+        return;
+      }
+      // Open the share URL in a new tab (renders PDF inline)
+      window.open(data.url, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      console.error("View PDF failed:", err);
+      toast.error("Failed to open PDF");
+    } finally {
+      setViewingPdf(null);
     }
   };
 
@@ -389,15 +494,18 @@ export default function ReceiptsPage() {
                   >
                     <Send className="h-3.5 w-3.5" />
                   </button>
-                  <Link
-                    href={`/api/receipts/generate?orderId=${order.orderNumber}&view=1`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                    title="View"
+                  <button
+                    onClick={() => handleViewPdf(order.orderNumber)}
+                    disabled={viewingPdf === order.orderNumber}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                    title="View PDF in browser"
                   >
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </Link>
+                    {viewingPdf === order.orderNumber ? (
+                      <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
+                    ) : (
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    )}
+                  </button>
                   <Link
                     href={`/dashboard/orders/${order.id}/receipt`}
                     className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"

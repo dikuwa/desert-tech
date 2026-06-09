@@ -281,17 +281,62 @@ export default function OrderReceiptPage() {
     }
   };
 
-  const handleSendEmail = () => {
-    const subject = encodeURIComponent(`Receipt for ${order.orderNumber} - ${storeSettings.storeName}`);
-    const paymentLine = isDepositPaid
-      ? `Paid: ${formatCents(totalPaidCents)}, Balance due: ${formatCents(balanceCents)}`
-      : isPaidInFull
-        ? "Paid in full."
-        : `Payment status: ${getStatusLabel(order.paymentStatus)}`;
-    const body = encodeURIComponent(
-      `Hi ${order.customerName},\n\nPlease find your receipt for ${order.orderNumber}.\n\nTotal: ${formatCents(order.subtotalCents)}\n${paymentLine}\n\nThank you for your business!\n${storeSettings.storeName}\n${storeSettings.email}`,
-    );
-    window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
+  const handleSendEmail = async () => {
+    try {
+      // Generate a share token first so the email includes a working link
+      const items = order.items?.length
+        ? order.items.map((item) => ({
+            name: item.name,
+            quantity: item.quantity,
+            unitPrice: item.unitPriceCents,
+            total: item.unitPriceCents * item.quantity,
+            sku: item.sku,
+          }))
+        : [];
+
+      const res = await fetch("/api/documents/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "receipt",
+          referenceId: order.orderNumber,
+          documentNumber: receiptNumber,
+          data: {
+            orderNumber: order.orderNumber,
+            customerName: order.customerName,
+            customerPhone: order.customerPhone,
+            items,
+            subtotalCents: order.subtotalCents,
+            paymentStatus: order.paymentStatus,
+            totalPaidCents,
+            balanceDueCents: balanceCents,
+            createdAt: order.createdAt,
+            fulfillmentMethod: order.fulfillmentMethod,
+            courierFeeCents: order.courierFeeCents,
+            shipping: order.shipping,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        toast.error("Failed to generate shareable link");
+        return;
+      }
+
+      const paymentLine = isDepositPaid
+        ? `Paid: ${formatCents(totalPaidCents)}, Balance due: ${formatCents(balanceCents)}`
+        : isPaidInFull
+          ? "Paid in full."
+          : `Payment status: ${getStatusLabel(order.paymentStatus)}`;
+
+      const subject = encodeURIComponent(`Receipt for ${order.orderNumber} - ${storeSettings.storeName}`);
+      const body = encodeURIComponent(
+        `Hi ${order.customerName},\n\nPlease find your receipt for ${order.orderNumber} below.\n\n${data.url}\n\nTotal: ${formatCents(order.subtotalCents)}\n${paymentLine}\n\nThank you for your business!\n${storeSettings.storeName}\n${storeSettings.email || ""}`,
+      );
+      window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
+    } catch {
+      toast.error("Failed to open email client");
+    }
   };
 
   return (

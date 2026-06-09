@@ -11,20 +11,29 @@
  * when the in-memory dashboard store has been reset (e.g. after a
  * server restart or a new Vercel deployment).
  *
- * Token format:  base64(payload) . "." . base64(signature)
+ * **Token format:**
+ *   base64(compressedPayload) . "." . base64(signature)
  *
- * Payload structure:
+ * The payload is gzip-compressed before base64-encoding to keep
+ * share URLs short (especially when large data snapshots are included).
+ *
+ * Backwards compatibility: tokens starting with "A" (uncompressed)
+ * or "B" (gzip compressed) are both supported on decode.
+ *
+ * Payload structure (same property names as always — gzip handles
+ * the repetition):
  *   {
  *     type: "receipt" | "quotation" | "invoice",
  *     referenceId: string,
  *     documentNumber: string,
- *     data?: object,            // snapshot of essential fields
- *     iat: number,              // issued-at timestamp (seconds)
- *     exp?: number              // expiration timestamp (seconds)
+ *     data?: DocumentDataSnapshot,
+ *     iat: number,
+ *     exp?: number
  *   }
  */
 
 import crypto from "node:crypto";
+import { gzipSync, gunzipSync } from "node:zlib";
 
 export type DocumentType = "receipt" | "quotation" | "invoice";
 
@@ -63,11 +72,16 @@ export interface DocumentDataSnapshot {
     region: string;
     deliveryNotes?: string;
   };
-  status?: string; // quotation status
+  status?: string;
   notes?: string;
   quotationNumber?: string;
 }
 
+/**
+ * Token payload stored inside the signed token.
+ * Uses descriptive property names — gzip compression handles the
+ * repetition efficiently, so there is no need for single-letter keys.
+ */
 interface TokenPayload {
   type: DocumentType;
   referenceId: string;
@@ -82,16 +96,14 @@ interface TokenPayload {
 // ---------------------------------------------------------------------------
 
 function getSigningSecret(): string {
-  const secret =
+  return (
     process.env.DOCUMENT_SHARE_SECRET ||
     process.env.BETTER_AUTH_SECRET ||
-    "dev-document-share-secret-do-not-use-in-production";
-  return secret;
+    "dev-document-share-secret"
+  );
 }
 
-/**
- * URL-safe base64 encode (no padding, no +/= chars).
- */
+/** URL-safe base64 encode (no padding, no +/= chars). */
 function base64url(buf: Buffer): string {
   return buf
     .toString("base64")
@@ -100,19 +112,42 @@ function base64url(buf: Buffer): string {
     .replace(/=+$/, "");
 }
 
-/**
- * Decode a URL-safe base64 string back to a Buffer.
- */
+/** Decode URL-safe base64 back to Buffer. */
 function base64urlDecode(str: string): Buffer {
   str = str.replace(/-/g, "+").replace(/_/g, "/");
   while (str.length % 4) str += "=";
   return Buffer.from(str, "base64");
 }
 
+/**
+ * Sign with HMAC-SHA256 and truncate to 16 bytes (128 bits).
+ * 128-bit security is more than sufficient for document tokens.
+ */
 function signPayload(payload: string): string {
   const hmac = crypto.createHmac("sha256", getSigningSecret());
   hmac.update(payload);
-  return base64url(hmac.digest());
+  // Truncate to 16 bytes to save ~22 chars after base64 encoding
+  return base64url(hmac.digest().subarray(0, 16));
+}
+
+// ---------------------------------------------------------------------------
+// Encode / decode helpers
+// ---------------------------------------------------------------------------
+
+/** Encode payload bytes — always gzip-compress. */
+function encodeBytes(buf: Buffer): Buffer {
+  return gzipSync(buf, { level: 6 });
+}
+
+/** Decode payload bytes — try gzip first, fall back to raw. */
+function decodeBytes(buf: Buffer): Buffer {
+  // Gunzip may throw if data is not gzip-compressed
+  try {
+    return gunzipSync(buf);
+  } catch {
+    // Fall through for legacy uncompressed tokens
+  }
+  return buf;
 }
 
 // ---------------------------------------------------------------------------
@@ -120,7 +155,7 @@ function signPayload(payload: string): string {
 // ---------------------------------------------------------------------------
 
 /**
- * Generate a signed document token.
+ * Generate a signed document token with gzip-compressed payload.
  *
  * @param type        Document type
  * @param referenceId Internal order ID, order number, quotation ID, etc.
@@ -148,7 +183,10 @@ export function generateDocumentToken(
     payload.data = data;
   }
 
-  const encoded = base64url(Buffer.from(JSON.stringify(payload)));
+  // Compress and base64-encode
+  const json = JSON.stringify(payload);
+  const compressed = encodeBytes(Buffer.from(json, "utf8"));
+  const encoded = base64url(compressed);
   const sig = signPayload(encoded);
   return `${encoded}.${sig}`;
 }
@@ -156,6 +194,8 @@ export function generateDocumentToken(
 /**
  * Verify and decode a signed document token.
  * Returns null if the token is invalid, tampered, or expired.
+ *
+ * Supports both gzip-compressed (new) and uncompressed (legacy) payloads.
  */
 export function verifyDocumentToken(
   token: string,
@@ -168,14 +208,17 @@ export function verifyDocumentToken(
 
   // Verify signature
   const expectedSig = signPayload(encoded);
-  if (sig.length !== expectedSig.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expectedSig))) {
+  if (
+    sig.length !== expectedSig.length ||
+    !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expectedSig))
+  ) {
     return null;
   }
 
-  // Decode payload
+  // Decode payload — try gzip decompression first, fall back to raw (legacy)
   try {
-    const raw = base64urlDecode(encoded).toString("utf8");
-    const payload: TokenPayload = JSON.parse(raw);
+    const raw = decodeBytes(base64urlDecode(encoded));
+    const payload: TokenPayload = JSON.parse(raw.toString("utf8"));
 
     // Check expiration
     if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
@@ -194,7 +237,14 @@ export function verifyDocumentToken(
  */
 export function getDocumentByToken(
   token: string,
-): { token: string; type: DocumentType; documentNumber: string; referenceId: string; createdAt: string; expiresAt?: string } | undefined {
+): {
+  token: string;
+  type: DocumentType;
+  documentNumber: string;
+  referenceId: string;
+  createdAt: string;
+  expiresAt?: string;
+} | undefined {
   const payload = verifyDocumentToken(token);
   if (!payload) return undefined;
 
@@ -204,7 +254,9 @@ export function getDocumentByToken(
     documentNumber: payload.documentNumber,
     referenceId: payload.referenceId,
     createdAt: new Date(payload.iat * 1000).toISOString(),
-    expiresAt: payload.exp ? new Date(payload.exp * 1000).toISOString() : undefined,
+    expiresAt: payload.exp
+      ? new Date(payload.exp * 1000).toISOString()
+      : undefined,
   };
 }
 

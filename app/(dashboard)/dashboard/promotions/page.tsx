@@ -117,6 +117,13 @@ export default function DashboardPromotionsPage() {
     setSelectedImage(0);
   };
 
+  // Sort promotions: active first, then by start date
+  const sortedPromotions = [...promotions].sort((a, b) => {
+    if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+    if (a.startsAt && b.startsAt) return new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime();
+    return 0;
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -130,144 +137,139 @@ export default function DashboardPromotionsPage() {
       </div>
 
       {showAdd && (
-        <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+        <div className="rounded-xl border border-border bg-card p-5 space-y-4">
           <h3 className="text-sm font-semibold text-foreground">New Promotion</h3>
-          <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Promotion title"
-            className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
-          <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Description"
-            className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
-          
-          {/* Images */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-foreground">Images</label>
-              <span className="text-xs text-muted-foreground">{form.images.length} image{form.images.length !== 1 ? "s" : ""}</span>
-            </div>
-            
-            {/* Image Gallery */}
-            {form.images.length > 0 && (
-              <div className="space-y-2">
-                {/* Main Image Preview */}
-                <div className="aspect-video w-full max-w-md rounded-lg border border-border bg-muted overflow-hidden">
-                  <img 
-                    src={form.images[selectedImage]} 
-                    alt={`Preview ${selectedImage + 1}`}
-                    className="w-full h-full object-contain"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                  />
-                </div>
-                
-                {/* Thumbnail Grid */}
-                <div className="flex flex-wrap gap-2">
-                  {form.images.map((img, idx) => (
-                    <div key={idx} className={cn(
-                      "relative w-16 h-16 rounded-lg border overflow-hidden cursor-pointer transition-all",
-                      selectedImage === idx 
-                        ? "border-primary ring-1 ring-primary" 
-                        : "border-border hover:border-primary/50"
-                    )}>
-                      <img 
-                        src={img} 
-                        alt={`Thumbnail ${idx + 1}`}
-                        className="w-full h-full object-cover"
-                        onClick={() => setSelectedImage(idx)}
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                      />
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const newImages = form.images.filter((_, i) => i !== idx);
-                          setForm(f => ({ ...f, images: newImages, imageUrl: newImages[0] || "" }));
-                          if (selectedImage >= newImages.length) setSelectedImage(Math.max(0, newImages.length - 1));
-                        }}
-                        className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-destructive text-white flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
-                        title="Remove image"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {/* Upload Button */}
-            <input ref={addImageInputRef} type="file" accept="image/*" multiple onChange={e => handleImageUpload(e, true)} className="hidden" />
-            <button
-              onClick={() => addImageInputRef.current?.click()}
-              disabled={uploading}
-              className="flex items-center gap-2 rounded-lg border border-dashed border-border px-4 py-3 text-sm text-muted-foreground hover:text-foreground hover:border-primary/50 hover:bg-muted/50 transition-all w-full justify-center"
-            >
-              <Upload className={cn("h-4 w-4", uploading && "animate-spin")} />
-              {uploading ? "Uploading..." : "Upload Images"}
-            </button>
-            <p className="text-xs text-muted-foreground">Click to browse or drag and drop. You can upload multiple images.</p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <input value={form.discountLabel} onChange={e => setForm(f => ({ ...f, discountLabel: e.target.value }))} placeholder="Discount label (e.g. Save 20%)"
+            <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Promotion title"
               className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
-            <Select value={form.placement} onValueChange={v => setForm(f => ({ ...f, placement: v }))}>
-              <SelectTrigger className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/30">
-                <SelectValue placeholder="Placement" />
-              </SelectTrigger>
-              <SelectContent className="bg-card border-border shadow-lg z-[80]">
-                <SelectItem value="HomeHero" className="text-sm cursor-pointer focus:bg-accent">Home Hero</SelectItem>
-                <SelectItem value="FeaturedSection" className="text-sm cursor-pointer focus:bg-accent">Featured Section</SelectItem>
-                <SelectItem value="ProductBadge" className="text-sm cursor-pointer focus:bg-accent">Product Badge</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Select value={form.type} onValueChange={v => setForm(f => ({ ...f, type: v }))}>
-              <SelectTrigger className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/30">
-                <SelectValue placeholder="Type" />
-              </SelectTrigger>
-              <SelectContent className="bg-card border-border shadow-lg z-[80]">
-                <SelectItem value="general" className="text-sm cursor-pointer focus:bg-accent">General Offer</SelectItem>
-                <SelectItem value="product" className="text-sm cursor-pointer focus:bg-accent">Product Offer</SelectItem>
-                <SelectItem value="bundle" className="text-sm cursor-pointer focus:bg-accent">Bundle Deal</SelectItem>
-                <SelectItem value="service" className="text-sm cursor-pointer focus:bg-accent">Service Offer</SelectItem>
-              </SelectContent>
-            </Select>
-            <div className="flex items-center h-10">
-              <DesertCheckbox
-                checked={form.isFeatured}
-                onChange={(e) => setForm(f => ({ ...f, isFeatured: e.target.checked }))}
-                label="Featured"
-              />
+            <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2} placeholder="Description"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
+            
+            {/* Images */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-foreground">Images</label>
+                <span className="text-xs text-muted-foreground">{form.images.length} image{form.images.length !== 1 ? "s" : ""}</span>
+              </div>
+              
+              {form.images.length > 0 && (
+                <div className="space-y-2">
+                  <div className="aspect-video w-full max-w-sm rounded-lg border border-border bg-muted overflow-hidden">
+                    <img 
+                      src={form.images[selectedImage]} 
+                      alt={`Preview ${selectedImage + 1}`}
+                      className="w-full h-full object-contain"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    />
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {form.images.map((img, idx) => (
+                      <div key={idx} className={cn(
+                        "relative w-14 h-14 rounded-lg border overflow-hidden cursor-pointer transition-all",
+                        selectedImage === idx 
+                          ? "border-primary ring-1 ring-primary" 
+                          : "border-border hover:border-primary/50"
+                      )}>
+                        <img 
+                          src={img} 
+                          alt={`Thumbnail ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                          onClick={() => setSelectedImage(idx)}
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                        />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const newImages = form.images.filter((_, i) => i !== idx);
+                            setForm(f => ({ ...f, images: newImages, imageUrl: newImages[0] || "" }));
+                            if (selectedImage >= newImages.length) setSelectedImage(Math.max(0, newImages.length - 1));
+                          }}
+                          className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-destructive text-white flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+                          title="Remove image"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              <input ref={addImageInputRef} type="file" accept="image/*" multiple onChange={e => handleImageUpload(e, true)} className="hidden" />
+              <button
+                onClick={() => addImageInputRef.current?.click()}
+                disabled={uploading}
+                className="flex items-center gap-2 rounded-lg border border-dashed border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:border-primary/50 hover:bg-muted/50 transition-all w-full justify-center"
+              >
+                <Upload className={cn("h-4 w-4", uploading && "animate-spin")} />
+                {uploading ? "Uploading..." : "Upload Images"}
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <input value={form.discountLabel} onChange={e => setForm(f => ({ ...f, discountLabel: e.target.value }))} placeholder="Discount label (e.g. Save 20%)"
+                className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
+              <Select value={form.placement} onValueChange={v => setForm(f => ({ ...f, placement: v }))}>
+                <SelectTrigger className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/30">
+                  <SelectValue placeholder="Placement" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border shadow-lg z-[80]">
+                  <SelectItem value="HomeHero" className="text-sm cursor-pointer focus:bg-accent">Home Hero</SelectItem>
+                  <SelectItem value="FeaturedSection" className="text-sm cursor-pointer focus:bg-accent">Featured Section</SelectItem>
+                  <SelectItem value="ProductBadge" className="text-sm cursor-pointer focus:bg-accent">Product Badge</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Select value={form.type} onValueChange={v => setForm(f => ({ ...f, type: v }))}>
+                <SelectTrigger className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary/30">
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border shadow-lg z-[80]">
+                  <SelectItem value="general" className="text-sm cursor-pointer focus:bg-accent">General Offer</SelectItem>
+                  <SelectItem value="product" className="text-sm cursor-pointer focus:bg-accent">Product Offer</SelectItem>
+                  <SelectItem value="bundle" className="text-sm cursor-pointer focus:bg-accent">Bundle Deal</SelectItem>
+                  <SelectItem value="service" className="text-sm cursor-pointer focus:bg-accent">Service Offer</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="flex items-center h-10">
+                <DesertCheckbox
+                  checked={form.isFeatured}
+                  onChange={(e) => setForm(f => ({ ...f, isFeatured: e.target.checked }))}
+                  label="Featured"
+                />
+              </div>
             </div>
           </div>
-          <div className="flex gap-2">
-            <button onClick={handleAdd} className="flex items-center gap-1 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground"><Check className="h-3 w-3" /> Create</button>
-            <button onClick={() => { setShowAdd(false); resetForm(); }} className="flex items-center gap-1 rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground"><X className="h-3 w-3" /> Cancel</button>
+          <div className="flex gap-2 pt-1">
+            <button onClick={handleAdd} className="flex items-center gap-1 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"><Check className="h-3 w-3" /> Create</button>
+            <button onClick={() => { setShowAdd(false); resetForm(); }} className="flex items-center gap-1 rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors"><X className="h-3 w-3" /> Cancel</button>
           </div>
         </div>
       )}
 
-      <div className="grid gap-4">
-        {promotions.map((promo, i) => (
+      <div className="space-y-3">
+        {sortedPromotions.map((promo, i) => (
           <FadeIn key={promo.id} delay={i * 0.03}>
-          <div className={cn("rounded-xl border bg-card p-5 transition-all hover:shadow-sm", !promo.isActive && "opacity-60")}>
+          <div className={cn("rounded-xl border border-border bg-card p-4 transition-all hover:shadow-sm", !promo.isActive && "opacity-50")}>
             {editId === promo.id ? (
               <div className="space-y-3">
+                {/* Edit Form - compact, consistent with product forms */}
                 <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
                   className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm font-semibold focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
-                <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                  className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2}
+                  className="h-auto w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30" />
                 
                 {/* Images in edit */}
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium text-foreground">Images</label>
+                    <label className="text-xs font-medium text-foreground">Images</label>
                     <span className="text-xs text-muted-foreground">{form.images.length} image{form.images.length !== 1 ? "s" : ""}</span>
                   </div>
                   
-                  {/* Image Gallery */}
                   {form.images.length > 0 && (
                     <div className="space-y-2">
-                      {/* Main Image Preview */}
-                      <div className="aspect-video w-full max-w-md rounded-lg border border-border bg-muted overflow-hidden">
+                      <div className="aspect-video w-full max-w-sm rounded-lg border border-border bg-muted overflow-hidden">
                         <img 
                           src={form.images[selectedImage]} 
                           alt={`Preview ${selectedImage + 1}`}
@@ -275,12 +277,10 @@ export default function DashboardPromotionsPage() {
                           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                         />
                       </div>
-                      
-                      {/* Thumbnail Grid */}
                       <div className="flex flex-wrap gap-2">
                         {form.images.map((img, idx) => (
                           <div key={idx} className={cn(
-                            "relative w-16 h-16 rounded-lg border overflow-hidden cursor-pointer transition-all",
+                            "relative w-14 h-14 rounded-lg border overflow-hidden cursor-pointer transition-all",
                             selectedImage === idx 
                               ? "border-primary ring-1 ring-primary" 
                               : "border-border hover:border-primary/50"
@@ -310,12 +310,11 @@ export default function DashboardPromotionsPage() {
                     </div>
                   )}
                   
-                  {/* Upload Button */}
                   <input ref={editImageInputRef} type="file" accept="image/*" multiple onChange={e => handleImageUpload(e, true)} className="hidden" />
                   <button
                     onClick={() => editImageInputRef.current?.click()}
                     disabled={uploading}
-                    className="flex items-center gap-2 rounded-lg border border-dashed border-border px-4 py-3 text-sm text-muted-foreground hover:text-foreground hover:border-primary/50 hover:bg-muted/50 transition-all w-full justify-center"
+                    className="flex items-center gap-2 rounded-lg border border-dashed border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:border-primary/50 hover:bg-muted/50 transition-all w-full justify-center"
                   >
                     <Upload className={cn("h-4 w-4", uploading && "animate-spin")} />
                     {uploading ? "Uploading..." : "Add Images"}
@@ -356,47 +355,49 @@ export default function DashboardPromotionsPage() {
                     />
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={() => handleEdit(promo.id)} className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"><Check className="h-3 w-3" /> Save</button>
-                  <button onClick={() => { setEditId(null); resetForm(); }} className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground"><X className="h-3 w-3" /> Cancel</button>
+                <div className="flex gap-2 pt-1">
+                  <button onClick={() => handleEdit(promo.id)} className="flex items-center gap-1 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"><Check className="h-3 w-3" /> Save</button>
+                  <button onClick={() => { setEditId(null); resetForm(); }} className="flex items-center gap-1 rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors"><X className="h-3 w-3" /> Cancel</button>
                 </div>
               </div>
             ) : (
               <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-4">
+                <div className="flex items-start gap-3 min-w-0 flex-1">
                   {promo.imageUrl ? (
-                    <div className="h-14 w-20 flex-shrink-0 overflow-hidden rounded-xl border border-border bg-muted">
+                    <div className="h-14 w-20 flex-shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
                       <img src={promo.imageUrl} alt={promo.title} className="h-full w-full object-cover" />
                     </div>
                   ) : (
-                    <div className="flex h-14 w-20 flex-shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
+                    <div className="flex h-14 w-20 flex-shrink-0 items-center justify-center rounded-lg bg-accent text-primary">
                       <Megaphone className="h-6 w-6" />
                     </div>
                   )}
-                  <div>
-                    <h3 className="text-base font-semibold text-foreground">{promo.title}</h3>
-                    <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{promo.description}</p>
-                    <div className="flex items-center gap-3 mt-2">
-                      {promo.discountLabel && <span className="rounded-md bg-primary/10 text-primary px-2 py-0.5 text-xs font-semibold">{promo.discountLabel}</span>}
-                      <span className="text-xs text-muted-foreground">{promo.placement}</span>
-                      <span className="text-xs text-muted-foreground">{promo.productCount} products</span>
-                      {promo.type && <span className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">{promo.type}</span>}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm font-semibold text-foreground">{promo.title}</h3>
                       {promo.isFeatured && <span className="text-[10px] font-semibold text-primary">Featured</span>}
                     </div>
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{promo.description}</p>
+                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                      {promo.discountLabel && <span className="rounded-md bg-primary/10 text-primary px-2 py-0.5 text-[11px] font-semibold">{promo.discountLabel}</span>}
+                      <span className="text-[11px] text-muted-foreground">{promo.placement}</span>
+                      <span className="text-[11px] text-muted-foreground">{promo.productCount} products</span>
+                      {promo.type && <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">{promo.type}</span>}
+                    </div>
                     {promo.startsAt && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {new Date(promo.startsAt).toLocaleDateString()}{promo.endsAt ? ` - ${new Date(promo.endsAt).toLocaleDateString()}` : ""}
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {new Date(promo.startsAt).toLocaleDateString()}{promo.endsAt ? ` — ${new Date(promo.endsAt).toLocaleDateString()}` : ""}
                       </p>
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 flex-shrink-0">
                   <button onClick={() => togglePromotionActive(promo.id)}
-                    className={cn("rounded-lg p-2 transition-colors", promo.isActive ? "text-success hover:bg-success-soft" : "text-muted-foreground hover:bg-muted")}>
-                    {promo.isActive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                    className={cn("rounded-lg p-1.5 transition-colors", promo.isActive ? "text-success hover:bg-success-soft" : "text-muted-foreground hover:bg-muted")}>
+                    {promo.isActive ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
                   </button>
-                  <button onClick={() => startEdit(promo)} className="rounded-lg p-2 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"><Pencil className="h-4 w-4" /></button>
-                  <button onClick={() => setDeleteConfirm(promo.id)} className="rounded-lg p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors"><Trash2 className="h-4 w-4" /></button>
+                  <button onClick={() => startEdit(promo)} className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"><Pencil className="h-3.5 w-3.5" /></button>
+                  <button onClick={() => setDeleteConfirm(promo.id)} className="rounded-lg p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors"><Trash2 className="h-3.5 w-3.5" /></button>
                 </div>
               </div>
             )}

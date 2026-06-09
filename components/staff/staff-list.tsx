@@ -851,18 +851,17 @@ export function StaffList({ staff, pendingInvitations = [], currentUserRole, onU
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
               Pending Invitations
             </h3>
-            <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-600 dark:text-amber-400">
+            <span className="rounded-full bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
               {pendingInvitations.length}
             </span>
           </div>
-          {pendingInvitations.map((inv) => (
-            <div
+          {pendingInvitations.map((inv) => (              <div
               key={inv.id}
-              className="rounded-xl border border-dashed border-amber-500/30 bg-amber-500/[0.03] p-4 transition-all hover:shadow-sm"
+              className="rounded-xl border border-dashed border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-900/10 p-4 transition-all hover:shadow-sm"
             >
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-sm">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 font-bold text-sm border border-amber-300 dark:border-amber-700">
                     {inv.name
                       .split(" ")
                       .map((n) => n[0])
@@ -872,7 +871,7 @@ export function StaffList({ staff, pendingInvitations = [], currentUserRole, onU
                   <div>
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-sm font-semibold text-foreground">{inv.name}</span>
-                      <span className="rounded-[3px] border border-amber-500/20 bg-amber-500/10 px-1.5 py-[2px] text-[9px] font-bold leading-none text-amber-600 dark:text-amber-400">
+                      <span className="rounded-[3px] border border-amber-300 dark:border-amber-700 bg-amber-100 dark:bg-amber-900/30 px-1.5 py-[2px] text-[9px] font-bold leading-none text-amber-800 dark:text-amber-300">
                         PENDING
                       </span>
                       <span className={`rounded-[3px] border px-1.5 py-[2px] text-[10px] font-bold leading-none select-none ${
