@@ -84,9 +84,6 @@ function ErrorState({ error }: { error: { code: string; message: string } }) {
               src="/images/receipt-icon.svg"
               alt="Desert Technology"
               className="h-10 w-auto"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = "none";
-              }}
             />
             <span className="text-lg font-bold text-foreground">
               Desert Technology
