@@ -42,9 +42,11 @@ export default function AdminLoginPage() {
         body: JSON.stringify(requiresTwoFactor ? { code: totpCode } : { email, password }),
       });
 
-      const data = await res.json();
+      // Defensive JSON parsing — check content type before calling .json()
+      const contentType = res.headers.get("content-type");
+      const data = contentType?.includes("application/json") ? await res.json() : null;
       if (!res.ok) {
-        throw new Error(data.message || data.error || "Invalid email, password, or verification code");
+        throw new Error(data?.message || data?.error || "Invalid email, password, or verification code");
       }
 
       if (data.twoFactorRedirect) {

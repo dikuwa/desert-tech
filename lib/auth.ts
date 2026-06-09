@@ -140,11 +140,11 @@ export const auth = betterAuth({
         required: false,
         input: false,
       },
-      profileEmail: {
-        type: "string",
-        required: false,
-        input: false,
-      },
+      // profileEmail is NOT added here because the column hasn't been
+      // created on production yet. It's stored and returned by the
+      // update-profile route directly. To include it in session responses,
+      // run the migration first, then uncomment below.
+      // profileEmail: { type: "string", required: false, input: false },
     },
   },
 
@@ -159,7 +159,7 @@ export const auth = betterAuth({
 
       const user = await db.user.findUnique({
         where: { email },
-        select: { status: true, role: true, twoFactorEnabled: true, mustChangePassword: true, permissions: true },
+        select: { id: true, status: true, role: true, twoFactorEnabled: true, mustChangePassword: true, permissions: true },
       });
 
       if (!user) return;
@@ -178,9 +178,21 @@ export const auth = betterAuth({
         });
       }
 
-      // 2FA enforcement is handled by the Better Auth twoFactor plugin
-      // during sign-in. It is NOT enforced here to avoid locking users out
-      // before they have a chance to set it up in Settings > Account.
+      // Auto-disable 2FA if the user never completed setup (has twoFactorEnabled
+      // set but no TwoFactor record with an actual secret). This prevents users
+      // from being locked out when 2FA was toggled but never configured.
+      if (user.twoFactorEnabled) {
+        const twoFactorRecord = await db.twoFactor.findUnique({
+          where: { userId: user.id },
+          select: { secret: true },
+        });
+        if (!twoFactorRecord || !twoFactorRecord.secret) {
+          await db.user.update({
+            where: { id: user.id },
+            data: { twoFactorEnabled: false },
+          });
+        }
+      }
     }),
     after: createAuthMiddleware(async (ctx) => {
       if (ctx.path !== "/sign-in/email" || !db) return;
