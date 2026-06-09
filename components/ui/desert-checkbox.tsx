@@ -56,7 +56,7 @@ export const DesertCheckbox = forwardRef<HTMLInputElement, DesertCheckboxProps>(
                 "h-2.5 w-2.5 text-primary-foreground transition-transform duration-150",
                 "scale-0 peer-checked:scale-100"
               )}
-              strokeWidth={3}
+              strokeWidth={2}
             />
           </div>
         </div>
