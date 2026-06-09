@@ -161,8 +161,21 @@ export async function generateReceiptDocument(orderId: string): Promise<Document
     pdfBuffer = await streamToBuffer(stream);
   }
 
-  // Create shareable token
-  const token = generateDocumentToken("receipt", order.orderNumber, receiptNumber);
+  // Create shareable signed token with data snapshot
+  const token = generateDocumentToken("receipt", order.orderNumber, receiptNumber, {
+    orderNumber: order.orderNumber,
+    customerName: order.customerName,
+    customerPhone: order.customerPhone,
+    items: order.items,
+    subtotalCents: order.subtotalCents,
+    paymentStatus: order.paymentStatus,
+    totalPaidCents: order.totalPaidCents,
+    balanceDueCents: order.balanceDueCents,
+    createdAt: order.createdAt,
+    fulfillmentMethod: order.fulfillmentMethod,
+    courierFeeCents: order.courierFeeCents,
+    shipping: order.shipping,
+  });
   const publicUrl = getPublicDocumentUrl(token, "receipt");
 
   return {

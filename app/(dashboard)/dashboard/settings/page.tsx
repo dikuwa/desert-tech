@@ -88,6 +88,7 @@ export default function SettingsPage() {
     status: string;
     jobTitle?: string;
     phone?: string;
+    profileImage?: string;
     twoFactorEnabled?: boolean;
     permissions?: string[];
     lastActiveAt?: string;

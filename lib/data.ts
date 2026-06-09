@@ -1,3 +1,5 @@
+"use client";
+
 import type { DashboardCategory, DashboardProduct } from "@/lib/dashboard-data";
 
 export interface ProductData {
@@ -87,8 +89,6 @@ export function getPromotionProducts(promotion: PromotionData): ProductData[] {
 export function getCategoryBySlug(slug: string): CategoryData | undefined {
   return undefined;
 }
-
-"use client";
 
 import { useDashboardStore } from "@/lib/store/dashboard";
 

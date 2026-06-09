@@ -25,7 +25,6 @@
  */
 
 import crypto from "node:crypto";
-import type { ReceiptPDFProps } from "@/components/receipts/receipt-pdf";
 
 export type DocumentType = "receipt" | "quotation" | "invoice";
 
@@ -209,6 +208,8 @@ export function getDocumentByToken(
   };
 }
 
+import { getDocumentShareUrl } from "./app-url";
+
 /**
  * Generate a public URL for a document token.
  *
@@ -216,8 +217,6 @@ export function getDocumentByToken(
  * Vercel preview deployment.
  */
 export function getPublicDocumentUrl(token: string, _type: DocumentType): string {
-  // Dynamic import to avoid circular dependency
-  const { getDocumentShareUrl } = require("./app-url");
   return getDocumentShareUrl(token);
 }
 

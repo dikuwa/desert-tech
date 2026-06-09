@@ -13,12 +13,11 @@ import { UserRole, UserStatus } from "@/lib/enums";
 import { sendPasswordResetEmail } from "@/lib/email";
 import { ensureSystemUsers, SYSTEM_USERS } from "@/lib/system-users";
 
-const baseURL = process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+const baseURL = process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : "https://deserttechnology.com.na");
 const trustedOrigins = Array.from(new Set([
   baseURL,
   process.env.NEXT_PUBLIC_APP_URL,
-  process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
-  "https://desertechnam.vercel.app",
+  "https://deserttechnology.com.na",
   "http://localhost:3000",
   "http://localhost:3040",
 ].filter((origin): origin is string => Boolean(origin))));

@@ -2,10 +2,10 @@
 
 import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
-import { forwardRef, InputHTMLAttributes } from "react";
+import { forwardRef, InputHTMLAttributes, type ReactNode } from "react";
 
 export interface DesertCheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
-  label?: string;
+  label?: ReactNode;
   labelClassName?: string;
   wrapperClassName?: string;
 }

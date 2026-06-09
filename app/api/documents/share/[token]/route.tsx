@@ -158,7 +158,7 @@ export async function GET(
   try {
     const { token } = await params;
 
-    // Validate the production URL is configured
+    // Validate that the production URL is configured (logs a warning if missing)
     getAppUrl();
 
     // Verify the signed token

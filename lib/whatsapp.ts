@@ -72,7 +72,8 @@ export async function sendPasswordResetWhatsApp(
   name: string,
   token: string,
 ): Promise<void> {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const { getAppUrl } = await import("./app-url");
+  const appUrl = getAppUrl();
   const resetUrl = `${appUrl}/admin/reset-password?token=${token}`;
 
   const message = [
@@ -105,7 +106,8 @@ export async function sendInvitationWhatsApp(
   role: string,
   inviterName: string,
 ): Promise<void> {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const { getAppUrl } = await import("./app-url");
+  const appUrl = getAppUrl();
   const acceptUrl = `${appUrl}/admin/invite/accept?token=${token}`;
   const roleDisplay = role.charAt(0) + role.slice(1).toLowerCase();
 

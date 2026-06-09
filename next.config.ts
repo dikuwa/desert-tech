@@ -6,6 +6,10 @@ const nextConfig: NextConfig = {
       "./public/fonts/*.ttf",
       "./public/images/deserttech-logo-pdf.png",
     ],
+    "/api/documents/share/[token]": [
+      "./public/fonts/*.ttf",
+      "./public/images/deserttech-logo-pdf.png",
+    ],
   },
   images: {
     remotePatterns: [
