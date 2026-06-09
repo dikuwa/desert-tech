@@ -70,7 +70,16 @@ export default function QuotationDetailPage() {
 
   const handleCopyLink = async () => {
     try {
-      // Generate document token for public URL
+      // Build data snapshot
+      const items = quotation.items.map((item) => ({
+        name: item.name,
+        quantity: item.quantity,
+        unitPrice: item.unitPriceCents,
+        total: item.unitPriceCents * item.quantity,
+        sku: item.sku,
+      }));
+
+      // Generate document token with data snapshot
       const res = await fetch("/api/documents/token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -78,6 +87,16 @@ export default function QuotationDetailPage() {
           type: "quotation",
           referenceId: quotation.id,
           documentNumber: quotation.quotationNumber,
+          data: {
+            quotationNumber: quotation.quotationNumber,
+            customerName: quotation.customerName,
+            customerPhone: quotation.customerPhone,
+            items,
+            subtotalCents: quotation.subtotalCents,
+            status: quotation.status,
+            notes: quotation.notes,
+            createdAt: quotation.createdAt,
+          },
         }),
       });
       const data = await res.json();
@@ -97,7 +116,16 @@ export default function QuotationDetailPage() {
 
   const handleSendWhatsApp = async () => {
     try {
-      // Generate document token for public URL
+      // Build data snapshot
+      const items = quotation.items.map((item) => ({
+        name: item.name,
+        quantity: item.quantity,
+        unitPrice: item.unitPriceCents,
+        total: item.unitPriceCents * item.quantity,
+        sku: item.sku,
+      }));
+
+      // Generate document token with data snapshot
       const res = await fetch("/api/documents/token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -105,6 +133,16 @@ export default function QuotationDetailPage() {
           type: "quotation",
           referenceId: quotation.id,
           documentNumber: quotation.quotationNumber,
+          data: {
+            quotationNumber: quotation.quotationNumber,
+            customerName: quotation.customerName,
+            customerPhone: quotation.customerPhone,
+            items,
+            subtotalCents: quotation.subtotalCents,
+            status: quotation.status,
+            notes: quotation.notes,
+            createdAt: quotation.createdAt,
+          },
         }),
       });
       const data = await res.json();

@@ -19,7 +19,8 @@ interface OrderConfirmationEmailProps {
   storePhone?: string;
 }
 
-const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+import { getAppUrl } from "@/lib/app-url";
+const baseUrl = getAppUrl();
 
 export function OrderConfirmationEmail({
   customerName,

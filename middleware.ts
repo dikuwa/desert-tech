@@ -57,6 +57,9 @@ export default async function middleware(req: NextRequest) {
   if (pathname.startsWith("/api/invitations/validate")) return NextResponse.next();
   if (pathname.startsWith("/api/invitations/accept")) return NextResponse.next();
 
+  // Allow public document share routes
+  if (pathname.startsWith("/api/documents/share/")) return NextResponse.next();
+
   // Allow password reset API routes
   if (pathname.startsWith("/api/password-reset")) return NextResponse.next();
 

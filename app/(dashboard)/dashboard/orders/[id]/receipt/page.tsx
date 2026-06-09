@@ -128,15 +128,18 @@ export default function OrderReceiptPage() {
     }
   };
 
-  const handleCopyLink = () => {
-    const link = `${window.location.origin}/api/receipts/generate?orderId=${order.orderNumber}`;
-    navigator.clipboard.writeText(link);
-    toast.success("Receipt link copied");
-  };
-
-  const handleGenerateCustomerLink = async () => {
-    setGeneratingLink(true);
+  const handleCopyLink = async () => {
     try {
+      const items = order.items?.length
+        ? order.items.map((item) => ({
+            name: item.name,
+            quantity: item.quantity,
+            unitPrice: item.unitPriceCents,
+            total: item.unitPriceCents * item.quantity,
+            sku: item.sku,
+          }))
+        : [];
+
       const res = await fetch("/api/documents/token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -144,13 +147,78 @@ export default function OrderReceiptPage() {
           type: "receipt",
           referenceId: order.orderNumber,
           documentNumber: receiptNumber,
+          data: {
+            orderNumber: order.orderNumber,
+            customerName: order.customerName,
+            customerPhone: order.customerPhone,
+            items,
+            subtotalCents: order.subtotalCents,
+            paymentStatus: order.paymentStatus,
+            totalPaidCents,
+            balanceDueCents: balanceCents,
+            createdAt: order.createdAt,
+            fulfillmentMethod: order.fulfillmentMethod,
+            courierFeeCents: order.courierFeeCents,
+            shipping: order.shipping,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        toast.error("Failed to generate shareable link");
+        return;
+      }
+      await navigator.clipboard.writeText(data.url);
+      setCustomerLink(data.url);
+      toast.success("Shareable link copied to clipboard");
+    } catch {
+      toast.error("Failed to copy link");
+    }
+  };
+
+  const handleGenerateCustomerLink = async () => {
+    setGeneratingLink(true);
+    try {
+      const items = order.items?.length
+        ? order.items.map((item) => ({
+            name: item.name,
+            quantity: item.quantity,
+            unitPrice: item.unitPriceCents,
+            total: item.unitPriceCents * item.quantity,
+            sku: item.sku,
+          }))
+        : [];
+
+      const res = await fetch("/api/documents/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "receipt",
+          referenceId: order.orderNumber,
+          documentNumber: receiptNumber,
+          data: {
+            orderNumber: order.orderNumber,
+            customerName: order.customerName,
+            customerPhone: order.customerPhone,
+            items,
+            subtotalCents: order.subtotalCents,
+            paymentStatus: order.paymentStatus,
+            totalPaidCents,
+            balanceDueCents: balanceCents,
+            createdAt: order.createdAt,
+            fulfillmentMethod: order.fulfillmentMethod,
+            courierFeeCents: order.courierFeeCents,
+            shipping: order.shipping,
+          },
         }),
       });
       const data = await res.json();
       if (data.url) {
-        navigator.clipboard.writeText(data.url);
+        await navigator.clipboard.writeText(data.url);
         setCustomerLink(data.url);
         toast.success("Customer link copied to clipboard");
+      } else {
+        toast.error("Failed to generate link");
       }
     } catch {
       toast.error("Failed to generate link");
@@ -160,9 +228,13 @@ export default function OrderReceiptPage() {
   };
 
   const handleSendWhatsApp = () => {
-    const publicLink = customerLink || `${window.location.origin}/api/receipts/generate?orderId=${order.orderNumber}`;
+    if (!customerLink) {
+      // Trigger link generation first, then WhatsApp
+      handleGenerateCustomerLink();
+      return;
+    }
     const msg = encodeURIComponent(
-      `Hi ${order.customerName}, here is your receipt for ${order.orderNumber}. Total: ${formatCents(order.subtotalCents)}. ${isDepositPaid ? `Paid: ${formatCents(totalPaidCents)}, Balance due: ${formatCents(balanceCents)}.` : isPaidInFull ? "Paid in full." : ""}\n\nView online: ${publicLink}`,
+      `Hi ${order.customerName}, here is your receipt for ${order.orderNumber}. Total: ${formatCents(order.subtotalCents)}. ${isDepositPaid ? `Paid: ${formatCents(totalPaidCents)}, Balance due: ${formatCents(balanceCents)}.` : isPaidInFull ? "Paid in full." : ""}\n\nView online: ${customerLink}`,
     );
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
   };

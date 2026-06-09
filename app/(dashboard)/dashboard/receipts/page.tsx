@@ -127,7 +127,31 @@ export default function ReceiptsPage() {
 
   const handleSendViaWhatsApp = async (orderNumber: string, customerName: string) => {
     try {
-      // Generate document token for public URL
+      // Build data snapshot from the order
+      const order = paidOrders.find((o) => o.orderNumber === orderNumber);
+      if (!order) {
+        toast.error("Order not found");
+        return;
+      }
+      const orderPayments = payments.filter((payment) => payment.orderNumber === order.orderNumber);
+      const { totalPaidCents, balanceDueCents } = computePaymentFields(
+        order.subtotalCents,
+        order.paymentStatus,
+        orderPayments,
+        { fulfillmentMethod: order.fulfillmentMethod, courierFeeCents: order.courierFeeCents },
+      );
+
+      const items = order.items?.length
+        ? order.items.map((item) => ({
+            name: item.name,
+            quantity: item.quantity,
+            unitPrice: item.unitPriceCents,
+            total: item.unitPriceCents * item.quantity,
+            sku: item.sku,
+          }))
+        : [];
+
+      // Generate document token with data snapshot
       const res = await fetch("/api/documents/token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -135,6 +159,20 @@ export default function ReceiptsPage() {
           type: "receipt",
           referenceId: orderNumber,
           documentNumber: `RCP-${orderNumber.replace("DT-", "")}`,
+          data: {
+            orderNumber: order.orderNumber,
+            customerName: order.customerName,
+            customerPhone: order.customerPhone,
+            items,
+            subtotalCents: order.subtotalCents,
+            paymentStatus: order.paymentStatus,
+            totalPaidCents,
+            balanceDueCents,
+            createdAt: order.createdAt,
+            fulfillmentMethod: order.fulfillmentMethod,
+            courierFeeCents: order.courierFeeCents,
+            shipping: order.shipping,
+          },
         }),
       });
       const data = await res.json();
@@ -183,7 +221,30 @@ export default function ReceiptsPage() {
 
   const handleCopyLink = async (orderNumber: string) => {
     try {
-      // Generate document token for public URL
+      const order = paidOrders.find((o) => o.orderNumber === orderNumber);
+      if (!order) {
+        toast.error("Order not found");
+        return;
+      }
+      const orderPayments = payments.filter((payment) => payment.orderNumber === order.orderNumber);
+      const { totalPaidCents, balanceDueCents } = computePaymentFields(
+        order.subtotalCents,
+        order.paymentStatus,
+        orderPayments,
+        { fulfillmentMethod: order.fulfillmentMethod, courierFeeCents: order.courierFeeCents },
+      );
+
+      const items = order.items?.length
+        ? order.items.map((item) => ({
+            name: item.name,
+            quantity: item.quantity,
+            unitPrice: item.unitPriceCents,
+            total: item.unitPriceCents * item.quantity,
+            sku: item.sku,
+          }))
+        : [];
+
+      // Generate document token with data snapshot
       const res = await fetch("/api/documents/token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -191,6 +252,20 @@ export default function ReceiptsPage() {
           type: "receipt",
           referenceId: orderNumber,
           documentNumber: `RCP-${orderNumber.replace("DT-", "")}`,
+          data: {
+            orderNumber: order.orderNumber,
+            customerName: order.customerName,
+            customerPhone: order.customerPhone,
+            items,
+            subtotalCents: order.subtotalCents,
+            paymentStatus: order.paymentStatus,
+            totalPaidCents,
+            balanceDueCents,
+            createdAt: order.createdAt,
+            fulfillmentMethod: order.fulfillmentMethod,
+            courierFeeCents: order.courierFeeCents,
+            shipping: order.shipping,
+          },
         }),
       });
       const data = await res.json();

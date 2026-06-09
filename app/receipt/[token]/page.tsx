@@ -3,6 +3,8 @@ import Link from "next/link";
 import { MessageCircle, Phone, Download, FileText, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getStatusBadgeClass } from "@/lib/dashboard-data";
+import { getAppUrl, getDocumentShareUrl } from "@/lib/app-url";
+import { generateDocumentToken } from "@/lib/document-tokens";
 
 interface PublicReceiptPageProps {
   params: Promise<{ token: string }>;
@@ -12,7 +14,7 @@ const WHATSAPP = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
 const PHONE = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
 
 async function fetchDocument(token: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const baseUrl = getAppUrl();
   try {
     const res = await fetch(`${baseUrl}/api/documents/token?token=${token}`, {
       cache: "no-store",
@@ -54,6 +56,32 @@ export default async function PublicReceiptPage({ params }: PublicReceiptPagePro
   const date = new Date(data.createdAt).toLocaleDateString("en-US", {
     year: "numeric", month: "long", day: "numeric",
   });
+
+  // Generate a signed share token for PDF download
+  const shareToken = generateDocumentToken(
+    "receipt",
+    data.orderNumber,
+    receiptNumber,
+    {
+      orderNumber: data.orderNumber,
+      customerName: data.customerName,
+      customerPhone: data.customerPhone,
+      items: items.map((i: any) => ({
+        name: i.name,
+        quantity: i.quantity,
+        unitPrice: i.unitPriceCents || 0,
+        total: (i.unitPriceCents || 0) * i.quantity,
+      })),
+      subtotalCents: data.subtotalCents,
+      paymentStatus: data.paymentStatus,
+      totalPaidCents: data.totalPaidCents,
+      balanceDueCents: data.balanceDueCents,
+      createdAt: data.createdAt,
+      fulfillmentMethod: data.fulfillmentMethod,
+      courierFeeCents: data.courierFeeCents,
+      shipping: data.shipping,
+    },
+  );
 
   const totalCents = data.subtotalCents + (data.fulfillmentMethod === "courier" ? (data.courierFeeCents || 0) : 0);
   const paidCents = data.totalPaidCents || 0;
@@ -214,7 +242,7 @@ export default async function PublicReceiptPage({ params }: PublicReceiptPagePro
         {/* Actions */}
         <div className="mt-6 space-y-3">
           <a
-            href={`/api/receipts/generate?orderId=${data.orderNumber}&view=1`}
+            href={getDocumentShareUrl(shareToken)}
             target="_blank"
             rel="noopener noreferrer"
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-all"

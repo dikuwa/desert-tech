@@ -8,8 +8,10 @@ interface PublicQuotationPageProps {
   params: Promise<{ token: string }>;
 }
 
+import { getAppUrl } from "@/lib/app-url";
+
 async function fetchDocument(token: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const baseUrl = getAppUrl();
   try {
     const res = await fetch(`${baseUrl}/api/documents/token?token=${token}`, {
       cache: "no-store",

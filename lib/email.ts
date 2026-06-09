@@ -7,7 +7,8 @@ import { Resend } from "resend";
 
 const resendApiKey = process.env.RESEND_API_KEY;
 const fromEmail = process.env.RESEND_FROM_EMAIL || "noreply@deserttechnology.com.na";
-const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+import { getAppUrl } from "./app-url";
+const appUrl = getAppUrl();
 
 // Initialize Resend only if API key is available
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
