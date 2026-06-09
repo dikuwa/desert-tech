@@ -104,7 +104,8 @@ export default function QuotationDetailPage() {
         toast.error("Failed to generate shareable link");
         return;
       }
-      await navigator.clipboard.writeText(data.url);
+      const shareUrl = data.shortUrl ?? data.url;
+      await navigator.clipboard.writeText(shareUrl);
       setCopiedLink(true);
       toast.success("Shareable link copied to clipboard");
       setTimeout(() => setCopiedLink(false), 2000);
@@ -158,6 +159,7 @@ export default function QuotationDetailPage() {
         )
         .join("\n");
 
+      const shareUrl = data.shortUrl ?? data.url;
       const msg = encodeURIComponent(
         `*Quotation ${quotation.quotationNumber} — ${storeSettings.storeName}*\n\n` +
           `Hi ${quotation.customerName},\n\n` +
@@ -165,7 +167,7 @@ export default function QuotationDetailPage() {
           `${itemsList}\n\n` +
           `*Total: ${formatCents(quotation.subtotalCents)}*\n\n` +
           `${quotation.notes ? `Notes: ${quotation.notes}\n\n` : ""}` +
-          `View quotation: ${data.url}\n\n` +
+          `View quotation: ${shareUrl}\n\n` +
           `Contact us:\n` +
           `${storeSettings.phone}\n` +
           `${storeSettings.email}`,

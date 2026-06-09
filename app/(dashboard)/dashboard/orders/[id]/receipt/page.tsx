@@ -168,8 +168,9 @@ export default function OrderReceiptPage() {
         toast.error("Failed to generate shareable link");
         return;
       }
-      await navigator.clipboard.writeText(data.url);
-      setCustomerLink(data.url);
+      const shareUrl = data.shortUrl ?? data.url;
+      await navigator.clipboard.writeText(shareUrl);
+      setCustomerLink(shareUrl);
       toast.success("Shareable link copied to clipboard");
     } catch {
       toast.error("Failed to copy link");
@@ -213,9 +214,10 @@ export default function OrderReceiptPage() {
         }),
       });
       const data = await res.json();
-      if (data.url) {
-        await navigator.clipboard.writeText(data.url);
-        setCustomerLink(data.url);
+      const shareUrl = data.shortUrl ?? data.url;
+      if (shareUrl) {
+        await navigator.clipboard.writeText(shareUrl);
+        setCustomerLink(shareUrl);
         toast.success("Customer link copied to clipboard");
       } else {
         toast.error("Failed to generate link");
@@ -269,11 +271,12 @@ export default function OrderReceiptPage() {
         return;
       }
 
+      const shareUrl = data.shortUrl ?? data.url;
       // Cache the link for later use
-      setCustomerLink(data.url);
+      setCustomerLink(shareUrl);
 
       const msg = encodeURIComponent(
-        `Hi ${order.customerName}, here is your receipt for ${order.orderNumber}. Total: ${formatCents(order.subtotalCents)}. ${isDepositPaid ? `Paid: ${formatCents(totalPaidCents)}, Balance due: ${formatCents(balanceCents)}.` : isPaidInFull ? "Paid in full." : ""}\n\nView online: ${data.url}`,
+        `Hi ${order.customerName}, here is your receipt for ${order.orderNumber}. Total: ${formatCents(order.subtotalCents)}. ${isDepositPaid ? `Paid: ${formatCents(totalPaidCents)}, Balance due: ${formatCents(balanceCents)}.` : isPaidInFull ? "Paid in full." : ""}\n\nView online: ${shareUrl}`,
       );
       window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
     } catch {
@@ -329,9 +332,10 @@ export default function OrderReceiptPage() {
           ? "Paid in full."
           : `Payment status: ${getStatusLabel(order.paymentStatus)}`;
 
+      const shareUrl = data.shortUrl ?? data.url;
       const subject = encodeURIComponent(`Receipt for ${order.orderNumber} - ${storeSettings.storeName}`);
       const body = encodeURIComponent(
-        `Hi ${order.customerName},\n\nPlease find your receipt for ${order.orderNumber} below.\n\n${data.url}\n\nTotal: ${formatCents(order.subtotalCents)}\n${paymentLine}\n\nThank you for your business!\n${storeSettings.storeName}\n${storeSettings.email || ""}`,
+        `Hi ${order.customerName},\n\nPlease find your receipt for ${order.orderNumber} below.\n\n${shareUrl}\n\nTotal: ${formatCents(order.subtotalCents)}\n${paymentLine}\n\nThank you for your business!\n${storeSettings.storeName}\n${storeSettings.email || ""}`,
       );
       window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
     } catch {

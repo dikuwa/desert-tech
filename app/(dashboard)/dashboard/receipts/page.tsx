@@ -181,8 +181,9 @@ export default function ReceiptsPage() {
         toast.error("Failed to generate shareable link");
         return;
       }
+      const shareUrl = data.shortUrl ?? data.url;
       const msg = encodeURIComponent(
-        `Hi ${customerName}, here is your receipt for order ${orderNumber}.\n\nView it here: ${data.url}\n\nThank you for choosing Desert Technology!`,
+        `Hi ${customerName}, here is your receipt for order ${orderNumber}.\n\nView it here: ${shareUrl}\n\nThank you for choosing Desert Technology!`,
       );
       window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
     } catch (err) {
@@ -245,9 +246,10 @@ export default function ReceiptsPage() {
       }
 
       // Open email client with the share link
+      const shareUrl = data.shortUrl ?? data.url;
       const subject = encodeURIComponent(`Receipt for ${order.orderNumber}`);
       const body = encodeURIComponent(
-        `Hi ${order.customerName},\n\nPlease find your receipt for ${order.orderNumber} below.\n\n${data.url}\n\nThank you for choosing Desert Technology!`,
+        `Hi ${order.customerName},\n\nPlease find your receipt for ${order.orderNumber} below.\n\n${shareUrl}\n\nThank you for choosing Desert Technology!`,
       );
       window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
     } catch (err) {
@@ -315,7 +317,7 @@ export default function ReceiptsPage() {
         return;
       }
       // Open the share URL in a new tab (renders PDF inline)
-      window.open(data.url, "_blank", "noopener,noreferrer");
+      window.open(data.shortUrl ?? data.url, "_blank", "noopener,noreferrer");
     } catch (err) {
       console.error("View PDF failed:", err);
       toast.error("Failed to open PDF");
@@ -378,7 +380,7 @@ export default function ReceiptsPage() {
         toast.error("Failed to generate shareable link");
         return;
       }
-      await navigator.clipboard.writeText(data.url);
+      await navigator.clipboard.writeText(data.shortUrl ?? data.url);
       setCopiedLink(true);
       toast.success("Link copied to clipboard");
       setTimeout(() => setCopiedLink(false), 2000);

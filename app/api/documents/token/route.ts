@@ -8,7 +8,7 @@
  *     documentNumber: string,
  *     data?: object  // Data snapshot for deployment-persistent tokens
  *   }
- *   Returns: { success, token, url }
+ *   Returns: { success, token, url, shortUrl }
  *
  * GET /api/documents/token?token=xxx — Verify and decode a signed token
  *   Returns: { success, type, documentNumber, referenceId, data, iat, exp }
@@ -54,7 +54,27 @@ export async function POST(request: NextRequest) {
     const { getDocumentShareUrl } = await import("@/lib/app-url");
     const url = getDocumentShareUrl(token);
 
-    return NextResponse.json({ success: true, token, url });
+    // Create a short branded link (/d/[shortCode]) as well
+    let shortUrl: string | null = null;
+    try {
+      const { createShortLink } = await import("@/lib/document-share");
+      const result = await createShortLink(
+        type,
+        referenceId,
+        documentNumber,
+        data || undefined,
+      );
+      shortUrl = result.url;
+    } catch (linkError) {
+      console.warn("[Token] Short link creation failed (non-fatal):", linkError);
+    }
+
+    return NextResponse.json({
+      success: true,
+      token,
+      url,
+      shortUrl,
+    });
   } catch (error) {
     console.error("Token generation error:", error);
     return NextResponse.json(

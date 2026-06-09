@@ -10,6 +10,7 @@
  * - Uses data from the signed token snapshot when available, falling back
  *   to the in-memory dashboard store
  * - Returns Content-Type: application/pdf
+ * - Supports ?download=1 to force download (Content-Disposition: attachment)
  * - Never redirects, never returns HTML (except on error)
  */
 import { NextRequest, NextResponse } from "next/server";
@@ -152,11 +153,12 @@ function resolveDocument(
 // ---------------------------------------------------------------------------
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ token: string }> },
 ) {
   try {
     const { token } = await params;
+    const isDownload = request.nextUrl.searchParams.get("download") === "1";
 
     // Validate that the production URL is configured (logs a warning if missing)
     getAppUrl();
@@ -238,11 +240,12 @@ export async function GET(
     }
 
     const filename = `${receiptNumber.replace(/[^a-zA-Z0-9_-]/g, "_")}.pdf`;
+    const disposition = isDownload ? "attachment" : "inline";
 
     return new NextResponse(new Uint8Array(pdfBuffer), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `inline; filename="${filename}"`,
+        "Content-Disposition": `${disposition}; filename="${filename}"`,
         "Content-Length": pdfBuffer.length.toString(),
         "Cache-Control": "private, no-store",
       },

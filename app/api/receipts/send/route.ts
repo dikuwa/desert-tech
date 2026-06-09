@@ -37,6 +37,20 @@ export async function POST(request: NextRequest) {
 
     const { buffer, filename, publicUrl, documentNumber } = docResult;
 
+    // Create a short branded link for the email body
+    let shortUrl = publicUrl;
+    try {
+      const { createShortLink } = await import("@/lib/document-share");
+      const linkResult = await createShortLink(
+        "receipt",
+        orderNumber,
+        documentNumber,
+      );
+      shortUrl = linkResult.url;
+    } catch (linkError) {
+      console.warn("[Receipt Send] Short link creation failed, using long URL:", linkError);
+    }
+
     // Look up order to get total for email
     const stored = getOrderByNumber(orderNumber);
     const { orders } = useDashboardStore.getState();
@@ -53,7 +67,7 @@ export async function POST(request: NextRequest) {
         orderNumber,
         receiptNumber: documentNumber,
         totalAmount,
-        publicUrl,
+        publicUrl: shortUrl,
       }),
     );
 
