@@ -10,7 +10,7 @@ import type { DocumentType } from "@/lib/document-tokens";
 interface DocumentPublicViewProps {
   type: DocumentType;
   documentNumber: string;
-  token: string;
+  shortCode: string;
   data: Record<string, unknown>;
 }
 
@@ -38,12 +38,11 @@ function formatDate(dateStr: string | undefined | null): string {
 export function DocumentPublicView({
   type,
   documentNumber,
-  token,
+  shortCode,
   data,
 }: DocumentPublicViewProps) {
-  const baseUrl = `/api/documents/share/${token}`;
-  const viewPdfUrl = baseUrl;
-  const downloadPdfUrl = `${baseUrl}?download=1`;
+  const viewPdfUrl = `/d/${shortCode}/pdf`;
+  const downloadPdfUrl = `/d/${shortCode}/download`;
 
   const typeLabel =
     type === "receipt"

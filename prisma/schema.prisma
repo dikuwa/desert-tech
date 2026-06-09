@@ -426,6 +426,28 @@ model StoreSetting {
   data String
 }
 
+// ============== DOCUMENT SHARING ==============
+
+model DocumentShare {
+  id             String    @id @default(cuid())
+  shortCode      String    @unique
+  token          String    // The underlying signed document token
+  documentType   String    // "receipt" | "quotation" | "invoice"
+  referenceId    String    // Order number, quotation ID, etc.
+  documentNumber String    // Human-readable number (e.g. RCP-xxx, QT-xxx)
+  createdById    String?
+  expiresAt      DateTime?
+  revokedAt      DateTime?
+  lastAccessedAt DateTime?
+  accessCount    Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([shortCode])
+  @@index([referenceId, documentType])
+  @@index([expiresAt])
+}
+
 // ============== ENUMS ==============
 
 enum UserRole {

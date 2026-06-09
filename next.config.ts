@@ -10,6 +10,14 @@ const nextConfig: NextConfig = {
       "./public/fonts/*.ttf",
       "./public/images/deserttech-logo-pdf.png",
     ],
+    "/d/[code]/pdf": [
+      "./public/fonts/*.ttf",
+      "./public/images/deserttech-logo-pdf.png",
+    ],
+    "/d/[code]/download": [
+      "./public/fonts/*.ttf",
+      "./public/images/deserttech-logo-pdf.png",
+    ],
   },
   images: {
     remotePatterns: [

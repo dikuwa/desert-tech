@@ -408,7 +408,8 @@ export const ModelName = {
   Notification: 'Notification',
   BackInStockRequest: 'BackInStockRequest',
   ContactMessage: 'ContactMessage',
-  StoreSetting: 'StoreSetting'
+  StoreSetting: 'StoreSetting',
+  DocumentShare: 'DocumentShare'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -424,7 +425,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "twoFactor" | "session" | "account" | "verification" | "invitation" | "auditLog" | "passwordReset" | "rateLimit" | "customer" | "category" | "brand" | "product" | "productImage" | "promotion" | "promotionProduct" | "order" | "orderItem" | "paymentRecord" | "receipt" | "followUp" | "notification" | "backInStockRequest" | "contactMessage" | "storeSetting"
+    modelProps: "user" | "twoFactor" | "session" | "account" | "verification" | "invitation" | "auditLog" | "passwordReset" | "rateLimit" | "customer" | "category" | "brand" | "product" | "productImage" | "promotion" | "promotionProduct" | "order" | "orderItem" | "paymentRecord" | "receipt" | "followUp" | "notification" | "backInStockRequest" | "contactMessage" | "storeSetting" | "documentShare"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -2278,6 +2279,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    DocumentShare: {
+      payload: Prisma.$DocumentSharePayload<ExtArgs>
+      fields: Prisma.DocumentShareFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DocumentShareFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentSharePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DocumentShareFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentSharePayload>
+        }
+        findFirst: {
+          args: Prisma.DocumentShareFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentSharePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DocumentShareFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentSharePayload>
+        }
+        findMany: {
+          args: Prisma.DocumentShareFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentSharePayload>[]
+        }
+        create: {
+          args: Prisma.DocumentShareCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentSharePayload>
+        }
+        createMany: {
+          args: Prisma.DocumentShareCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DocumentShareCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentSharePayload>[]
+        }
+        delete: {
+          args: Prisma.DocumentShareDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentSharePayload>
+        }
+        update: {
+          args: Prisma.DocumentShareUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentSharePayload>
+        }
+        deleteMany: {
+          args: Prisma.DocumentShareDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DocumentShareUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DocumentShareUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentSharePayload>[]
+        }
+        upsert: {
+          args: Prisma.DocumentShareUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentSharePayload>
+        }
+        aggregate: {
+          args: Prisma.DocumentShareAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDocumentShare>
+        }
+        groupBy: {
+          args: Prisma.DocumentShareGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DocumentShareGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DocumentShareCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DocumentShareCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -2703,6 +2778,25 @@ export const StoreSettingScalarFieldEnum = {
 export type StoreSettingScalarFieldEnum = (typeof StoreSettingScalarFieldEnum)[keyof typeof StoreSettingScalarFieldEnum]
 
 
+export const DocumentShareScalarFieldEnum = {
+  id: 'id',
+  shortCode: 'shortCode',
+  token: 'token',
+  documentType: 'documentType',
+  referenceId: 'referenceId',
+  documentNumber: 'documentNumber',
+  createdById: 'createdById',
+  expiresAt: 'expiresAt',
+  revokedAt: 'revokedAt',
+  lastAccessedAt: 'lastAccessedAt',
+  accessCount: 'accessCount',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DocumentShareScalarFieldEnum = (typeof DocumentShareScalarFieldEnum)[keyof typeof DocumentShareScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -3003,6 +3097,7 @@ export type GlobalOmitConfig = {
   backInStockRequest?: Prisma.BackInStockRequestOmit
   contactMessage?: Prisma.ContactMessageOmit
   storeSetting?: Prisma.StoreSettingOmit
+  documentShare?: Prisma.DocumentShareOmit
 }
 
 /* Types for Logging */

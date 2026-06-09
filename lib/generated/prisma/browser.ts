@@ -142,3 +142,8 @@ export type ContactMessage = Prisma.ContactMessageModel
  * 
  */
 export type StoreSetting = Prisma.StoreSettingModel
+/**
+ * Model DocumentShare
+ * 
+ */
+export type DocumentShare = Prisma.DocumentShareModel

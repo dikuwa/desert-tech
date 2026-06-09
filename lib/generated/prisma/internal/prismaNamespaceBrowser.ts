@@ -75,7 +75,8 @@ export const ModelName = {
   Notification: 'Notification',
   BackInStockRequest: 'BackInStockRequest',
   ContactMessage: 'ContactMessage',
-  StoreSetting: 'StoreSetting'
+  StoreSetting: 'StoreSetting',
+  DocumentShare: 'DocumentShare'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -478,6 +479,25 @@ export const StoreSettingScalarFieldEnum = {
 } as const
 
 export type StoreSettingScalarFieldEnum = (typeof StoreSettingScalarFieldEnum)[keyof typeof StoreSettingScalarFieldEnum]
+
+
+export const DocumentShareScalarFieldEnum = {
+  id: 'id',
+  shortCode: 'shortCode',
+  token: 'token',
+  documentType: 'documentType',
+  referenceId: 'referenceId',
+  documentNumber: 'documentNumber',
+  createdById: 'createdById',
+  expiresAt: 'expiresAt',
+  revokedAt: 'revokedAt',
+  lastAccessedAt: 'lastAccessedAt',
+  accessCount: 'accessCount',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DocumentShareScalarFieldEnum = (typeof DocumentShareScalarFieldEnum)[keyof typeof DocumentShareScalarFieldEnum]
 
 
 export const SortOrder = {

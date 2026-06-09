@@ -25,32 +25,18 @@ export default async function DocumentSharePage({ params }: Props) {
     result = await resolveShortLink(code);
   } catch (err) {
     console.error("[DocumentShare] Failed to resolve short link:", err);
-    return (
-      <ErrorState
-        error={{
-          code: "NOT_FOUND",
-          message: "This document link is invalid or has expired.",
-        }}
-      />
-    );
+    return <ErrorState error={{ code: "NOT_FOUND", message: "This document link is invalid or has expired." }} />;
   }
 
-  // Handle known error states
-  if ("code" in result) {
-    return <ErrorState error={result} />;
+  // Handle error states
+  if (!result.ok) {
+    return <ErrorState error={{ code: result.code, message: result.message }} />;
   }
 
   // Verify the underlying signed token and extract document data
   const payload = verifyDocumentToken(result.token);
   if (!payload) {
-    return (
-      <ErrorState
-        error={{
-          code: "TOKEN_INVALID",
-          message: "This document link is invalid or has expired.",
-        }}
-      />
-    );
+    return <ErrorState error={{ code: "TOKEN_INVALID", message: "This document link is invalid or has expired." }} />;
   }
 
   const doc = payload.data || {};
@@ -59,7 +45,7 @@ export default async function DocumentSharePage({ params }: Props) {
     <DocumentPublicView
       type={payload.type}
       documentNumber={payload.documentNumber}
-      token={result.token}
+      shortCode={code}
       data={doc as any}
     />
   );

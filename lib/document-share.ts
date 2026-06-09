@@ -1,18 +1,19 @@
 /**
- * Document short-link service using Redis (Upstash).
+ * Document short-link service using Prisma (Postgres) as the primary store,
+ * with Redis (Upstash) as a read cache for fast lookups.
  *
  * Maps short random codes to signed document tokens so that customers
- * receive compact branded URLs like https://deserttechnam.com/d/r8K4pQ
+ * receive compact branded URLs like https://deserttech.com/d/r8K4pQ
  * instead of long token URLs.
  *
- * The underlying signed token (from document-tokens.ts) remains the
- * authoritative payload — the short code is just a cache-key lookup.
- * This means:
- *   - Links survive redeploys (the token is still valid)
- *   - Expiration is checked both at the short-link level and the token level
- *   - Revocation is handled at the short-link level
+ * The underlying signed token (from document-tokens.ts) encodes all
+ * document data, so links survive redeploys and are self-verifying.
+ *
+ * The database is the source of truth — Redis is only a cache layer.
+ * This ensures links are never lost, even if Redis is unavailable.
  */
 
+import { db } from "./db";
 import { cache } from "./cache";
 import { generateDocumentToken, verifyDocumentToken, type DocumentType } from "./document-tokens";
 import { getAppUrl } from "./app-url";
@@ -23,53 +24,45 @@ import crypto from "node:crypto";
 // ---------------------------------------------------------------------------
 
 export interface ShortLinkRecord {
-  /** Random short code (7 chars, base64url) */
   shortCode: string;
-  /** The underlying signed document token */
   token: string;
-  /** Document type */
   type: DocumentType;
-  /** Internal reference ID (order number, quotation ID, etc.) */
   referenceId: string;
-  /** Human-readable document number (e.g. RCP-xxx, QT-xxx) */
   documentNumber: string;
-  /** When the short link was created (ISO string) */
   createdAt: string;
-  /** When the short link expires (ISO string) — null means never */
   expiresAt: string | null;
-  /** If non-null, the link was revoked at this time (ISO string) */
   revokedAt: string | null;
-  /** Last access timestamp (ISO string) — updated on each resolve */
   lastAccessedAt: string | null;
-  /** Number of times this link has been accessed */
   accessCount: number;
 }
 
+export type ShortLinkErrorCode = "NOT_FOUND" | "EXPIRED" | "REVOKED" | "TOKEN_INVALID";
+
 export interface ShortLinkError {
-  code: "NOT_FOUND" | "EXPIRED" | "REVOKED" | "TOKEN_INVALID";
+  code: ShortLinkErrorCode;
   message: string;
 }
+
+export type ResolveResult =
+  | { ok: true; record: ShortLinkRecord; token: string }
+  | { ok: false; code: ShortLinkErrorCode; message: string };
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-/** Default TTL: 90 days (in seconds) */
-const DEFAULT_TTL_SECONDS = 90 * 24 * 60 * 60;
-
-/** Redis key prefix for short links */
-const KEY_PREFIX = "shortlink:";
-
 /** Length of the random short code in characters */
 const SHORT_CODE_LENGTH = 7;
+
+/** Cache TTL in seconds (2 hours for fast reads, DB is source of truth) */
+const CACHE_TTL_SECONDS = 2 * 60 * 60;
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Generate a cryptographically random short code (URL-safe, no ambiguous chars). */
 function generateShortCode(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789"; // No 0/O/1/l/I
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
   const bytes = crypto.randomBytes(SHORT_CODE_LENGTH);
   let code = "";
   for (let i = 0; i < SHORT_CODE_LENGTH; i++) {
@@ -78,14 +71,41 @@ function generateShortCode(): string {
   return code;
 }
 
-/** Build the Redis key for a short code. */
 function redisKey(code: string): string {
-  return `${KEY_PREFIX}${code}`;
+  return `shortlink:${code}`;
 }
 
-/** Build the public URL for a short code. */
 export function getShortLinkUrl(code: string): string {
   return `${getAppUrl()}/d/${code}`;
+}
+
+/** Build a ShortLinkRecord from a database DocumentShare row. */
+function toRecord(row: NonNullable<Awaited<ReturnType<typeof findDbRecord>>>): ShortLinkRecord {
+  return {
+    shortCode: row.shortCode,
+    token: row.token,
+    type: row.documentType as DocumentType,
+    referenceId: row.referenceId,
+    documentNumber: row.documentNumber,
+    createdAt: row.createdAt.toISOString(),
+    expiresAt: row.expiresAt?.toISOString() ?? null,
+    revokedAt: row.revokedAt?.toISOString() ?? null,
+    lastAccessedAt: row.lastAccessedAt?.toISOString() ?? null,
+    accessCount: row.accessCount,
+  };
+}
+
+/** Look up a DocumentShare from the database by short code. */
+async function findDbRecord(code: string) {
+  if (!db) return null;
+  try {
+    return await db.documentShare.findUnique({
+      where: { shortCode: code },
+    });
+  } catch (err) {
+    console.error("[DocumentShare] DB lookup failed:", err);
+    return null;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -93,17 +113,8 @@ export function getShortLinkUrl(code: string): string {
 // ---------------------------------------------------------------------------
 
 /**
- * Create a short link for a document token.
- *
- * If a valid non-revoked short link already exists for this reference,
- * it is reused (deduplication).
- *
- * @param type        Document type
- * @param referenceId Internal reference ID
- * @param documentNumber  Human-readable document number
- * @param data        Optional data snapshot (same as generateDocumentToken)
- * @param ttlDays     Short-link TTL in days (default 90)
- * @returns The short link record and public URL
+ * Create a short link for a document.
+ * Reuses existing valid links for the same reference to avoid duplicates.
  */
 export async function createShortLink(
   type: DocumentType,
@@ -112,18 +123,54 @@ export async function createShortLink(
   data?: Record<string, unknown>,
   ttlDays = 90,
 ): Promise<{ record: ShortLinkRecord; url: string }> {
-  // Check for existing valid short link for this reference
-  const existing = await findValidShortLink(referenceId, type);
-  if (existing) {
-    return { record: existing, url: getShortLinkUrl(existing.shortCode) };
+  // Try the database first
+  if (db) {
+    try {
+      const existing = await db.documentShare.findFirst({
+        where: {
+          referenceId,
+          documentType: type,
+          revokedAt: null,
+          OR: [
+            { expiresAt: null },
+            { expiresAt: { gte: new Date() } },
+          ],
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (existing) {
+        const record = toRecord(existing);
+        // Warm the cache
+        cache.set(redisKey(record.shortCode), JSON.stringify(record), {
+          ex: CACHE_TTL_SECONDS,
+        }).catch(() => {});
+        return { record, url: getShortLinkUrl(record.shortCode) };
+      }
+    } catch (err) {
+      console.warn("[DocumentShare] DB lookup failed, falling back to new link:", err);
+    }
   }
 
-  // Generate the signed token (which encodes all document data)
+  // Generate new short code (retry on collision)
+  let shortCode = "";
+  let attempts = 0;
+  while (attempts < 5) {
+    shortCode = generateShortCode();
+    if (db) {
+      const existing = await db.documentShare.findUnique({ where: { shortCode } }).catch(() => null);
+      if (existing) {
+        attempts++;
+        continue;
+      }
+    }
+    break;
+  }
+
   const token = generateDocumentToken(type, referenceId, documentNumber || referenceId, data as any, ttlDays);
-  const shortCode = generateShortCode();
 
   const now = new Date();
-  const expiresAt = new Date(now.getTime() + ttlDays * 24 * 60 * 60 * 1000);
+  const expiresAt = ttlDays > 0 ? new Date(now.getTime() + ttlDays * 24 * 60 * 60 * 1000) : null;
 
   const record: ShortLinkRecord = {
     shortCode,
@@ -132,131 +179,148 @@ export async function createShortLink(
     referenceId,
     documentNumber: documentNumber || referenceId,
     createdAt: now.toISOString(),
-    expiresAt: expiresAt.toISOString(),
+    expiresAt: expiresAt?.toISOString() ?? null,
     revokedAt: null,
     lastAccessedAt: null,
     accessCount: 0,
   };
 
-  // Store in Redis with TTL matching the link expiration
-  await cache.set(redisKey(shortCode), JSON.stringify(record), {
-    ex: ttlDays * 24 * 60 * 60,
-  });
+  // Persist to database
+  if (db) {
+    try {
+      await db.documentShare.create({
+        data: {
+          shortCode,
+          token,
+          documentType: type,
+          referenceId,
+          documentNumber: documentNumber || referenceId,
+          expiresAt,
+        },
+      });
+    } catch (err) {
+      console.error("[DocumentShare] DB create failed:", err);
+    }
+  }
+
+  // Also cache in Redis for fast reads
+  cache.set(redisKey(shortCode), JSON.stringify(record), {
+    ex: CACHE_TTL_SECONDS,
+  }).catch(() => {});
 
   return { record, url: getShortLinkUrl(shortCode) };
 }
 
 /**
  * Resolve a short code to a document token.
- *
- * Returns the short link record with updated access stats,
- * or a ShortLinkError if the link is invalid/expired/revoked.
- *
- * The caller should then verify the underlying token with
- * verifyDocumentToken() before using the document data.
+ * Checks the Redis cache first, then the database.
  */
-export async function resolveShortLink(
-  code: string,
-): Promise<{ record: ShortLinkRecord; token: string } | ShortLinkError> {
-  const raw = await cache.get<string>(redisKey(code));
-  if (!raw) {
-    return { code: "NOT_FOUND", message: "This document link is invalid or has expired." };
-  }
+export async function resolveShortLink(rawCode: string): Promise<ResolveResult> {
+  const code = rawCode.trim();
 
-  let record: ShortLinkRecord;
+  // 1. Try Redis cache (fast path)
   try {
-    record = JSON.parse(raw);
-  } catch {
-    return { code: "NOT_FOUND", message: "This document link is invalid." };
-  }
-
-  // Check expiration
-  if (record.expiresAt && new Date(record.expiresAt) < new Date()) {
-    return { code: "EXPIRED", message: "This document link has expired. Please contact Desert Technology for a new copy." };
-  }
-
-  // Check revocation
-  if (record.revokedAt) {
-    return { code: "REVOKED", message: "This document link is no longer available." };
-  }
-
-  // Verify the underlying signed token
-  const payload = verifyDocumentToken(record.token);
-  if (!payload) {
-    return { code: "TOKEN_INVALID", message: "This document link is invalid or has expired." };
-  }
-
-  // Update access stats (fire-and-forget — don't block the response)
-  record.lastAccessedAt = new Date().toISOString();
-  record.accessCount += 1;
-  cache.set(redisKey(code), JSON.stringify(record), {
-    ex: DEFAULT_TTL_SECONDS,
-  }).catch(() => {
-    // Non-critical — don't fail the request
-  });
-
-  return { record, token: record.token };
-}
-
-/**
- * Revoke a short link so it can no longer be used.
- */
-export async function revokeShortLink(code: string): Promise<boolean> {
-  const raw = await cache.get<string>(redisKey(code));
-  if (!raw) return false;
-
-  try {
-    const record: ShortLinkRecord = JSON.parse(raw);
-    record.revokedAt = new Date().toISOString();
-    await cache.set(redisKey(code), JSON.stringify(record), {
-      ex: DEFAULT_TTL_SECONDS,
-    });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Find an existing valid (non-revoked, non-expired) short link for a
- * given reference ID and document type.
- */
-export async function findValidShortLink(
-  referenceId: string,
-  type: DocumentType,
-): Promise<ShortLinkRecord | null> {
-  // Redis doesn't support secondary indexes, so we scan for matching records.
-  // In practice, the number of short links per document is very small.
-  let cursor = 0;
-  const now = new Date();
-
-  do {
-    const [nextCursor, keys] = await cache.scan(cursor, {
-      match: `${KEY_PREFIX}*`,
-      count: 100,
-    });
-    cursor = Number(nextCursor);
-
-    if (keys.length > 0) {
-      const values = await cache.mget<string[]>(...keys);
-      for (const raw of values) {
-        if (!raw) continue;
-        try {
-          const record: ShortLinkRecord = JSON.parse(raw);
-          if (
-            record.referenceId === referenceId &&
-            record.type === type &&
-            !record.revokedAt &&
-            (!record.expiresAt || new Date(record.expiresAt) > now)
-          ) {
-            return record;
-          }
-        } catch {
-          // Skip corrupted records
-        }
+    const raw = await cache.get<string>(redisKey(code));
+    if (raw) {
+      try {
+        const record: ShortLinkRecord = JSON.parse(raw);
+        const validation = validateRecord(record);
+        if (validation.ok) return validation;
+      } catch {
+        // Corrupted cache entry — fall through to DB
       }
     }
-  } while (cursor !== 0);
+  } catch {
+    // Redis unavailable — fall through to DB
+  }
 
-  return null;
+  // 2. Try database
+  const row = await findDbRecord(code);
+  if (!row) {
+    return { ok: false, code: "NOT_FOUND", message: "This document link is invalid or has expired." };
+  }
+
+  const record = toRecord(row);
+  const validation = validateRecord(record);
+  if (!validation.ok) return validation;
+
+  // Verify the signed token
+  const payload = verifyDocumentToken(record.token);
+  if (!payload) {
+    return { ok: false, code: "TOKEN_INVALID", message: "This document link is invalid or has expired." };
+  }
+
+  // Update access stats (fire-and-forget)
+  updateAccessStats(code, record).catch(() => {});
+
+  return { ok: true, record, token: record.token };
+}
+
+/**
+ * Validate the short link record for expiration and revocation.
+ */
+function validateRecord(record: ShortLinkRecord): ResolveResult {
+  if (record.expiresAt && new Date(record.expiresAt) < new Date()) {
+    return {
+      ok: false,
+      code: "EXPIRED",
+      message: "This document link has expired. Please contact Desert Technology for a new copy.",
+    };
+  }
+  if (record.revokedAt) {
+    return {
+      ok: false,
+      code: "REVOKED",
+      message: "This document link is no longer available.",
+    };
+  }
+  return { ok: true, record, token: record.token };
+}
+
+/**
+ * Update access stats (access count, last accessed time).
+ */
+async function updateAccessStats(code: string, record: ShortLinkRecord) {
+  record.lastAccessedAt = new Date().toISOString();
+  record.accessCount += 1;
+
+  // Update cache
+  cache.set(redisKey(code), JSON.stringify(record), {
+    ex: CACHE_TTL_SECONDS,
+  }).catch(() => {});
+
+  // Update database
+  if (db) {
+    try {
+      await db.documentShare.update({
+        where: { shortCode: code },
+        data: {
+          lastAccessedAt: new Date(),
+          accessCount: { increment: 1 },
+        },
+      });
+    } catch {
+      // Non-critical
+    }
+  }
+}
+
+/**
+ * Revoke a short link.
+ */
+export async function revokeShortLink(code: string): Promise<boolean> {
+  if (db) {
+    try {
+      await db.documentShare.update({
+        where: { shortCode: code },
+        data: { revokedAt: new Date() },
+      });
+      // Invalidate cache
+      cache.del(redisKey(code)).catch(() => {});
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  return false;
 }
