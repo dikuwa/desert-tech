@@ -66,31 +66,77 @@ export default function QuotationDetailPage() {
 
   const handlePrint = () => window.print();
 
-  const handleCopyLink = () => {
-    const link = `${window.location.origin}/dashboard/quotations/${quotation.id}`;
-    navigator.clipboard.writeText(link);
-    toast.success("Quotation link copied");
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const handleCopyLink = async () => {
+    try {
+      // Generate document token for public URL
+      const res = await fetch("/api/documents/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "quotation",
+          referenceId: quotation.id,
+          documentNumber: quotation.quotationNumber,
+        }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        toast.error("Failed to generate shareable link");
+        return;
+      }
+      await navigator.clipboard.writeText(data.url);
+      setCopiedLink(true);
+      toast.success("Shareable link copied to clipboard");
+      setTimeout(() => setCopiedLink(false), 2000);
+    } catch (err) {
+      console.error("Copy link failed:", err);
+      toast.error("Failed to copy link");
+    }
   };
 
-  const handleSendWhatsApp = () => {
-    const itemsList = quotation.items
-      .map(
-        (item) =>
-          `${item.name} x${item.quantity} — ${formatCents(item.unitPriceCents * item.quantity)}`,
-      )
-      .join("\n");
+  const handleSendWhatsApp = async () => {
+    try {
+      // Generate document token for public URL
+      const res = await fetch("/api/documents/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "quotation",
+          referenceId: quotation.id,
+          documentNumber: quotation.quotationNumber,
+        }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        toast.error("Failed to generate shareable link");
+        return;
+      }
 
-    const msg = encodeURIComponent(
-      `*Quotation ${quotation.quotationNumber} — ${storeSettings.storeName}*\n\n` +
-        `Hi ${quotation.customerName},\n\n` +
-        `Here is your quotation:\n\n` +
-        `${itemsList}\n\n` +
-        `*Total: ${formatCents(quotation.subtotalCents)}*\n\n` +
-        `${quotation.notes ? `Notes: ${quotation.notes}\n\n` : ""}` +
-        `Visit us: ${storeSettings.address}\n` +
-        `Phone: ${storeSettings.phone}`,
-    );
-    window.open(`https://wa.me/send?text=${msg}`, "_blank");
+      const itemsList = quotation.items
+        .map(
+          (item) =>
+            `${item.name} x${item.quantity} — ${formatCents(item.unitPriceCents * item.quantity)}`,
+        )
+        .join("\n");
+
+      const msg = encodeURIComponent(
+        `*Quotation ${quotation.quotationNumber} — ${storeSettings.storeName}*\n\n` +
+          `Hi ${quotation.customerName},\n\n` +
+          `Here is your quotation:\n\n` +
+          `${itemsList}\n\n` +
+          `*Total: ${formatCents(quotation.subtotalCents)}*\n\n` +
+          `${quotation.notes ? `Notes: ${quotation.notes}\n\n` : ""}` +
+          `View quotation: ${data.url}\n\n` +
+          `Contact us:\n` +
+          `${storeSettings.phone}\n` +
+          `${storeSettings.email}`,
+      );
+      window.open(`https://wa.me/send?text=${msg}`, "_blank");
+    } catch (err) {
+      console.error("WhatsApp share failed:", err);
+      toast.error("Failed to generate shareable link");
+    }
   };
 
   const handleDelete = () => {
