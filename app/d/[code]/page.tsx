@@ -20,9 +20,22 @@ export default async function DocumentSharePage({ params }: Props) {
   const { code } = await params;
 
   // Resolve the short code to a signed token
-  const result = await resolveShortLink(code);
+  let result;
+  try {
+    result = await resolveShortLink(code);
+  } catch (err) {
+    console.error("[DocumentShare] Failed to resolve short link:", err);
+    return (
+      <ErrorState
+        error={{
+          code: "NOT_FOUND",
+          message: "This document link is invalid or has expired.",
+        }}
+      />
+    );
+  }
 
-  // Handle errors
+  // Handle known error states
   if ("code" in result) {
     return <ErrorState error={result} />;
   }
