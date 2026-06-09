@@ -216,6 +216,7 @@ export function getDocumentByToken(
  * Vercel preview deployment.
  */
 export function getPublicDocumentUrl(token: string, _type: DocumentType): string {
+  // Dynamic import to avoid circular dependency
   const { getDocumentShareUrl } = require("./app-url");
   return getDocumentShareUrl(token);
 }
