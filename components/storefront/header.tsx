@@ -282,7 +282,7 @@ export function StorefrontHeader() {
 
           <div className="flex items-center gap-2 ml-auto">
             <a
-              href={`https://wa.me/${whatsapp}`}
+              href={`https://wa.me/${whatsapp}?text=${encodeURIComponent("Hi DesertTech, I need help with an order/product.")}`}
               target="_blank"
               rel="noopener noreferrer"
               className="hidden items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-semibold text-foreground transition-all hover:-translate-y-0.5 hover:border-whatsapp/30 hover:bg-whatsapp-soft hover:text-whatsapp active:translate-y-0 lg:flex"

@@ -4,6 +4,7 @@ import { MobileStickyCTA } from "@/components/storefront/mobile-cta";
 import { MobileDrawer } from "@/components/storefront/mobile-drawer";
 import { ProductSync } from "@/components/product-sync";
 import { CatalogSync } from "@/components/catalog-sync";
+import { StorefrontToaster } from "@/components/ui/storefront-toaster";
 
 export default function StorefrontLayout({
   children,
@@ -19,6 +20,7 @@ export default function StorefrontLayout({
       <StorefrontFooter />
       <MobileStickyCTA />
       <MobileDrawer />
+      <StorefrontToaster />
     </>
   );
 }

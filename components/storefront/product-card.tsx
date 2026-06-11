@@ -92,22 +92,31 @@ export function ProductCard({ product }: ProductCardProps) {
       )}
     >
       <button
-        onClick={() => toggleItem({
-          productId: product.id,
-          name: product.name,
-          slug: product.slug,
-          imageUrl: product.imageUrl || "",
-          priceCents: product.priceCents,
-          specs: product.specs,
-        })}
+        onClick={() => {
+          toggleItem({
+            productId: product.id,
+            name: product.name,
+            slug: product.slug,
+            imageUrl: product.imageUrl || "",
+            priceCents: product.priceCents,
+            specs: product.specs,
+          });
+          if (wishlisted) {
+            toast.success("Removed from wishlist");
+          } else {
+            toast.success("Added to wishlist");
+          }
+        }}
         className={cn(
-          "absolute right-3 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card/95 text-muted-foreground shadow-xs transition-all hover:text-destructive",
+          "absolute right-3 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-lg border bg-card/95 shadow-xs transition-all",
           isSoldOut && "hidden",
-          wishlisted && "border-destructive/20 bg-destructive/10 text-destructive",
+          wishlisted
+            ? "border-[#f68923]/40 bg-[#f68923]/10 text-[#f68923]"
+            : "border-border text-muted-foreground hover:border-[#f68923]/40 hover:bg-[#f68923]/5 hover:text-[#f68923]",
         )}
         aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
       >
-        <Heart className={cn("h-4 w-4", wishlisted && "fill-current")} />
+        <Heart className={cn("h-4 w-4", wishlisted && "fill-[#f68923]")} />
       </button>
 
       <Link

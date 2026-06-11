@@ -57,12 +57,16 @@ export function ProductFilters({ onFilterChange }: ProductFiltersProps) {
   const categories = useDashboardStore((s) => s.categories);
   const brands = useDashboardStore((s) => s.brands);
 
-  // Build dynamic filter groups from dashboard data
+  // Get products to check which categories/brands have items
+  const products = useDashboardStore((s) => s.products);
+
+  // Build dynamic filter groups from dashboard data, hiding empty categories/brands
   const categoryOptions: FilterOption[] = [
     { value: "all", label: "All Products" },
     ...categories
       .filter((c) => c.isActive)
       .sort((a, b) => a.sortOrder - b.sortOrder)
+      .filter((c) => products.some((p) => p.category === c.name))
       .map((c) => ({ value: c.slug, label: c.name })),
   ];
 
@@ -71,6 +75,7 @@ export function ProductFilters({ onFilterChange }: ProductFiltersProps) {
     ...brands
       .filter((b) => b.isActive)
       .sort((a, b) => a.sortOrder - b.sortOrder)
+      .filter((b) => products.some((p) => p.brand === b.name))
       .map((b) => ({ value: b.slug, label: b.name })),
   ];
 

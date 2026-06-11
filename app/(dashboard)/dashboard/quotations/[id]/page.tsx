@@ -319,9 +319,9 @@ export default function QuotationDetailPage() {
               }}
             />
             <div>
-              <h2 className="text-base font-bold text-foreground">Desert Technology Consultant</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">Windhoek, Namibia</p>
-              <p className="text-xs text-muted-foreground">+264 85 277 5140</p>
+              <h2 className="text-base font-bold text-foreground">{storeSettings.storeName || "Desert Technology Consultant"}</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">{storeSettings.address || "Windhoek, Namibia"}</p>
+              <p className="text-xs text-muted-foreground">{storeSettings.phone || "+264 85 277 5140"}</p>
             </div>
           </div>
           <div className="text-right">

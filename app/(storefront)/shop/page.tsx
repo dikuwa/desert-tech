@@ -243,7 +243,7 @@ function ShopContent() {
     setSearchQuery(query);
   };
 
-  // Category stats
+  // Category stats — only show categories with products
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { all: allProducts.length };
     categories.forEach((cat) => {
@@ -252,7 +252,13 @@ function ShopContent() {
     return counts;
   }, [allProducts, categories]);
 
-  // Brand stats
+  // Categories with at least 1 product
+  const categoriesWithProducts = useMemo(
+    () => categories.filter((cat) => (categoryCounts[cat.slug] || 0) > 0),
+    [categories, categoryCounts],
+  );
+
+  // Brand stats — only show brands with products
   const brandCounts = useMemo(() => {
     const counts: Record<string, number> = { all: allProducts.length };
     BRANDS.forEach((brand) => {
@@ -260,6 +266,12 @@ function ShopContent() {
     });
     return counts;
   }, [allProducts, BRANDS]);
+
+  // Brands with at least 1 product
+  const brandsWithProducts = useMemo(
+    () => BRANDS.filter((brand) => (brandCounts[brand] || 0) > 0),
+    [BRANDS, brandCounts],
+  );
 
   const FilterSidebar = () => (
     <div className="space-y-4">
@@ -276,7 +288,7 @@ function ShopContent() {
           active={selectedCategory === "all"}
           onClick={() => handleCategoryChange("all")}
         />
-        {categories.map((cat) => (
+        {categoriesWithProducts.map((cat) => (
           <ShopFilterOption
             key={cat.slug}
             label={cat.name}
@@ -301,7 +313,7 @@ function ShopContent() {
           active={selectedBrand === "all"}
           onClick={() => handleBrandChange("all")}
         />
-        {BRANDS.map((brand) => (
+        {brandsWithProducts.map((brand) => (
           <ShopFilterOption
             key={brand}
             label={brand}

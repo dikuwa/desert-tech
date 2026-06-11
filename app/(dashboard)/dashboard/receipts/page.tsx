@@ -481,7 +481,8 @@ export default function ReceiptsPage() {
                     onClick={() => handleDownloadPDF(order.orderNumber)}
                     disabled={downloading === order.orderNumber}
                     className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50"
-                    title="Download PDF"
+                    title="Download receipt PDF"
+                    aria-label="Download receipt PDF"
                   >
                     {downloading === order.orderNumber ? (
                       <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
@@ -492,7 +493,8 @@ export default function ReceiptsPage() {
                   <button
                     onClick={() => setShowSendModal(order.orderNumber)}
                     className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-primary hover:bg-accent transition-colors"
-                    title="Send"
+                    title="Share receipt"
+                    aria-label="Share receipt"
                   >
                     <Send className="h-3.5 w-3.5" />
                   </button>
@@ -500,7 +502,8 @@ export default function ReceiptsPage() {
                     onClick={() => handleViewPdf(order.orderNumber)}
                     disabled={viewingPdf === order.orderNumber}
                     className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50"
-                    title="View PDF in browser"
+                    title="Open receipt PDF in browser"
+                    aria-label="Open receipt PDF in browser"
                   >
                     {viewingPdf === order.orderNumber ? (
                       <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
@@ -511,7 +514,8 @@ export default function ReceiptsPage() {
                   <Link
                     href={`/dashboard/orders/${order.id}/receipt`}
                     className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-                    title="Open receipt"
+                    title="Open receipt details"
+                    aria-label="Open receipt details"
                   >
                     <FileText className="h-3.5 w-3.5" />
                   </Link>

@@ -4,6 +4,7 @@ import { requireAuth } from "@/lib/auth-server";
 import { redirect } from "next/navigation";
 import { ProductSync } from "@/components/product-sync";
 import { CatalogSync } from "@/components/catalog-sync";
+import { DashboardToaster } from "@/components/ui/dashboard-toaster";
 
 export default async function DashboardLayout({
   children,
@@ -33,6 +34,7 @@ export default async function DashboardLayout({
       <main className="dashboard-main flex-1 overflow-auto bg-muted bg-noise">
         <div className="dashboard-content p-6 lg:p-8">{children}</div>
       </main>
+      <DashboardToaster />
     </div>
   );
 }
