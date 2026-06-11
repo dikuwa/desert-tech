@@ -18,6 +18,7 @@ export default function FollowUpsPage() {
   const markFollowUpDone = useDashboardStore((s) => s.markFollowUpDone);
   const reopenFollowUp = useDashboardStore((s) => s.reopenFollowUp);
   const orders = useDashboardStore((s) => s.orders);
+  const storeSettings = useDashboardStore((s) => s.settings);
   const [filter, setFilter] = useState<string>("Pending");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedFollowUp, setSelectedFollowUp] = useState<string | null>(null);
@@ -29,7 +30,53 @@ export default function FollowUpsPage() {
   const selected = selectedFollowUp ? followUps.find(f => f.id === selectedFollowUp) : null;
   const selectedOrder = selected ? orders.find(o => o.orderNumber === selected.orderNumber) : null;
 
+  // Email sending state
+  const [showEmailInput, setShowEmailInput] = useState(false);
+  const [emailInput, setEmailInput] = useState("");
+  const [sendingEmail, setSendingEmail] = useState(false);
 
+  const handleSendEmail = async (email?: string) => {
+    const recipientEmail = email || emailInput;
+    if (!recipientEmail || !selected) {
+      setShowEmailInput(true);
+      return;
+    }
+    setSendingEmail(true);
+    setShowEmailInput(false);
+    try {
+      // Try sending via the system email API with corrected Resend config
+      const emailRes = await fetch("/api/documents/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          documentType: "receipt",
+          recipientEmail,
+          recipientName: selected.customerName,
+          documentNumber: selected.orderNumber,
+          subject: `Follow-up: ${selected.orderNumber} - ${storeSettings.storeName}`,
+          messageBody: `Follow-up regarding ${selected.customerName} - ${selected.orderNumber}\n\n${selected.note || ""}`,
+        }),
+      });
+      const emailData = await emailRes.json();
+      if (emailData.success) {
+        toast.success("Follow-up email sent via system email");
+        setSendingEmail(false);
+        setEmailInput("");
+        return;
+      }
+    } catch {
+      // Fall through to mailto fallback
+    }
+    // Fallback: open email client
+    const subject = encodeURIComponent(`Follow-up: ${selected.orderNumber}`);
+    const body = encodeURIComponent(
+      `Regarding ${selected.customerName} - ${selected.orderNumber}\n\n${selected.note || ""}`,
+    );
+    window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
+    toast.error("System email unavailable, opened mail client instead");
+    setSendingEmail(false);
+    setEmailInput("");
+  };
 
   const handleMarkDone = (id: string) => {
     markFollowUpDone(id);
@@ -257,15 +304,22 @@ export default function FollowUpsPage() {
                     </a>
                   )}
 
-                  {/* Email */}
-                  {(selected.type === "Email") && (
-                    <a
-                      href={`mailto:?subject=${encodeURIComponent(`Follow-up: ${selected.orderNumber}`)}&body=${encodeURIComponent(`Regarding ${selected.customerName} - ${selected.orderNumber}\n\n${selected.note || ""}`)}`}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+                  {/* Email — try system sender first, fall back to mailto */}
+                  {(selected.type === "Email" || selectedOrder?.customerPhone) && (
+                    <button
+                      onClick={() => {
+                        setShowEmailInput(true);
+                      }}
+                      disabled={sendingEmail}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-primary hover:text-primary-foreground transition-colors disabled:opacity-50"
                     >
-                      <Mail className="h-3.5 w-3.5" />
+                      {sendingEmail ? (
+                        <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
+                      ) : (
+                        <Mail className="h-3.5 w-3.5" />
+                      )}
                       Email
-                    </a>
+                    </button>
                   )}
 
                   {/* View order */}
@@ -305,6 +359,37 @@ export default function FollowUpsPage() {
                 )}
               </div>
             </div>
+
+            {/* Email input prompt */}
+            {showEmailInput && (
+              <div className="border-t border-border p-4 space-y-3">
+                <p className="text-xs font-semibold text-foreground">Send email to customer:</p>
+                <input
+                  type="email"
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  placeholder="customer@example.com"
+                  autoFocus
+                  className="w-full h-9 rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  onKeyDown={(e) => { if (e.key === "Enter") handleSendEmail(emailInput); if (e.key === "Escape") { setShowEmailInput(false); setEmailInput(""); }}}
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleSendEmail(emailInput)}
+                    disabled={!emailInput || sendingEmail}
+                    className="flex-1 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                  >
+                    {sendingEmail ? "Sending..." : "Send via System Email"}
+                  </button>
+                  <button
+                    onClick={() => { setShowEmailInput(false); setEmailInput(""); }}
+                    className="rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
