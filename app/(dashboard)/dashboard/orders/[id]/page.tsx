@@ -30,6 +30,7 @@ import {
   formatCents,
   computePaymentFields,
 } from "@/lib/dashboard-data";
+import { formatPhone } from "@/lib/format";
 import type {
   DashboardOrder,
   OrderContactStatus,
@@ -211,6 +212,49 @@ export default function OrderDetailPage() {
 
   // Confirmation state
   const [confirmAction, setConfirmAction] = useState<"cancel" | "delete" | "restore" | null>(null);
+
+  // Helper: generate a shareable receipt link for WhatsApp
+  const generateReceiptLink = async (order: DashboardOrder): Promise<string | null> => {
+    try {
+      const items = order.items?.length
+        ? order.items.map((item) => ({
+            name: item.name,
+            quantity: item.quantity,
+            unitPrice: item.unitPriceCents,
+            total: item.unitPriceCents * item.quantity,
+            sku: item.sku,
+          }))
+        : [];
+
+      const res = await fetch("/api/documents/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "receipt",
+          referenceId: order.orderNumber,
+          documentNumber: `RCP-${order.orderNumber.replace("DT-", "")}`,
+          data: {
+            orderNumber: order.orderNumber,
+            customerName: order.customerName,
+            customerPhone: order.customerPhone,
+            items,
+            subtotalCents: order.subtotalCents,
+            paymentStatus: order.paymentStatus,
+            totalPaidCents: 0,
+            balanceDueCents: order.subtotalCents,
+            createdAt: order.createdAt,
+            fulfillmentMethod: order.fulfillmentMethod,
+            courierFeeCents: order.courierFeeCents,
+            shipping: order.shipping,
+          },
+        }),
+      });
+      const data = await res.json();
+      return data.shortUrl ?? data.url ?? null;
+    } catch {
+      return null;
+    }
+  };
 
   // Email receipt state
   const [showEmailInput, setShowEmailInput] = useState(false);
@@ -554,14 +598,22 @@ export default function OrderDetailPage() {
               </div>
               {/* Quick contact buttons */}
               <div className="flex gap-2 mt-4">
-                <a
-                  href={`https://wa.me/${order.customerPhone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hi ${order.customerName}, regarding your order ${order.orderNumber}...`)}`}
-                  target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 rounded-lg border border-whatsapp/20 bg-whatsapp-soft px-3 py-1.5 text-xs font-semibold text-whatsapp hover:bg-whatsapp hover:text-white transition-colors"
-                >
-                  <MessageCircle className="h-3.5 w-3.5" />
-                  WhatsApp
-                </a>
+              <button
+                onClick={async () => {
+                  try {
+                    const shareUrl = await generateReceiptLink(order);
+                    if (!shareUrl) { toast.error("Failed to generate shareable link"); return; }
+                    const msg = encodeURIComponent(
+                      `Hi ${order.customerName},\n\nYour order ${order.orderNumber} has been created.\n\nView receipt: ${shareUrl}\n\nTotal: ${formatCents(order.subtotalCents)}\n\nThank you for choosing ${storeSettings?.storeName || "Desert Technology"}!`,
+                    );
+                    window.open(`https://wa.me/${formatPhone(order.customerPhone)}?text=${msg}`, "_blank");
+                  } catch { toast.error("Failed to generate link"); }
+                }}
+                className="inline-flex items-center gap-1 rounded-lg border border-whatsapp/20 bg-whatsapp-soft px-3 py-1.5 text-xs font-semibold text-whatsapp hover:bg-whatsapp hover:text-white transition-colors"
+              >
+                <MessageCircle className="h-3.5 w-3.5" />
+                WhatsApp
+              </button>
                 <a
                   href={`tel:${order.customerPhone}`}
                   className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors"

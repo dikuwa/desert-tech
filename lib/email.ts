@@ -6,7 +6,14 @@
 import { Resend } from "resend";
 
 const resendApiKey = process.env.RESEND_API_KEY;
-const fromEmail = process.env.RESEND_FROM_EMAIL || "noreply@deserttechnology.com.na";
+
+// Priority order for From address:
+// 1. RESEND_FROM_EMAIL (explicitly configured verified sender)
+// 2. BUSINESS_EMAIL (the store's business email)
+// 3. Fallback to the original default (may fail if unverified, but error is surfaced)
+const RESEND_FROM = process.env.RESEND_FROM_EMAIL || process.env.BUSINESS_EMAIL || "noreply@deserttechnology.com.na";
+const RESEND_REPLY_TO = process.env.RESEND_REPLY_TO_EMAIL || process.env.RESEND_REPLY_TO || process.env.BUSINESS_EMAIL || "sales@desertechnam.com";
+
 import { getAppUrl } from "./app-url";
 const appUrl = getAppUrl();
 
@@ -49,7 +56,8 @@ export async function sendEmail(options: EmailOptions): Promise<void> {
 
   try {
     const result = await resend.emails.send({
-      from: fromEmail,
+      from: RESEND_FROM,
+      replyTo: RESEND_REPLY_TO,
       to,
       subject,
       html,
@@ -57,7 +65,18 @@ export async function sendEmail(options: EmailOptions): Promise<void> {
     });
 
     if (result.error) {
-      throw new Error(`Email failed: ${result.error.message}`);
+      // Check for common Resend domain verification errors
+      const errMsg = result.error.message || "";
+      if (errMsg.includes("domain is not verified") || errMsg.includes("verify your domain")) {
+        console.error("[Email] Domain verification error. From address used:", RESEND_FROM);
+        console.error("[Email] To fix: Add RESEND_FROM_EMAIL with a verified sender (e.g. on a verified domain).");
+        throw new Error(
+          "Email could not be sent because the sender domain is not verified. " +
+          "Please verify the domain in Resend or set the RESEND_FROM_EMAIL environment variable " +
+          "with a verified sender address."
+        );
+      }
+      throw new Error(`Email failed: ${errMsg}`);
     }
 
     console.log(`[Email] Sent to ${to}: ${subject}`);
@@ -85,7 +104,8 @@ export async function sendEmailWithAttachment(options: EmailWithAttachmentOption
 
   try {
     const result = await resend.emails.send({
-      from: fromEmail,
+      from: RESEND_FROM,
+      replyTo: RESEND_REPLY_TO,
       to,
       subject,
       html,
@@ -97,7 +117,18 @@ export async function sendEmailWithAttachment(options: EmailWithAttachmentOption
     });
 
     if (result.error) {
-      throw new Error(`Email failed: ${result.error.message}`);
+      // Check for common Resend domain verification errors
+      const errMsg = result.error.message || "";
+      if (errMsg.includes("domain is not verified") || errMsg.includes("verify your domain")) {
+        console.error("[Email] Domain verification error. From address used:", RESEND_FROM);
+        console.error("[Email] To fix: Add RESEND_FROM_EMAIL with a verified sender (e.g. on a verified domain).");
+        throw new Error(
+          "Email could not be sent because the sender domain is not verified. " +
+          "Please verify the domain in Resend or set the RESEND_FROM_EMAIL environment variable " +
+          "with a verified sender address."
+        );
+      }
+      throw new Error(`Email failed: ${errMsg}`);
     }
 
     console.log(`[Email] Sent with attachments to ${to}: ${subject}`);

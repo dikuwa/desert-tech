@@ -23,6 +23,7 @@ import {
   getStatusLabel,
   computePaymentFields,
 } from "@/lib/dashboard-data";
+import { formatPhone } from "@/lib/format";
 import { toast } from "sonner";
 
 export default function OrderReceiptPage() {
@@ -55,7 +56,7 @@ export default function OrderReceiptPage() {
   const isDepositPaid = order.paymentStatus === "DepositPaid";
 
   const receiptNumber = `RCP-${order.orderNumber.replace("DT-", "")}`;
-  const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
+
 
   const [customerLink, setCustomerLink] = useState<string | null>(null);
   const [generatingLink, setGeneratingLink] = useState(false);
@@ -274,7 +275,12 @@ export default function OrderReceiptPage() {
       const msg = encodeURIComponent(
         `Hi ${order.customerName}, here is your receipt for ${order.orderNumber}. Total: ${formatCents(order.subtotalCents)}. ${isDepositPaid ? `Paid: ${formatCents(totalPaidCents)}, Balance due: ${formatCents(balanceCents)}.` : isPaidInFull ? "Paid in full." : ""}\n\nView online: ${shareUrl}`,
       );
-      window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
+      const customerPhone = formatPhone(order.customerPhone);
+      if (!customerPhone) {
+        toast.error("No WhatsApp number available for this customer.");
+        return;
+      }
+      window.open(`https://wa.me/${customerPhone}?text=${msg}`, "_blank");
     } catch {
       toast.error("Failed to generate shareable link");
     }
@@ -388,9 +394,9 @@ export default function OrderReceiptPage() {
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
-      {/* Consolidated Actions: one card, two columns */}
+      {/* Consolidated Actions: flex justify-between layout */}
       <div className="rounded-xl border border-border bg-card p-4 print:hidden">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           {/* Left Column: Share & Send */}
           <div>
             <div className="flex items-center gap-2 mb-2">
@@ -437,8 +443,8 @@ export default function OrderReceiptPage() {
             </div>
           </div>
 
-          {/* Right Column: Document */}
-          <div>
+          {/* Right Column: Document — pushed right on desktop */}
+          <div className="sm:text-right sm:self-end">
             <div className="flex items-center gap-2 mb-2">
               <FileText className="h-3.5 w-3.5 text-primary" />
               <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Document</span>

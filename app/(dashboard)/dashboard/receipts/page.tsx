@@ -16,12 +16,11 @@ import {
 import { FadeIn } from "@/components/ui/fade-in";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { computePaymentFields, formatCents, getStatusBadgeClass, getStatusLabel } from "@/lib/dashboard-data";
+import { formatPhone } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 const ITEMS_PER_PAGE = 10;
-const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
-
 export default function ReceiptsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -187,7 +186,12 @@ export default function ReceiptsPage() {
       const msg = encodeURIComponent(
         `Hi ${customerName}, here is your receipt for order ${orderNumber}.\n\nView it here: ${shareUrl}\n\nThank you for choosing Desert Technology!`,
       );
-      window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
+      const customerPhone = formatPhone(order?.customerPhone || "");
+      if (!customerPhone) {
+        toast.error("No WhatsApp number available for this customer.");
+        return;
+      }
+      window.open(`https://wa.me/${customerPhone}?text=${msg}`, "_blank");
     } catch (err) {
       console.error("WhatsApp share failed:", err);
       toast.error("Failed to generate shareable link");

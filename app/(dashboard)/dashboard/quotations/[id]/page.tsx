@@ -25,6 +25,7 @@ import {
   getStatusBadgeClass,
   getStatusLabel,
 } from "@/lib/dashboard-data";
+import { formatPhone } from "@/lib/format";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -167,7 +168,12 @@ export default function QuotationDetailPage() {
           `${storeSettings.phone}\n` +
           `${storeSettings.email}`,
       );
-      window.open(`https://wa.me/send?text=${msg}`, "_blank");
+      const customerPhone = formatPhone(quotation.customerPhone);
+      if (!customerPhone) {
+        toast.error("No WhatsApp number available for this customer.");
+        return;
+      }
+      window.open(`https://wa.me/${customerPhone}?text=${msg}`, "_blank");
     } catch (err) {
       console.error("WhatsApp share failed:", err);
       toast.error("Failed to generate shareable link");
@@ -416,7 +422,7 @@ export default function QuotationDetailPage() {
 
       {/* Share & Send + Document combined card */}
       <div className="rounded-xl border border-border bg-card p-4 print:hidden">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           {/* Left: Share & Send */}
           <div>
             <div className="flex items-center gap-2 mb-2">
@@ -459,8 +465,8 @@ export default function QuotationDetailPage() {
             </div>
           </div>
 
-          {/* Right: Document */}
-          <div>
+          {/* Right: Document — pushed right on desktop */}
+          <div className="sm:text-right sm:self-end">
             <div className="flex items-center gap-2 mb-2">
               <FileText className="h-3.5 w-3.5 text-primary" />
               <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Document</span>

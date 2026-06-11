@@ -132,6 +132,7 @@ interface DashboardState {
   // Follow-ups
   addFollowUp: (f: Omit<DashboardFollowUp, "id" | "createdAt">) => void;
   markFollowUpDone: (id: string) => void;
+  reopenFollowUp: (id: string) => void;
 
   // Staff
   addStaff: (s: Omit<DashboardStaff, "id" | "createdAt">) => void;
@@ -829,6 +830,12 @@ export const useDashboardStore = create<DashboardState>()(
         set((s) => ({
           followUps: s.followUps.map((f) =>
             f.id === id ? { ...f, status: "Done" } : f
+          ),
+        })),
+      reopenFollowUp: (id) =>
+        set((s) => ({
+          followUps: s.followUps.map((f) =>
+            f.id === id ? { ...f, status: "Pending" } : f
           ),
         })),
 

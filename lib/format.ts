@@ -19,4 +19,10 @@ export function centsToHuman(cents: number): string {
   return (cents / 100).toFixed(2);
 }
 
-
+/**
+ * Format a phone number for WhatsApp/URL use by stripping all non-digit characters.
+ * E.g. "+264 85 277 5140" → "264852775140"
+ */
+export function formatPhone(phone: string): string {
+  return phone.replace(/[^0-9]/g, "");
+}
