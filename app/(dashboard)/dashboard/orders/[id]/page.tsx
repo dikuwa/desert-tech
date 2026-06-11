@@ -164,6 +164,7 @@ export default function OrderDetailPage() {
   const customers = useDashboardStore((s) => s.customers);
   const addCustomer = useDashboardStore((s) => s.addCustomer);
   const deleteCustomer = useDashboardStore((s) => s.deleteCustomer);
+  const storeSettings = useDashboardStore((s) => s.settings);
   const reducedMotion = useReducedMotion();
 
   if (!order) notFound();
@@ -210,6 +211,11 @@ export default function OrderDetailPage() {
 
   // Confirmation state
   const [confirmAction, setConfirmAction] = useState<"cancel" | "delete" | "restore" | null>(null);
+
+  // Email receipt state
+  const [showEmailInput, setShowEmailInput] = useState(false);
+  const [emailInput, setEmailInput] = useState("");
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   // Record Payment dialog
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
@@ -260,6 +266,115 @@ export default function OrderDetailPage() {
       message: `Order ${order.orderNumber} has been restored.`,
     });
     toast.success(`Order ${order.orderNumber} restored`);
+  };
+
+  const handleSendEmail = async (email?: string) => {
+    const recipientEmail = email || emailInput;
+    if (!recipientEmail) {
+      setShowEmailInput(true);
+      return;
+    }
+    setSendingEmail(true);
+    setShowEmailInput(false);
+    // Compute payment status locally (can't rely on outer scope hoisting)
+    const orderIsPaidInFull = order.paymentStatus === "PaidInFull" || (balanceCents <= 0 && order.paymentStatus !== "Unpaid");
+    const orderIsDepositPaid = order.paymentStatus === "DepositPaid";
+    try {
+      // Build order snapshot data
+      const items = order.items?.length
+        ? order.items.map((item) => ({
+            name: item.name,
+            quantity: item.quantity,
+            unitPrice: item.unitPriceCents,
+            total: item.unitPriceCents * item.quantity,
+            sku: item.sku,
+          }))
+        : [{ name: `${order.itemCount} items`, quantity: order.itemCount, unitPrice: Math.round(order.subtotalCents / order.itemCount), total: order.subtotalCents }];
+
+      // Generate share token
+      const tokenRes = await fetch("/api/documents/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "receipt",
+          referenceId: order.orderNumber,
+          documentNumber: `RCP-${order.orderNumber.replace("DT-", "")}`,
+          data: {
+            orderNumber: order.orderNumber,
+            customerName: order.customerName,
+            customerPhone: order.customerPhone,
+            items,
+            subtotalCents: order.subtotalCents,
+            paymentStatus: order.paymentStatus,
+            totalPaidCents,
+            balanceDueCents: balanceCents,
+            createdAt: order.createdAt,
+            fulfillmentMethod: order.fulfillmentMethod,
+            courierFeeCents: order.courierFeeCents,
+            shipping: order.shipping,
+          },
+        }),
+      });
+      const tokenData = await tokenRes.json();
+      if (!tokenData.success) {
+        toast.error("Failed to generate shareable link");
+        return;
+      }
+
+      const shareUrl = tokenData.shortUrl ?? tokenData.url;
+
+      // Send via the send-email API with PDF attachment
+      const emailRes = await fetch("/api/documents/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          documentType: "receipt",
+          recipientEmail,
+          recipientName: order.customerName,
+          documentNumber: `RCP-${order.orderNumber.replace("DT-", "")}`,
+          subject: `Receipt for ${order.orderNumber} - ${storeSettings?.storeName || "Desert Technology"}`,
+          messageBody: `Please find your receipt for ${order.orderNumber} attached.`,
+          shareUrl,
+          orderSnapshot: {
+            orderNumber: order.orderNumber,
+            customerName: order.customerName,
+            customerPhone: order.customerPhone,
+            items,
+            subtotalCents: order.subtotalCents,
+            paymentStatus: order.paymentStatus,
+            totalPaidCents,
+            balanceDueCents: balanceCents,
+            createdAt: order.createdAt,
+            fulfillmentMethod: order.fulfillmentMethod,
+            courierFeeCents: order.courierFeeCents,
+            shipping: order.shipping,
+          },
+        }),
+      });
+      const emailData = await emailRes.json();
+      if (emailData.success) {
+        toast.success("Receipt sent via email with PDF attachment");
+      } else {
+        // Fallback: open email client
+        const paymentLine = orderIsDepositPaid
+          ? `Paid: ${formatCents(totalPaidCents)}, Balance due: ${formatCents(balanceCents)}`
+          : orderIsPaidInFull
+            ? "Paid in full."
+            : `Payment status: ${getStatusLabel(order.paymentStatus)}`;
+        const subject = encodeURIComponent(`Receipt for ${order.orderNumber} - ${storeSettings?.storeName || "Desert Tech"}`);
+        const body = encodeURIComponent(
+          `Hi ${order.customerName},\n\nPlease find your receipt for ${order.orderNumber} below.\n\n${shareUrl}\n\nTotal: ${formatCents(order.subtotalCents)}\n${paymentLine}\n\nThank you for your business!`,
+        );
+        window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
+        toast.error(emailData.error || "Failed to send email, opened mail client instead");
+      }
+    } catch (err) {
+      console.error("Send email failed:", err);
+      toast.error("Failed to send email");
+    } finally {
+      setSendingEmail(false);
+      setEmailInput("");
+    }
   };
 
   const handleRecordPayment = () => {
@@ -338,6 +453,18 @@ export default function OrderDetailPage() {
               Restore
             </button>
           )}
+          <button
+            onClick={() => handleSendEmail()}
+            disabled={sendingEmail}
+            className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-primary hover:text-primary-foreground transition-colors disabled:opacity-50"
+          >
+            {sendingEmail ? (
+              <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
+            ) : (
+              <Mail className="h-3.5 w-3.5" />
+            )}
+            Email Receipt
+          </button>
           <Link
             href={`/dashboard/orders/${order.id}/receipt`}
             className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors"
@@ -773,6 +900,37 @@ export default function OrderDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Email input prompt */}
+      {showEmailInput && (
+        <div className="rounded-xl border border-border bg-card p-4">
+          <p className="text-xs font-semibold text-foreground mb-2">Enter customer email to send receipt:</p>
+          <div className="flex gap-2">
+            <input
+              type="email"
+              value={emailInput}
+              onChange={(e) => setEmailInput(e.target.value)}
+              placeholder="customer@example.com"
+              autoFocus
+              className="h-9 flex-1 rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+              onKeyDown={(e) => { if (e.key === "Enter") handleSendEmail(emailInput); if (e.key === "Escape") setShowEmailInput(false); }}
+            />
+            <button
+              onClick={() => handleSendEmail(emailInput)}
+              disabled={!emailInput || sendingEmail}
+              className="h-9 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            >
+              {sendingEmail ? "Sending..." : "Send"}
+            </button>
+            <button
+              onClick={() => { setShowEmailInput(false); setEmailInput(""); }}
+              className="h-9 rounded-lg border border-border px-3 text-xs font-semibold text-foreground hover:bg-muted"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Record Payment Dialog */}
       <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
