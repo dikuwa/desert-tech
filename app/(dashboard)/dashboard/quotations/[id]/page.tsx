@@ -17,6 +17,8 @@ import {
   Trash2,
   Pencil,
   History,
+  Download,
+  Mail,
 } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
@@ -179,6 +181,101 @@ export default function QuotationDetailPage() {
     }
   };
 
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
+
+  const handleDownloadPDF = async () => {
+    setDownloadingPdf(true);
+    try {
+      // Use the receipts generate endpoint with quotation data
+      const items = quotation.items.map((item) => ({
+        name: item.name,
+        quantity: item.quantity,
+        unitPrice: item.unitPriceCents,
+        total: item.unitPriceCents * item.quantity,
+        sku: item.sku,
+      }));
+
+      const res = await fetch("/api/documents/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "quotation",
+          referenceId: quotation.id,
+          documentNumber: quotation.quotationNumber,
+          data: {
+            quotationNumber: quotation.quotationNumber,
+            customerName: quotation.customerName,
+            customerPhone: quotation.customerPhone,
+            items,
+            subtotalCents: quotation.subtotalCents,
+            status: quotation.status,
+            notes: quotation.notes,
+            createdAt: quotation.createdAt,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error("Failed to generate link");
+      window.open(data.shortUrl ?? data.url, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      console.error("Download failed:", err);
+      toast.error("Failed to open PDF");
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
+  const handleSendEmail = async () => {
+    setSendingEmail(true);
+    try {
+      const items = quotation.items.map((item) => ({
+        name: item.name,
+        quantity: item.quantity,
+        unitPrice: item.unitPriceCents,
+        total: item.unitPriceCents * item.quantity,
+        sku: item.sku,
+      }));
+
+      const res = await fetch("/api/documents/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "quotation",
+          referenceId: quotation.id,
+          documentNumber: quotation.quotationNumber,
+          data: {
+            quotationNumber: quotation.quotationNumber,
+            customerName: quotation.customerName,
+            customerPhone: quotation.customerPhone,
+            items,
+            subtotalCents: quotation.subtotalCents,
+            status: quotation.status,
+            notes: quotation.notes,
+            createdAt: quotation.createdAt,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        toast.error("Failed to generate shareable link");
+        return;
+      }
+
+      const shareUrl = data.shortUrl ?? data.url;
+      const subject = encodeURIComponent(`Quotation ${quotation.quotationNumber} - ${storeSettings.storeName}`);
+      const body = encodeURIComponent(
+        `Hi ${quotation.customerName},\n\nPlease find your quotation ${quotation.quotationNumber} below.\n\n${shareUrl}\n\nTotal: ${formatCents(quotation.subtotalCents)}\n\n${quotation.notes ? `Notes: ${quotation.notes}\n\n` : ""}Thank you for your interest!\n${storeSettings.storeName}\n${storeSettings.email || ""}`,
+      );
+      window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
+    } catch (err) {
+      console.error("Send email failed:", err);
+      toast.error("Failed to open email client");
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
   const handleDelete = () => {
     deleteQuotation(quotation.id);
     toast.success("Quotation deleted");
@@ -187,7 +284,7 @@ export default function QuotationDetailPage() {
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
-      {/* Actions bar */}
+      {/* Back link */}
       <div className="flex items-center justify-between print:hidden">
         <Link
           href="/dashboard/quotations"
@@ -196,20 +293,29 @@ export default function QuotationDetailPage() {
           <ArrowLeft className="h-4 w-4" />
           Quotations
         </Link>
-        <div className="flex items-center gap-2">
+      </div>
+
+      {/* Group A: Status / Workflow Actions */}
+      <div className="rounded-xl border border-border bg-card p-4 print:hidden">
+        <div className="flex items-center gap-2 mb-2">
+          <Send className="h-3.5 w-3.5 text-primary" />
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Quotation Status</span>
+          <span className={cn("ml-auto inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium", getStatusBadgeClass(quotation.status))}>
+            {getStatusLabel(quotation.status)}
+          </span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
           {quotation.status === "Draft" && (
-            <>
-              <button
-                onClick={() => {
-                  updateQuotationStatus(quotation.id, "Sent");
-                  toast.success("Quotation marked as sent");
-                }}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-primary/20 px-3 py-2 text-xs font-medium text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
-              >
-                <Send className="h-3.5 w-3.5" />
-                Mark Sent
-              </button>
-            </>
+            <button
+              onClick={() => {
+                updateQuotationStatus(quotation.id, "Sent");
+                toast.success("Quotation marked as sent");
+              }}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-primary/20 px-3 py-2 text-xs font-medium text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
+            >
+              <Send className="h-3.5 w-3.5" />
+              Mark as Sent
+            </button>
           )}
           {quotation.status === "Sent" && (
             <>
@@ -221,7 +327,7 @@ export default function QuotationDetailPage() {
                 className="inline-flex items-center gap-1.5 rounded-lg border border-success/20 px-3 py-2 text-xs font-medium text-success hover:bg-success hover:text-white transition-colors"
               >
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                Accept
+                Mark as Accepted
               </button>
               <button
                 onClick={() => {
@@ -231,27 +337,78 @@ export default function QuotationDetailPage() {
                 className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/20 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
               >
                 <XCircle className="h-3.5 w-3.5" />
-                Decline
+                Mark as Declined
               </button>
             </>
           )}
+          {quotation.status !== "Draft" && quotation.status !== "Sent" && (
+            <span className="text-xs text-muted-foreground">
+              This quotation has been {quotation.status.toLowerCase()}.
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Group B: Share / Send Actions */}
+      <div className="rounded-xl border border-border bg-card p-4 print:hidden">
+        <div className="flex items-center gap-2 mb-2">
+          <MessageCircle className="h-3.5 w-3.5 text-primary" />
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Share &amp; Send</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={handleSendWhatsApp}
             className="inline-flex items-center gap-1.5 rounded-lg border border-whatsapp/20 px-3 py-2 text-xs font-medium text-whatsapp hover:bg-whatsapp hover:text-white transition-colors"
+            title="Send quotation via WhatsApp"
+            aria-label="Send quotation via WhatsApp"
           >
             <MessageCircle className="h-3.5 w-3.5" />
             WhatsApp
           </button>
           <button
+            onClick={handleSendEmail}
+            disabled={sendingEmail}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:text-primary hover:border-primary/30 hover:bg-accent transition-colors disabled:opacity-50"
+            title="Send quotation via Email"
+            aria-label="Send quotation via Email"
+          >
+            <Mail className="h-3.5 w-3.5" />
+            Email
+          </button>
+          <button
             onClick={handleCopyLink}
             className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+            title="Copy quotation link"
+            aria-label="Copy quotation link"
           >
             <Copy className="h-3.5 w-3.5" />
             Copy Link
           </button>
+        </div>
+      </div>
+
+      {/* Group C: Document / Management Actions */}
+      <div className="rounded-xl border border-border bg-card p-4 print:hidden">
+        <div className="flex items-center gap-2 mb-2">
+          <FileText className="h-3.5 w-3.5 text-primary" />
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Document</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={handleDownloadPDF}
+            disabled={downloadingPdf}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:text-primary hover:border-primary/30 hover:bg-accent transition-colors disabled:opacity-50"
+            title="Download quotation PDF"
+            aria-label="Download quotation PDF"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Download
+          </button>
           <button
             onClick={handlePrint}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+            title="Print quotation"
+            aria-label="Print quotation"
           >
             <Printer className="h-3.5 w-3.5" />
             Print
@@ -259,6 +416,7 @@ export default function QuotationDetailPage() {
           <Link
             href={`/dashboard/quotations/${quotation.id}/edit`}
             className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors"
+            title="Edit quotation"
           >
             <Pencil className="h-3.5 w-3.5" />
             Edit
@@ -266,8 +424,11 @@ export default function QuotationDetailPage() {
           <button
             onClick={() => setDeleteOpen(true)}
             className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-destructive hover:border-destructive/30 transition-colors"
+            title="Delete quotation"
+            aria-label="Delete quotation"
           >
             <Trash2 className="h-3.5 w-3.5" />
+            Delete
           </button>
         </div>
       </div>

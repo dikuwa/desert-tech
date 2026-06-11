@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ExternalLink, Link as LinkIcon } from "lucide-react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -345,67 +344,94 @@ export default function OrderReceiptPage() {
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
-      {/* Actions bar */}
+      {/* Group A: Share / Send Actions */}
+      <div className="rounded-xl border border-border bg-card p-4 print:hidden">
+        <div className="flex items-center gap-2 mb-2">
+          <MessageCircle className="h-3.5 w-3.5 text-primary" />
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Share &amp; Send</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {(!order.preferredContact || order.preferredContact.length === 0 || order.preferredContact.includes("WhatsApp")) && (
+            <button
+              onClick={handleSendWhatsApp}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-whatsapp/20 px-3 py-2 text-xs font-medium text-whatsapp hover:bg-whatsapp hover:text-white transition-colors"
+              title="Send receipt via WhatsApp"
+              aria-label="Send receipt via WhatsApp"
+            >
+              <MessageCircle className="h-3.5 w-3.5" />
+              WhatsApp
+            </button>
+          )}
+          {(!order.preferredContact || order.preferredContact.length === 0 || order.preferredContact.includes("Email")) && (
+            <button
+              onClick={handleSendEmail}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:text-primary hover:border-primary/30 hover:bg-accent transition-colors"
+              title="Send receipt via Email"
+              aria-label="Send receipt via Email"
+            >
+              <Mail className="h-3.5 w-3.5" />
+              Email
+            </button>
+          )}
+          <button
+            onClick={handleGenerateCustomerLink}
+            disabled={generatingLink}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:text-primary hover:border-primary/30 hover:bg-accent transition-colors disabled:opacity-50"
+            title="Copy receipt link"
+            aria-label="Copy receipt link"
+          >
+            {generatingLink ? (
+              <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
+            ) : (
+              <Copy className="h-3.5 w-3.5" />
+            )}
+            Copy Link
+          </button>
+        </div>
+      </div>
+
+      {/* Group B: Document Actions */}
+      <div className="rounded-xl border border-border bg-card p-4 print:hidden">
+        <div className="flex items-center gap-2 mb-2">
+          <FileText className="h-3.5 w-3.5 text-primary" />
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Document</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={handleDownloadPDF}
+            disabled={downloadingPdf}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:text-primary hover:border-primary/30 hover:bg-accent transition-colors disabled:opacity-50"
+            title="Download receipt PDF"
+            aria-label="Download receipt PDF"
+          >
+            {downloadingPdf ? (
+              <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
+            ) : (
+              <Download className="h-3.5 w-3.5" />
+            )}
+            Download
+          </button>
+          <button
+            onClick={handlePrint}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+            title="Print receipt"
+            aria-label="Print receipt"
+          >
+            <Printer className="h-3.5 w-3.5" />
+            Print
+          </button>
+        </div>
+      </div>
+
+      {/* Back link */}
       <div className="flex items-center justify-between print:hidden">
         <Link
           href={`/dashboard/orders/${order.id}`}
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
-          Order Details
+          Back to Order
         </Link>
-        <div className="flex items-center gap-1.5">
-          {/* Send method: only show customer's preferred, or all if none selected */}
-          {(!order.preferredContact || order.preferredContact.length === 0 || order.preferredContact.includes("WhatsApp")) && (
-            <button
-              onClick={handleSendWhatsApp}
-              title="Send via WhatsApp"
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-whatsapp/20 text-whatsapp hover:bg-whatsapp hover:text-white transition-colors"
-            >
-              <MessageCircle className="h-4 w-4" />
-            </button>
-          )}
-          {(!order.preferredContact || order.preferredContact.length === 0 || order.preferredContact.includes("Email")) && (
-            <button
-              onClick={handleSendEmail}
-              title="Send via Email"
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-primary hover:border-primary/30 hover:bg-accent transition-colors"
-            >
-              <Mail className="h-4 w-4" />
-            </button>
-          )}
-          <button
-            onClick={handleGenerateCustomerLink}
-            disabled={generatingLink}
-            title="Copy customer link"
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-primary hover:border-primary/30 hover:bg-accent transition-colors"
-          >
-            {generatingLink ? (
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
-            ) : (
-              <LinkIcon className="h-4 w-4" />
-            )}
-          </button>
-          <button
-            onClick={handleDownloadPDF}
-            disabled={downloadingPdf}
-            title="Download PDF"
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50"
-          >
-            {downloadingPdf ? (
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
-            ) : (
-              <Download className="h-4 w-4" />
-            )}
-          </button>
-          <button
-            onClick={handlePrint}
-            title="Print"
-            className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-          >
-            <Printer className="h-4 w-4" />
-          </button>
-        </div>
       </div>
 
       {/* Print-only styles */}
