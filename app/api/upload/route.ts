@@ -48,16 +48,22 @@ export async function POST(request: NextRequest) {
 
   // Context-aware permission check
   const context = (formData.get("context") as string | null) || "product";
-  const requiredPermissions = CONTEXT_PERMISSIONS[context] ?? DEFAULT_PERMISSIONS;
-  const canUpload = requiredPermissions.some((p) =>
-    hasPermission(user.role, user.permissions, p),
-  );
-  if (!canUpload) {
-    const contextLabel = context.charAt(0).toUpperCase() + context.slice(1);
-    return NextResponse.json(
-      { error: `Permission denied. You need ${contextLabel.toLowerCase()}-related permissions to upload images here.` },
-      { status: 403 },
+
+  // Profile context bypass — any authenticated user can upload their own avatar
+  if (context === "profile") {
+    // Allow all authenticated users for profile images
+  } else {
+    const requiredPermissions = CONTEXT_PERMISSIONS[context] ?? DEFAULT_PERMISSIONS;
+    const canUpload = requiredPermissions.some((p) =>
+      hasPermission(user.role, user.permissions, p),
     );
+    if (!canUpload) {
+      const contextLabel = context.charAt(0).toUpperCase() + context.slice(1);
+      return NextResponse.json(
+        { error: `Permission denied. You need ${contextLabel.toLowerCase()}-related permissions to upload images here.` },
+        { status: 403 },
+      );
+    }
   }
 
   // Validate file presence & name

@@ -31,6 +31,8 @@ export default function ReceiptsPage() {
   const [showSendModal, setShowSendModal] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [viewingPdf, setViewingPdf] = useState<string | null>(null);
+  const [showEmailInput, setShowEmailInput] = useState(false);
+  const [emailInput, setEmailInput] = useState("");
 
   const addNotification = useDashboardStore((s) => s.addNotification);
   const storeOrders = useDashboardStore((s) => s.orders);
@@ -192,10 +194,11 @@ export default function ReceiptsPage() {
     }
   };
 
-  const handleSendViaEmail = async (orderNumber: string) => {
+  const handleSendViaEmail = async (orderNumber: string, recipientEmail: string) => {
     const order = paidOrders.find((o) => o.orderNumber === orderNumber);
     if (!order) return;
     setSending(orderNumber);
+    setShowEmailInput(false);
     try {
       // Generate a share token with data snapshot
       const orderPayments = payments.filter((payment) => payment.orderNumber === order.orderNumber);
@@ -245,8 +248,48 @@ export default function ReceiptsPage() {
         return;
       }
 
-      // Open email client with the share link
       const shareUrl = data.shortUrl ?? data.url;
+      const settings = useDashboardStore.getState().settings;
+
+      // Try sending via the send-email API with PDF attachment
+      try {
+        const emailRes = await fetch("/api/documents/send-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            documentType: "receipt",
+            recipientEmail,
+            recipientName: order.customerName,
+            documentNumber: `RCP-${orderNumber.replace("DT-", "")}`,
+            subject: `Receipt for ${orderNumber} - ${settings?.storeName || "Desert Technology"}`,
+            messageBody: `Your receipt for ${orderNumber} is attached.`,
+            shareUrl,
+            orderSnapshot: {
+              orderNumber: order.orderNumber,
+              customerName: order.customerName,
+              customerPhone: order.customerPhone,
+              items: items.length ? items : [{ name: `${order.itemCount} items`, quantity: 1, unitPrice: order.subtotalCents, total: order.subtotalCents }],
+              subtotalCents: order.subtotalCents,
+              paymentStatus: order.paymentStatus,
+              totalPaidCents,
+              balanceDueCents,
+              createdAt: order.createdAt,
+              fulfillmentMethod: order.fulfillmentMethod,
+              courierFeeCents: order.courierFeeCents,
+              shipping: order.shipping,
+            },
+          }),
+        });
+        const emailData = await emailRes.json();
+        if (emailData.success) {
+          toast.success("Receipt sent with PDF attachment");
+          return;
+        }
+      } catch {
+        // Fall through to mailto fallback
+      }
+
+      // Fallback: open email client with the share link
       const subject = encodeURIComponent(`Receipt for ${order.orderNumber}`);
       const body = encodeURIComponent(
         `Hi ${order.customerName},\n\nPlease find your receipt for ${order.orderNumber} below.\n\n${shareUrl}\n\nThank you for choosing Desert Technology!`,
@@ -258,6 +301,7 @@ export default function ReceiptsPage() {
     } finally {
       setSending(null);
       setShowSendModal(null);
+      setEmailInput("");
     }
   };
 
@@ -551,7 +595,7 @@ export default function ReceiptsPage() {
       )}
 
       {/* Send Modal */}
-      {showSendModal && (
+      {showSendModal && !showEmailInput && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowSendModal(null)}>
           <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-base font-semibold text-foreground mb-2">Send Receipt</h3>
@@ -574,7 +618,7 @@ export default function ReceiptsPage() {
                 </div>
               </button>
               <button
-                onClick={() => handleSendViaEmail(showSendModal)}
+                onClick={() => setShowEmailInput(true)}
                 disabled={sending === showSendModal}
                 className="flex w-full items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-primary/30 hover:bg-accent disabled:opacity-50"
               >
@@ -612,6 +656,40 @@ export default function ReceiptsPage() {
             >
               Cancel
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Email input prompt */}
+      {showSendModal && showEmailInput && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => { setShowEmailInput(false); setShowSendModal(null); }}>
+          <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-base font-semibold text-foreground mb-2">Send via Email</h3>
+            <p className="text-xs text-muted-foreground mb-4">Enter the customer's email address to send the receipt PDF.</p>
+            <input
+              type="email"
+              value={emailInput}
+              onChange={(e) => setEmailInput(e.target.value)}
+              placeholder="customer@example.com"
+              autoFocus
+              className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+              onKeyDown={(e) => { if (e.key === "Enter") handleSendViaEmail(showSendModal, emailInput); if (e.key === "Escape") { setShowEmailInput(false); setEmailInput(""); }}}
+            />
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={() => handleSendViaEmail(showSendModal, emailInput)}
+                disabled={!emailInput || sending === showSendModal}
+                className="flex-1 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+              >
+                {sending === showSendModal ? "Sending..." : "Send Receipt"}
+              </button>
+              <button
+                onClick={() => { setShowEmailInput(false); setEmailInput(""); }}
+                className="rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
+              >
+                Back
+              </button>
+            </div>
           </div>
         </div>
       )}

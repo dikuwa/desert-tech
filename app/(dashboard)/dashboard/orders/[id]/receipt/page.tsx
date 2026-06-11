@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -10,8 +10,6 @@ import {
   CheckCircle2,
   Banknote,
   User,
-  Package,
-  Calendar,
   FileText,
   MessageCircle,
   Copy,
@@ -28,9 +26,7 @@ import {
 import { toast } from "sonner";
 
 export default function OrderReceiptPage() {
-  const params = useParams();
-  const router = useRouter();
-  const orderId = params.id as string;
+  const orderId = useParams().id as string;
 
   const order = useDashboardStore((s) => s.orders.find((o) => o.id === orderId));
   const payments = useDashboardStore((s) => s.payments);
@@ -64,6 +60,9 @@ export default function OrderReceiptPage() {
   const [customerLink, setCustomerLink] = useState<string | null>(null);
   const [generatingLink, setGeneratingLink] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [showEmailInput, setShowEmailInput] = useState(false);
+  const [emailInput, setEmailInput] = useState("");
 
   const handlePrint = () => {
     window.print();
@@ -230,7 +229,6 @@ export default function OrderReceiptPage() {
 
   const handleSendWhatsApp = async () => {
     try {
-      // Generate a fresh token inline so WhatsApp always opens with a valid link
       const items = order.items?.length
         ? order.items.map((item) => ({
             name: item.name,
@@ -271,7 +269,6 @@ export default function OrderReceiptPage() {
       }
 
       const shareUrl = data.shortUrl ?? data.url;
-      // Cache the link for later use
       setCustomerLink(shareUrl);
 
       const msg = encodeURIComponent(
@@ -283,9 +280,16 @@ export default function OrderReceiptPage() {
     }
   };
 
-  const handleSendEmail = async () => {
+  const handleSendEmail = async (email?: string) => {
+    const recipientEmail = email || emailInput;
+    if (!recipientEmail) {
+      setShowEmailInput(true);
+      return;
+    }
+    setSendingEmail(true);
+    setShowEmailInput(false);
     try {
-      // Generate a share token first so the email includes a working link
+      // Generate a share token first
       const items = order.items?.length
         ? order.items.map((item) => ({
             name: item.name,
@@ -296,7 +300,7 @@ export default function OrderReceiptPage() {
           }))
         : [];
 
-      const res = await fetch("/api/documents/token", {
+      const tokenRes = await fetch("/api/documents/token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -319,109 +323,185 @@ export default function OrderReceiptPage() {
           },
         }),
       });
-      const data = await res.json();
-      if (!data.success) {
+      const tokenData = await tokenRes.json();
+      if (!tokenData.success) {
         toast.error("Failed to generate shareable link");
         return;
       }
 
-      const paymentLine = isDepositPaid
-        ? `Paid: ${formatCents(totalPaidCents)}, Balance due: ${formatCents(balanceCents)}`
-        : isPaidInFull
-          ? "Paid in full."
-          : `Payment status: ${getStatusLabel(order.paymentStatus)}`;
+      const shareUrl = tokenData.shortUrl ?? tokenData.url;
 
-      const shareUrl = data.shortUrl ?? data.url;
-      const subject = encodeURIComponent(`Receipt for ${order.orderNumber} - ${storeSettings.storeName}`);
-      const body = encodeURIComponent(
-        `Hi ${order.customerName},\n\nPlease find your receipt for ${order.orderNumber} below.\n\n${shareUrl}\n\nTotal: ${formatCents(order.subtotalCents)}\n${paymentLine}\n\nThank you for your business!\n${storeSettings.storeName}\n${storeSettings.email || ""}`,
-      );
-      window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
+      // Call the send-email API to send PDF as attachment
+      const emailRes = await fetch("/api/documents/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          documentType: "receipt",
+          recipientEmail,
+          recipientName: order.customerName,
+          documentNumber: receiptNumber,
+          subject: `Receipt for ${order.orderNumber} - ${storeSettings.storeName}`,
+          messageBody: `Please find your receipt for ${order.orderNumber} attached.`,
+          shareUrl,
+          orderSnapshot: {
+            orderNumber: order.orderNumber,
+            customerName: order.customerName,
+            customerPhone: order.customerPhone,
+            items: items.length
+              ? items
+              : [{ name: `${order.itemCount} items`, quantity: 1, unitPrice: order.subtotalCents, total: order.subtotalCents }],
+            subtotalCents: order.subtotalCents,
+            paymentStatus: order.paymentStatus,
+            totalPaidCents,
+            balanceDueCents: balanceCents,
+            createdAt: order.createdAt,
+            fulfillmentMethod: order.fulfillmentMethod,
+            courierFeeCents: order.courierFeeCents,
+            shipping: order.shipping,
+          },
+        }),
+      });
+      const emailData = await emailRes.json();
+      if (emailData.success) {
+        toast.success("Receipt emailed with PDF attachment");
+      } else {
+        // Fallback to mailto: if API fails
+        const paymentLine = isDepositPaid
+          ? `Paid: ${formatCents(totalPaidCents)}, Balance due: ${formatCents(balanceCents)}`
+          : isPaidInFull
+            ? "Paid in full."
+            : `Payment status: ${getStatusLabel(order.paymentStatus)}`;
+        const subject = encodeURIComponent(`Receipt for ${order.orderNumber} - ${storeSettings.storeName}`);
+        const body = encodeURIComponent(
+          `Hi ${order.customerName},\n\nPlease find your receipt for ${order.orderNumber} below.\n\n${shareUrl}\n\nTotal: ${formatCents(order.subtotalCents)}\n${paymentLine}\n\nThank you for your business!\n${storeSettings.storeName}\n${storeSettings.email || ""}`,
+        );
+        window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
+        toast.error(emailData.error || "Failed to send email, opened mail client instead");
+      }
     } catch {
-      toast.error("Failed to open email client");
+      toast.error("Failed to send email");
+    } finally {
+      setSendingEmail(false);
+      setEmailInput("");
     }
   };
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
-      {/* Group A: Share / Send Actions */}
+      {/* Consolidated Actions: one card, two columns */}
       <div className="rounded-xl border border-border bg-card p-4 print:hidden">
-        <div className="flex items-center gap-2 mb-2">
-          <MessageCircle className="h-3.5 w-3.5 text-primary" />
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Share &amp; Send</span>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {(!order.preferredContact || order.preferredContact.length === 0 || order.preferredContact.includes("WhatsApp")) && (
-            <button
-              onClick={handleSendWhatsApp}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-whatsapp/20 px-3 py-2 text-xs font-medium text-whatsapp hover:bg-whatsapp hover:text-white transition-colors"
-              title="Send receipt via WhatsApp"
-              aria-label="Send receipt via WhatsApp"
-            >
-              <MessageCircle className="h-3.5 w-3.5" />
-              WhatsApp
-            </button>
-          )}
-          {(!order.preferredContact || order.preferredContact.length === 0 || order.preferredContact.includes("Email")) && (
-            <button
-              onClick={handleSendEmail}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:text-primary hover:border-primary/30 hover:bg-accent transition-colors"
-              title="Send receipt via Email"
-              aria-label="Send receipt via Email"
-            >
-              <Mail className="h-3.5 w-3.5" />
-              Email
-            </button>
-          )}
-          <button
-            onClick={handleGenerateCustomerLink}
-            disabled={generatingLink}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:text-primary hover:border-primary/30 hover:bg-accent transition-colors disabled:opacity-50"
-            title="Copy receipt link"
-            aria-label="Copy receipt link"
-          >
-            {generatingLink ? (
-              <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
-            ) : (
-              <Copy className="h-3.5 w-3.5" />
-            )}
-            Copy Link
-          </button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Left Column: Share & Send */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <MessageCircle className="h-3.5 w-3.5 text-primary" />
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Share &amp; Send</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {(!order.preferredContact || order.preferredContact.length === 0 || order.preferredContact.includes("WhatsApp")) && (
+                <button
+                  onClick={handleSendWhatsApp}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-whatsapp/20 px-3 py-2 text-xs font-medium text-whatsapp hover:bg-whatsapp hover:text-white transition-colors"
+                  title="Send receipt via WhatsApp"
+                  aria-label="Send receipt via WhatsApp"
+                >
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  WhatsApp
+                </button>
+              )}
+              {(!order.preferredContact || order.preferredContact.length === 0 || order.preferredContact.includes("Email")) && (
+                <button
+                  onClick={() => handleSendEmail()}
+                  disabled={sendingEmail}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-primary hover:text-primary-foreground transition-colors disabled:opacity-50"
+                  title="Send receipt via Email"
+                  aria-label="Send receipt via Email"
+                >
+                  {sendingEmail ? (
+                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
+                  ) : (
+                    <Mail className="h-3.5 w-3.5" />
+                  )}
+                  Email
+                </button>
+              )}
+              <button
+                onClick={handleCopyLink}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+                title="Copy receipt link"
+                aria-label="Copy receipt link"
+              >
+                <Copy className="h-3.5 w-3.5" />
+                Copy Link
+              </button>
+            </div>
+          </div>
+
+          {/* Right Column: Document */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <FileText className="h-3.5 w-3.5 text-primary" />
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Document</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={handleDownloadPDF}
+                disabled={downloadingPdf}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:text-primary hover:border-primary/30 hover:bg-accent transition-colors disabled:opacity-50"
+                title="Download receipt PDF"
+                aria-label="Download receipt PDF"
+              >
+                {downloadingPdf ? (
+                  <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
+                ) : (
+                  <Download className="h-3.5 w-3.5" />
+                )}
+                Download
+              </button>
+              <button
+                onClick={handlePrint}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                title="Print receipt"
+                aria-label="Print receipt"
+              >
+                <Printer className="h-3.5 w-3.5" />
+                Print
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Group B: Document Actions */}
-      <div className="rounded-xl border border-border bg-card p-4 print:hidden">
-        <div className="flex items-center gap-2 mb-2">
-          <FileText className="h-3.5 w-3.5 text-primary" />
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Document</span>
+      {/* Email input prompt */}
+      {showEmailInput && (
+        <div className="rounded-xl border border-border bg-card p-4 print:hidden">
+          <p className="text-xs font-semibold text-foreground mb-2">Enter customer email to send receipt:</p>
+          <div className="flex gap-2">
+            <input
+              type="email"
+              value={emailInput}
+              onChange={(e) => setEmailInput(e.target.value)}
+              placeholder="customer@example.com"
+              autoFocus
+              className="h-9 flex-1 rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+              onKeyDown={(e) => { if (e.key === "Enter") handleSendEmail(emailInput); if (e.key === "Escape") setShowEmailInput(false); }}
+            />
+            <button
+              onClick={() => handleSendEmail(emailInput)}
+              disabled={!emailInput || sendingEmail}
+              className="h-9 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            >
+              {sendingEmail ? "Sending..." : "Send"}
+            </button>
+            <button
+              onClick={() => { setShowEmailInput(false); setEmailInput(""); }}
+              className="h-9 rounded-lg border border-border px-3 text-xs font-semibold text-foreground hover:bg-muted"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={handleDownloadPDF}
-            disabled={downloadingPdf}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:text-primary hover:border-primary/30 hover:bg-accent transition-colors disabled:opacity-50"
-            title="Download receipt PDF"
-            aria-label="Download receipt PDF"
-          >
-            {downloadingPdf ? (
-              <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
-            ) : (
-              <Download className="h-3.5 w-3.5" />
-            )}
-            Download
-          </button>
-          <button
-            onClick={handlePrint}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-            title="Print receipt"
-            aria-label="Print receipt"
-          >
-            <Printer className="h-3.5 w-3.5" />
-            Print
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* Back link */}
       <div className="flex items-center justify-between print:hidden">
