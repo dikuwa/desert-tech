@@ -46,6 +46,12 @@ function isPublicPath(pathname: string): boolean {
 export default async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // ===== DEV AUTH BYPASS =====
+  // When no DATABASE_URL is configured, the app runs in mock/dev mode.
+  // Skip all auth checks so developers can test the dashboard UI without
+  // needing a real PostgreSQL database.
+  const isDevMode = !process.env.DATABASE_URL;
+
   // Allow auth API routes
   if (pathname.startsWith(apiAuthPrefix)) return NextResponse.next();
 
@@ -59,6 +65,7 @@ export default async function middleware(req: NextRequest) {
 
   // Allow public document share routes
   if (pathname.startsWith("/api/documents/share/")) return NextResponse.next();
+  if (pathname.startsWith("/d/")) return NextResponse.next();
 
   // Allow password reset API routes
   if (pathname.startsWith("/api/password-reset")) return NextResponse.next();
@@ -86,7 +93,14 @@ export default async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check for session cookie
+  // In dev/mock mode, skip all session checks so dashboard and API work
+  // without a database. The server-side auth-guard.ts will provide mock
+  // sessions automatically.
+  if (isDevMode) {
+    return NextResponse.next();
+  }
+
+  // Check for session cookie (only in production/real mode)
   const sessionCookie =
     req.cookies.get("__Secure-better-auth.session_token") ??
     req.cookies.get("better-auth.session_token");
