@@ -120,6 +120,7 @@ export default function SettingsPage() {
             contactNumber: data.user.phone || "",
             profileEmail: data.user.profileEmail || data.user.email || "",
             profileImage: data.user.image || "",
+            jobTitle: data.user.jobTitle || "",
           });
         }
       })
@@ -138,6 +139,7 @@ export default function SettingsPage() {
     contactNumber: "",
     profileEmail: "",
     profileImage: "",
+    jobTitle: "",
   });
   const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
   const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
@@ -270,6 +272,7 @@ export default function SettingsPage() {
           phone: profileForm.contactNumber,
           profileEmail: profileForm.profileEmail,
           profileImage: profileForm.profileImage,
+          jobTitle: profileForm.jobTitle,
         }),
       });
 
@@ -290,6 +293,7 @@ export default function SettingsPage() {
         email: data?.user?.email || prev.email,
         phone: data?.user?.contactNumber || profileForm.contactNumber,
         profileImage: data?.user?.profileImage || profileForm.profileImage || prev.profileImage,
+        jobTitle: data?.user?.jobTitle || profileForm.jobTitle,
       } : prev);
 
       // Re-initialize profile form from server response for accuracy
@@ -299,6 +303,7 @@ export default function SettingsPage() {
           contactNumber: data.user.contactNumber || profileForm.contactNumber,
           profileEmail: data.user.profileEmail || data.user.email || profileForm.profileEmail,
           profileImage: data.user.profileImage || profileForm.profileImage,
+          jobTitle: data.user.jobTitle || profileForm.jobTitle,
         });
       }
       setIsEditingProfile(false);
@@ -1403,6 +1408,15 @@ export default function SettingsPage() {
                         className="mt-1.5 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
                       />
                     </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground">Job Title</label>
+                      <input
+                        value={profileForm.jobTitle}
+                        onChange={(e) => setProfileForm((f) => ({ ...f, jobTitle: e.target.value }))}
+                        placeholder="Your job title"
+                        className="mt-1.5 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                      />
+                    </div>
                     <div className="sm:col-span-2">
                       <label className="text-sm font-medium text-foreground">Profile Email</label>
                       <input
@@ -1436,6 +1450,7 @@ export default function SettingsPage() {
                           contactNumber: userSession?.phone || "",
                           profileEmail: userSession?.email || "",
                           profileImage: userSession?.profileImage || "",
+                          jobTitle: userSession?.jobTitle || "",
                         });
                       }}
                       className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors"

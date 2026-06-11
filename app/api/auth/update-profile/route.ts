@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json();
-    const { name, phone, profileEmail, profileImage } = body;
+    const { name, phone, profileEmail, profileImage, jobTitle } = body;
 
     // Build update data — only include fields that were actually provided
     const updateData: Record<string, unknown> = {};
@@ -60,6 +60,10 @@ export async function POST(request: NextRequest) {
 
     if (typeof profileEmail === "string" && profileEmail.trim()) {
       updateData.profileEmail = profileEmail.trim();
+    }
+
+    if (typeof jobTitle === "string") {
+      updateData.jobTitle = jobTitle.trim() || null;
     }
 
     if (Object.keys(updateData).length === 0) {
