@@ -30,13 +30,14 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ProductImage } from "@/components/ui/product-image";
 
-const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
-const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
+const WHATSAPP_NUMBER_FALLBACK = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
+const PHONE_NUMBER_FALLBACK = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
 
 export default function ProductDetailPage() {
   const params = useParams();
   const slug = params.slug as string;
   const dashboardProducts = useDashboardStore((s) => s.products);
+  const settings = useDashboardStore((s) => s.settings);
   const managedCategories = useDashboardStore((s) => s.categories);
   // Merge static + dashboard products and search for the slug
   const allProductsMerged = mergeProducts(dashboardProducts, managedCategories);
@@ -65,6 +66,9 @@ export default function ProductDetailPage() {
     return <div className="mx-auto max-w-7xl px-4 py-20 text-sm text-muted-foreground">Loading product...</div>;
   }
   if (!product) notFound();
+
+  const whatsappNumber = settings.whatsapp || WHATSAPP_NUMBER_FALLBACK;
+  const phoneNumber = settings.phone || PHONE_NUMBER_FALLBACK;
 
   const wishlisted = isWishlisted(product.id);
 
@@ -278,7 +282,7 @@ export default function ProductDetailPage() {
           {/* WhatsApp & Call */}
           <div className="flex flex-col sm:flex-row gap-3">
             <a
-              href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Hi, I'm interested in the ${product.name} (${formatNAD(product.priceCents)}). Is it available?`)}`}
+              href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Hi, I'm interested in the ${product.name} (${formatNAD(product.priceCents)}). Is it available?`)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 rounded-xl border border-whatsapp/20 bg-whatsapp-soft px-6 py-3 text-sm font-semibold text-whatsapp transition-all hover:-translate-y-0.5 hover:border-whatsapp/30 hover:bg-whatsapp hover:text-white hover:shadow-md active:translate-y-0"
@@ -287,7 +291,7 @@ export default function ProductDetailPage() {
               Enquire on WhatsApp
             </a>
             <a
-              href={`tel:${PHONE_NUMBER}`}
+              href={`tel:${phoneNumber}`}
               className="flex items-center justify-center gap-2 rounded-xl border border-border px-6 py-3 text-sm font-semibold text-foreground transition-all hover:bg-muted hover:shadow-sm active:scale-[0.98]"
             >
               <Phone className="h-5 w-5" />

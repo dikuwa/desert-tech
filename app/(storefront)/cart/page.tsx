@@ -15,17 +15,22 @@ import { useState } from "react";
 import { useCart } from "@/lib/store/cart";
 import { formatNAD } from "@/lib/data";
 import { cn } from "@/lib/utils";
+import { useDashboardStore } from "@/lib/store/dashboard";
 import { ProductImage } from "@/components/ui/product-image";
 
-const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
-const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
+const WHATSAPP_NUMBER_FALLBACK = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
+const PHONE_NUMBER_FALLBACK = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, clearCart, getSubtotal } = useCart();
+  const settings = useDashboardStore((s) => s.settings);
   const [isClearing, setIsClearing] = useState(false);
 
   const subtotal = getSubtotal();
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
+
+  const whatsappNumber = settings.whatsapp || WHATSAPP_NUMBER_FALLBACK;
+  const phoneNumber = settings.phone || PHONE_NUMBER_FALLBACK;
 
   const cartWhatsAppMessage = encodeURIComponent(
     `Hi, I'd like to enquire about the following items:\n\n${items.map((i) => `- ${i.name} x${i.quantity} (${formatNAD(i.priceCents * i.quantity)})`).join("\n")}\n\nTotal: ${formatNAD(subtotal)}`,
@@ -142,7 +147,7 @@ export default function CartPage() {
                   </button>
 
                   <Link
-                    href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Hi, I'm interested in the ${item.name}.`)}`}
+                    href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Hi, I'm interested in the ${item.name}.`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-1 ml-auto text-xs font-medium text-whatsapp hover:text-whatsapp-hover transition-colors"
@@ -186,7 +191,7 @@ export default function CartPage() {
               </Link>
 
               <a
-                href={`https://wa.me/${WHATSAPP_NUMBER}?text=${cartWhatsAppMessage}`}
+                href={`https://wa.me/${whatsappNumber}?text=${cartWhatsAppMessage}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex w-full items-center justify-center gap-2 rounded-xl border border-whatsapp/20 bg-whatsapp-soft px-5 py-3 text-sm font-semibold text-whatsapp transition-all hover:-translate-y-0.5 hover:border-whatsapp/30 hover:bg-whatsapp hover:text-white hover:shadow-md active:translate-y-0"
@@ -196,7 +201,7 @@ export default function CartPage() {
               </a>
 
               <a
-                href={`tel:${PHONE_NUMBER}`}
+                href={`tel:${phoneNumber}`}
                 className="flex w-full items-center justify-center gap-2 rounded-xl border border-border px-5 py-3 text-sm font-semibold text-foreground transition-all hover:bg-muted active:scale-[0.98]"
               >
                 <Phone className="h-4 w-4" />
