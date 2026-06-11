@@ -21,6 +21,7 @@ import path from "node:path";
 import { z } from "zod";
 import { sendEmailWithAttachment } from "@/lib/email";
 import { ReceiptPDF, type ReceiptPDFProps } from "@/components/receipts/receipt-pdf";
+import { QuotationPDF, type QuotationPDFProps } from "@/components/receipts/quotation-pdf";
 
 const requestSchema = z.object({
   documentType: z.enum(["receipt", "quotation"]),
@@ -58,6 +59,24 @@ const requestSchema = z.object({
       deliveryNotes: z.string().optional(),
     }).optional(),
   }).optional(),
+  // Quotation-specific: data snapshot
+  quotationSnapshot: z.object({
+    quotationNumber: z.string().min(1),
+    customerName: z.string().min(1),
+    customerPhone: z.string().min(1),
+    customerEmail: z.string().optional(),
+    items: z.array(z.object({
+      name: z.string().min(1),
+      quantity: z.number().int().positive(),
+      unitPrice: z.number().int().nonnegative(),
+      total: z.number().int().nonnegative(),
+      sku: z.string().optional(),
+    })).min(1),
+    subtotalCents: z.number().int().nonnegative(),
+    notes: z.string().optional(),
+    status: z.string().min(1),
+    createdAt: z.string().min(1),
+  }).optional(),
 });
 
 function loadPdfLogo(): string | null {
@@ -77,6 +96,35 @@ async function streamToBuffer(stream: Awaited<ReturnType<typeof renderToStream>>
     stream.on("error", reject);
   });
   return Buffer.concat(chunks);
+}
+
+async function generateQuotationPdfBuffer(quotationSnapshot: z.infer<typeof requestSchema>["quotationSnapshot"]): Promise<Buffer> {
+  if (!quotationSnapshot) throw new Error("quotationSnapshot is required for quotation PDF");
+  const date = new Date(quotationSnapshot.createdAt).toLocaleDateString("en-US", {
+    year: "numeric", month: "long", day: "numeric",
+  });
+
+  const quotationProps: QuotationPDFProps = {
+    quotationNumber: quotationSnapshot.quotationNumber,
+    date,
+    customerName: quotationSnapshot.customerName,
+    customerPhone: quotationSnapshot.customerPhone,
+    customerEmail: quotationSnapshot.customerEmail,
+    items: quotationSnapshot.items,
+    subtotal: quotationSnapshot.subtotalCents,
+    notes: quotationSnapshot.notes,
+    status: quotationSnapshot.status,
+  };
+
+  let pdfBuffer: Buffer;
+  try {
+    const stream = await renderToStream(<QuotationPDF {...quotationProps} logoSrc={loadPdfLogo()} />);
+    pdfBuffer = await streamToBuffer(stream);
+  } catch {
+    const stream = await renderToStream(<QuotationPDF {...quotationProps} logoSrc={null} />);
+    pdfBuffer = await streamToBuffer(stream);
+  }
+  return pdfBuffer;
 }
 
 async function generateReceiptPdfBuffer(orderSnapshot: z.infer<typeof requestSchema>["orderSnapshot"]): Promise<Buffer> {
@@ -124,13 +172,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { documentType, recipientEmail, recipientName, documentNumber, subject, messageBody, shareUrl, orderSnapshot } = parsed.data;
+    const { documentType, recipientEmail, recipientName, documentNumber, subject, messageBody, shareUrl, orderSnapshot, quotationSnapshot } = parsed.data;
     const pdfFilename = documentType === "receipt" ? `Receipt-${documentNumber}.pdf` : `Quotation-${documentNumber}.pdf`;
 
     // Generate PDF buffer
     let pdfBuffer: Buffer;
     try {
-      pdfBuffer = await generateReceiptPdfBuffer(orderSnapshot);
+      if (documentType === "receipt") {
+        pdfBuffer = await generateReceiptPdfBuffer(orderSnapshot);
+      } else {
+        pdfBuffer = await generateQuotationPdfBuffer(quotationSnapshot);
+      }
     } catch (error) {
       console.error("[SendEmail] PDF generation failed:", error);
       return NextResponse.json(
