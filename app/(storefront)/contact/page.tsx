@@ -29,9 +29,22 @@ export default function ContactPage() {
     if (!formData.fullName || !formData.message) return;
 
     setFormState("submitting");
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setFormState("success");
-    setFormData({ fullName: "", email: "", phone: "", subject: "", message: "" });
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to send message");
+      }
+      setFormState("success");
+      setFormData({ fullName: "", email: "", phone: "", subject: "", message: "" });
+    } catch (err) {
+      console.error("Contact form submission failed:", err);
+      setFormState("error");
+    }
     setTimeout(() => setFormState("idle"), 4000);
   };
 

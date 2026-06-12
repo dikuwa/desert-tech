@@ -273,15 +273,17 @@ export default function OrderReceiptPage() {
       const shareUrl = data.shortUrl ?? data.url;
       setCustomerLink(shareUrl);
 
-      const msg = encodeURIComponent(
-        `Hi ${order.customerName}, here is your receipt for ${order.orderNumber}. Total: ${formatCents(order.subtotalCents)}. ${isDepositPaid ? `Paid: ${formatCents(totalPaidCents)}, Balance due: ${formatCents(balanceCents)}.` : isPaidInFull ? "Paid in full." : ""}\n\nView online: ${shareUrl}`,
-      );
+      const msg = `Hi ${order.customerName}, here is your receipt for ${order.orderNumber}. Total: ${formatCents(order.subtotalCents)}. ${isDepositPaid ? `Paid: ${formatCents(totalPaidCents)}, Balance due: ${formatCents(balanceCents)}.` : isPaidInFull ? "Paid in full." : ""}\n\nView online: ${shareUrl}`;
       const customerPhone = formatPhone(order.customerPhone);
       if (!customerPhone) {
         toast.error("No WhatsApp number available for this customer.");
         return;
       }
-      window.open(buildWhatsAppUrl(customerPhone, msg), "_blank");
+      const wa = document.createElement("a");
+      wa.href = buildWhatsAppUrl(customerPhone, msg);
+      wa.target = "_blank";
+      wa.rel = "noopener,noreferrer";
+      wa.click();
     } catch {
       toast.error("Failed to generate shareable link");
     }

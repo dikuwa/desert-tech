@@ -157,8 +157,7 @@ export default function QuotationDetailPage() {
         .join("\n");
 
       const shareUrl = data.shortUrl ?? data.url;
-      const msg = encodeURIComponent(
-        `*Quotation ${quotation.quotationNumber} — ${storeSettings.storeName}*\n\n` +
+      const msg = `*Quotation ${quotation.quotationNumber} — ${storeSettings.storeName}*\n\n` +
           `Hi ${quotation.customerName},\n\n` +
           `Here is your quotation:\n\n` +
           `${itemsList}\n\n` +
@@ -167,14 +166,17 @@ export default function QuotationDetailPage() {
           `View quotation: ${shareUrl}\n\n` +
           `Contact us:\n` +
           `${storeSettings.phone}\n` +
-          `${storeSettings.email}`,
-      );
+          `${storeSettings.email}`;
       const customerPhone = formatPhone(quotation.customerPhone);
       if (!customerPhone) {
         toast.error("No WhatsApp number available for this customer.");
         return;
       }
-      window.open(buildWhatsAppUrl(customerPhone, msg), "_blank");
+      const wa = document.createElement("a");
+      wa.href = buildWhatsAppUrl(customerPhone, msg);
+      wa.target = "_blank";
+      wa.rel = "noopener,noreferrer";
+      wa.click();
     } catch (err) {
       console.error("WhatsApp share failed:", err);
       toast.error("Failed to generate shareable link");

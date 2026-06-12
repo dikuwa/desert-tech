@@ -184,15 +184,17 @@ export default function ReceiptsPage() {
         return;
       }
       const shareUrl = data.shortUrl ?? data.url;
-      const msg = encodeURIComponent(
-        `Hi ${customerName}, here is your receipt for order ${orderNumber}.\n\nView it here: ${shareUrl}\n\nThank you for choosing Desert Technology!`,
-      );
+      const msg = `Hi ${customerName}, here is your receipt for order ${orderNumber}.\n\nView it here: ${shareUrl}\n\nThank you for choosing Desert Technology!`;
       const customerPhone = formatPhone(order?.customerPhone || "");
       if (!customerPhone) {
         toast.error("No WhatsApp number available for this customer.");
         return;
       }
-      window.open(buildWhatsAppUrl(customerPhone, msg), "_blank");
+      const wa = document.createElement("a");
+      wa.href = buildWhatsAppUrl(customerPhone, msg);
+      wa.target = "_blank";
+      wa.rel = "noopener,noreferrer";
+      wa.click();
     } catch (err) {
       console.error("WhatsApp share failed:", err);
       toast.error("Failed to generate shareable link");

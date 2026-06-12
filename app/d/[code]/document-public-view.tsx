@@ -80,7 +80,11 @@ export function DocumentPublicView({
 
   const handleViewPdf = () => {
     setPdfLoading("view");
-    window.open(viewPdfUrl, "_blank", "noopener,noreferrer");
+    const a = document.createElement("a");
+    a.href = viewPdfUrl;
+    a.target = "_blank";
+    a.rel = "noopener,noreferrer";
+    a.click();
     setTimeout(() => setPdfLoading(null), 1000);
   };
 
@@ -111,7 +115,12 @@ export function DocumentPublicView({
   const handleWhatsApp = () => {
     const msg = `Here is your ${typeLabel.toLowerCase()} ${documentNumber} from Desert Technology.\n\nView online: ${shareUrl}`;
     const formattedPhone = formatWhatsAppPhone(BUSINESS_WHATSAPP);
-    window.open(buildWhatsAppUrl(formattedPhone, msg), "_blank");
+    const url = buildWhatsAppUrl(formattedPhone, msg);
+    const a = document.createElement("a");
+    a.href = url;
+    a.target = "_blank";
+    a.rel = "noopener,noreferrer";
+    a.click();
   };
 
   return (

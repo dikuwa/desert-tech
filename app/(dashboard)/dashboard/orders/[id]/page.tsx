@@ -603,7 +603,11 @@ export default function OrderDetailPage() {
                     const shareUrl = await generateReceiptLink(order);
                     if (!shareUrl) { toast.error("Failed to generate shareable link"); return; }
                     const msg = `Hi ${order.customerName},\n\nYour order ${order.orderNumber} has been created.\n\nView receipt: ${shareUrl}\n\nTotal: ${formatCents(order.subtotalCents)}\n\nThank you for choosing ${storeSettings?.storeName || "Desert Technology"}!`;
-                    window.open(buildWhatsAppUrl(order.customerPhone, msg), "_blank");
+                    const a = document.createElement("a");
+                    a.href = buildWhatsAppUrl(order.customerPhone, msg);
+                    a.target = "_blank";
+                    a.rel = "noopener,noreferrer";
+                    a.click();
                   } catch { toast.error("Failed to generate link"); }
                 }}
                 className="inline-flex items-center gap-1 rounded-lg border border-whatsapp/20 bg-whatsapp-soft px-3 py-1.5 text-xs font-semibold text-whatsapp hover:bg-whatsapp hover:text-white transition-colors"
