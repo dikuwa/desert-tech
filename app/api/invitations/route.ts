@@ -186,27 +186,40 @@ export async function POST(req: NextRequest) {
       note,
     });
 
-    // Send invitation via email
-    try {
-      await sendInvitationEmail({
-        to: email,
-        name,
-        inviterName: currentUser.name,
-        token,
-        role,
-        note,
-      });
-    } catch (emailError) {
-      console.error("[API] Failed to send invitation email:", emailError);
-    }
-
     const acceptUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/admin/invite/accept?token=${token}`;
+
+    // Send invitation via email (only if an actual email was provided)
+    let emailSent = false;
+    let warning: string | null = null;
+
+    if (rawEmail) {
+      try {
+        await sendInvitationEmail({
+          to: email,
+          name,
+          inviterName: currentUser.name,
+          token,
+          role,
+          note,
+        });
+        emailSent = true;
+      } catch (emailError) {
+        const message = emailError instanceof Error ? emailError.message : "Unknown email error";
+        console.error("[API] Failed to send invitation email:", message);
+        warning = "Invitation created but the email could not be sent. Please check your Resend configuration or share the invite link manually via WhatsApp.";
+      }
+    } else {
+      // No email provided (WhatsApp-only invitation) — skip email
+      warning = "Invitation created. Share the invite link with the user via WhatsApp.";
+    }
 
     return NextResponse.json(
       {
         invitation,
         acceptUrl,
-        message: "Invitation created successfully",
+        message: warning || "Invitation sent successfully.",
+        emailSent,
+        warning,
       },
       { status: 201 }
     );

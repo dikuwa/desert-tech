@@ -375,15 +375,16 @@ export function StaffList({ staff, pendingInvitations = [], currentUserRole, onU
     setWhatsappShare({ ...whatsappShare, loading: true, error: null });
 
     try {
+      // Use whatsappOnly=true so the API generates a fresh link without sending email
       const res = await fetch(`/api/invitations/${whatsappShare.invitation.id}/resend`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: phoneRaw }),
+        body: JSON.stringify({ phone: phoneRaw, whatsappOnly: true }),
       });
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "Failed to resend invitation");
+        throw new Error(data.error || "Failed to create invite link");
       }
 
       const data = await res.json();

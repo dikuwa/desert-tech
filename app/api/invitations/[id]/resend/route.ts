@@ -54,6 +54,15 @@ export async function POST(
       );
     }
 
+    // Check body for mode — WhatsApp-only requests should not send email
+    let whatsappOnly = false;
+    try {
+      const body = await req.json();
+      whatsappOnly = body?.whatsappOnly === true || !!body?.phone;
+    } catch {
+      // No body or invalid JSON — full resend with email
+    }
+
     // Generate new token
     const { generateInvitationToken, hashToken } = await import("@/lib/auth-server");
     const token = generateInvitationToken();
@@ -73,6 +82,27 @@ export async function POST(
     const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/+$/, "");
     const acceptUrl = `${appUrl}/admin/invite/accept?token=${token}`;
 
+    // If WhatsApp-only, skip email and just return the accept URL
+    if (whatsappOnly) {
+      await createAuditLog({
+        action: "invitation.link_generated",
+        targetType: "invitation",
+        targetId: id,
+        targetLabel: invitation.email,
+        metadata: {
+          method: "whatsapp",
+          emailSent: false,
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        acceptUrl,
+        message: "Invite link generated. Share it via WhatsApp.",
+        whatsappOnly: true,
+      });
+    }
+
     // Send email — catch provider errors so the audit log is still written
     let emailSent = false;
     let emailError: string | null = null;
@@ -80,14 +110,12 @@ export async function POST(
     const isDevFallback = !process.env.RESEND_API_KEY;
 
     if (isDevFallback) {
-      // Development fallback — log the invitation URL to the server console
-      // The client will show a dev-specific message instead of a false success toast
       console.log("\n========== INVITATION EMAIL (Development Mode) ==========");
       console.log(`To: ${invitation.email}`);
       console.log(`Name: ${invitation.name}`);
       console.log(`Accept URL: ${acceptUrl}`);
       console.log("========================================================\n");
-      emailSent = true; // Dev fallback is the intended dev "sending" mechanism
+      emailSent = true;
     } else {
       try {
         await sendInvitationEmail({
@@ -134,12 +162,10 @@ export async function POST(
       devMode: isDevFallback,
     });
   } catch (error) {
-    // Permission, rate-limit, and validation errors are returned above.
-    // This catch handles unexpected errors only.
     if (error instanceof Error &&
       (error.message.includes("Permission") ||
        error.message.includes("Rate limit"))) {
-      throw error; // Let the caller handle known errors
+      throw error;
     }
 
     console.error("[API] POST /api/invitations/[id]/resend error:", error);
