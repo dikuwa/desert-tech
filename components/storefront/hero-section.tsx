@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { decodeHTMLEntities } from "@/lib/utils";
+import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
 const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
@@ -67,7 +68,7 @@ export function HeroSection() {
               <ArrowRight className="h-4 w-4" />
             </Link>
             <a
-              href={`https://wa.me/${whatsapp}`}
+              href={buildWhatsAppUrl(whatsapp)}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-5 py-3 text-sm font-semibold text-foreground transition-all hover:-translate-y-0.5 hover:border-whatsapp/30 hover:bg-whatsapp-soft hover:text-whatsapp active:translate-y-0"

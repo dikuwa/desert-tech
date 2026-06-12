@@ -1,6 +1,6 @@
 import { MessageCircle, Phone } from "lucide-react";
+import { getWhatsAppUrl } from "@/lib/whatsapp-url";
 
-const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
 const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
 
 export function WhatsAppCTA() {
@@ -24,7 +24,7 @@ export function WhatsAppCTA() {
             </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:ml-auto sm:shrink-0">
               <a
-                href={`https://wa.me/${WHATSAPP_NUMBER}`}
+                href={getWhatsAppUrl()}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-md active:translate-y-0"

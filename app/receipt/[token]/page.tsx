@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { getStatusBadgeClass } from "@/lib/dashboard-data";
 import { getAppUrl, getDocumentShareUrl } from "@/lib/app-url";
 import { generateDocumentToken } from "@/lib/document-tokens";
+import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
 
 interface PublicReceiptPageProps {
   params: Promise<{ token: string }>;
@@ -252,7 +253,7 @@ export default async function PublicReceiptPage({ params }: PublicReceiptPagePro
           </a>
           <div className="grid grid-cols-2 gap-3">
             <a
-              href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(`Hi DesertTech, I'm enquiring about my order ${data.orderNumber}.`)}`}
+              href={buildWhatsAppUrl(WHATSAPP, `Hi DesertTech, I'm enquiring about my order ${data.orderNumber}.`)}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 rounded-xl border border-whatsapp/20 bg-whatsapp-soft px-4 py-3 text-sm font-semibold text-whatsapp hover:bg-whatsapp hover:text-white transition-all"

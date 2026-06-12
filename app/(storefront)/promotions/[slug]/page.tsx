@@ -22,6 +22,7 @@ import { useCart } from "@/lib/store/cart";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ProductImage } from "@/components/ui/product-image";
+import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
 
 export default function PromotionDetailPage() {
   const params = useParams();
@@ -307,7 +308,7 @@ export default function PromotionDetailPage() {
               </p>
               <div className="mt-6 flex flex-wrap justify-center gap-3">
                 <a
-                  href={`https://wa.me/${process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140"}?text=${encodeURIComponent(`Hi, I'm interested in the promotion: ${promotion.title}. Please send me a quote.`)}`}
+                  href={buildWhatsAppUrl(process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140", `Hi, I'm interested in the promotion: ${promotion.title}. Please send me a quote.`)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-md active:scale-[0.98]"

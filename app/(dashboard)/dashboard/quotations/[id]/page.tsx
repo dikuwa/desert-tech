@@ -26,6 +26,7 @@ import {
   getStatusLabel,
 } from "@/lib/dashboard-data";
 import { formatPhone } from "@/lib/format";
+import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -173,7 +174,7 @@ export default function QuotationDetailPage() {
         toast.error("No WhatsApp number available for this customer.");
         return;
       }
-      window.open(`https://wa.me/${customerPhone}?text=${msg}`, "_blank");
+      window.open(buildWhatsAppUrl(customerPhone, msg), "_blank");
     } catch (err) {
       console.error("WhatsApp share failed:", err);
       toast.error("Failed to generate shareable link");

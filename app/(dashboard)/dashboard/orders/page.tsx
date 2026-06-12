@@ -16,6 +16,13 @@ import Link from "next/link";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   getStatusBadgeClass,
   getStatusLabel,
   formatCents,
@@ -163,19 +170,25 @@ export default function OrdersPage() {
             className="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-4 text-sm placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"
           />
         </div>
-        <select
-          value={paymentFilter}
-          onChange={(e) => {
-            setPaymentFilter(e.target.value);
-            setCurrentPage(1);
-          }}
-          className="h-10 rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"
-        >
-          <option value="All">All Payments</option>
-          <option value="Unpaid">Unpaid</option>
-          <option value="DepositPaid">Deposit Paid</option>
-          <option value="PaidInFull">Paid in Full</option>
-        </select>
+        <div className="w-44">
+          <Select
+            value={paymentFilter}
+            onValueChange={(value) => {
+              setPaymentFilter(value);
+              setCurrentPage(1);
+            }}
+          >
+            <SelectTrigger className="h-10">
+              <SelectValue placeholder="All Payments" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="All">All Payments</SelectItem>
+              <SelectItem value="Unpaid">Unpaid</SelectItem>
+              <SelectItem value="DepositPaid">Deposit Paid</SelectItem>
+              <SelectItem value="PaidInFull">Paid in Full</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Table */}

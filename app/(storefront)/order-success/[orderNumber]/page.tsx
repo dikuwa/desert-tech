@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { formatNAD } from "@/lib/data";
 import { useDashboardStore } from "@/lib/store/dashboard";
+import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
 const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
@@ -145,7 +146,7 @@ export default function OrderSuccessPage() {
       {/* Contact CTAs */}
       <div className="space-y-3">
         <a
-          href={`https://wa.me/${whatsapp}?text=${shareMessage}`}
+          href={buildWhatsAppUrl(whatsapp, decodeURIComponent(shareMessage.replace(/^"|"$/g, "")))}
           target="_blank"
           rel="noopener noreferrer"
           className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-whatsapp/20 bg-whatsapp-soft px-6 py-3.5 text-sm font-semibold text-whatsapp transition-all hover:-translate-y-0.5 hover:border-whatsapp/30 hover:bg-whatsapp hover:text-white hover:shadow-md active:translate-y-0"

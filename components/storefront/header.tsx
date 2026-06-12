@@ -10,17 +10,20 @@ import {
   Mail,
   Search,
   BadgeCheck,
+  Heart,
   ArrowRight,
   ChevronDown,
 } from "lucide-react";
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/lib/store/cart";
+import { useWishlist } from "@/lib/store/wishlist";
 import { useMobileMenu } from "@/lib/store/mobile-menu";
 import { formatNAD, mergeProducts } from "@/lib/data";
 import { CartDropdown } from "@/components/storefront/cart-dropdown";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { buildShopUrl, getActiveBrands, groupActiveCategories } from "@/lib/storefront-navigation";
+import { buildWhatsAppUrl, formatWhatsAppPhone } from "@/lib/whatsapp-url";
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
 const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
@@ -54,6 +57,7 @@ export function StorefrontHeader() {
   useEffect(() => { setHydrated(true); }, []);
   const { getItemCount } = useCart();
   const itemCount = getItemCount();
+  const wishlistCount = useWishlist((s) => s.items.length);
 
   // Get products from dashboard store for search
   const dashboardProducts = useDashboardStore((s) => s.products);
@@ -157,7 +161,7 @@ export function StorefrontHeader() {
             </a>
             <span className="text-white/30">|</span>
             <a
-              href={`https://wa.me/${whatsapp}`}
+              href={buildWhatsAppUrl(whatsapp)}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 font-semibold text-white/90 hover:text-white transition-colors shrink-0"
@@ -282,7 +286,7 @@ export function StorefrontHeader() {
 
           <div className="flex items-center gap-2 ml-auto">
             <a
-              href={`https://wa.me/${whatsapp}?text=${encodeURIComponent("Hi DesertTech, I need help with an order/product.")}`}
+              href={buildWhatsAppUrl(whatsapp, "Hi DesertTech, I need help with an order/product.")}
               target="_blank"
               rel="noopener noreferrer"
               className="hidden items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-semibold text-foreground transition-all hover:-translate-y-0.5 hover:border-whatsapp/30 hover:bg-whatsapp-soft hover:text-whatsapp active:translate-y-0 lg:flex"
@@ -290,6 +294,19 @@ export function StorefrontHeader() {
               <BadgeCheck className="h-4 w-4 text-whatsapp" />
               Ask expert
             </a>
+            {/* Wishlist icon */}
+            <Link
+              href="/wishlist"
+              className="relative flex items-center justify-center h-10 w-10 rounded-lg text-muted-foreground hover:text-[#f68923] hover:bg-[#f68923]/5 transition-colors"
+              aria-label={`Wishlist (${wishlistCount} items)`}
+            >
+              <Heart className="h-5 w-5" />
+              {wishlistCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#f68923] px-1 text-[10px] font-bold leading-none text-white ring-2 ring-background">
+                  {wishlistCount > 99 ? "99+" : wishlistCount}
+                </span>
+              )}
+            </Link>
             <CartDropdown />
 
             <button

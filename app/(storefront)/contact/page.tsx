@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Phone, MessageCircle, Mail, MapPin, Building2, Banknote, Send, Check, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDashboardStore } from "@/lib/store/dashboard";
+import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
 
 export default function ContactPage() {
   const contactDetails = useDashboardStore((s) => s.contactDetails);
@@ -61,7 +62,7 @@ export default function ContactPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {activeContacts.map((c) => {
                   const Icon = c.type === "phone" ? Phone : c.type === "whatsapp" ? MessageCircle : c.type === "email" ? Mail : MapPin;
-                  const href = c.type === "phone" ? `tel:${c.value}` : c.type === "whatsapp" ? `https://wa.me/${c.value}` : c.type === "email" ? `mailto:${c.value}` : "#";
+                  const href = c.type === "phone" ? `tel:${c.value}` : c.type === "whatsapp" ? buildWhatsAppUrl(c.value) : c.type === "email" ? `mailto:${c.value}` : "#";
                   const color = c.type === "whatsapp" ? "text-whatsapp" : "text-primary";
                   return (
                     <a

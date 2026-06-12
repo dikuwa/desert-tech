@@ -25,6 +25,7 @@ import type { DashboardProduct } from "@/lib/dashboard-data";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { useCart } from "@/lib/store/cart";
 import { useWishlist } from "@/lib/store/wishlist";
+import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
 import { NotifyMeModal } from "@/components/storefront/notify-me-modal";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -150,7 +151,7 @@ export default function ProductDetailPage() {
               })}
               className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white/90 backdrop-blur-sm border border-border shadow-sm hover:shadow-md transition-all"
             >
-              <Heart className={cn("h-5 w-5", wishlisted ? "fill-destructive text-destructive" : "text-muted-foreground")} />
+              <Heart className={cn("h-5 w-5", wishlisted ? "fill-[#f68923] text-[#f68923]" : "text-muted-foreground")} />
             </button>
           </div>
 
@@ -282,7 +283,7 @@ export default function ProductDetailPage() {
           {/* WhatsApp & Call */}
           <div className="flex flex-col sm:flex-row gap-3">
             <a
-              href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Hi, I'm interested in the ${product.name} (${formatNAD(product.priceCents)}). Is it available?`)}`}
+              href={buildWhatsAppUrl(whatsappNumber, `Hi, I'm interested in the ${product.name} (${formatNAD(product.priceCents)}). Is it available?`)}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 rounded-xl border border-whatsapp/20 bg-whatsapp-soft px-6 py-3 text-sm font-semibold text-whatsapp transition-all hover:-translate-y-0.5 hover:border-whatsapp/30 hover:bg-whatsapp hover:text-white hover:shadow-md active:translate-y-0"

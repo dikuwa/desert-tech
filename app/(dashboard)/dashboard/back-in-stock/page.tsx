@@ -18,6 +18,7 @@ import {
 import { FadeIn } from "@/components/ui/fade-in";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
+import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
 import type {
   DashboardBackInStockRequest,
   BackInStockStatus,
@@ -144,7 +145,7 @@ export default function BackInStockPage() {
         return (
           <a
             key={method}
-            href={`https://wa.me/${contactValue.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hi ${req.customerName}, regarding your request for ${req.productName} — it's now available!`)}`}
+            href={buildWhatsAppUrl(contactValue, `Hi ${req.customerName}, regarding your request for ${req.productName} — it's now available!`)}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-sm text-whatsapp hover:underline"

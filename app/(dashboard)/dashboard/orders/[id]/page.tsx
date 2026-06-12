@@ -30,6 +30,7 @@ import {
   computePaymentFields,
 } from "@/lib/dashboard-data";
 import { formatPhone } from "@/lib/format";
+import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
 import type {
   DashboardOrder,
   OrderContactStatus,
@@ -601,10 +602,8 @@ export default function OrderDetailPage() {
                   try {
                     const shareUrl = await generateReceiptLink(order);
                     if (!shareUrl) { toast.error("Failed to generate shareable link"); return; }
-                    const msg = encodeURIComponent(
-                      `Hi ${order.customerName},\n\nYour order ${order.orderNumber} has been created.\n\nView receipt: ${shareUrl}\n\nTotal: ${formatCents(order.subtotalCents)}\n\nThank you for choosing ${storeSettings?.storeName || "Desert Technology"}!`,
-                    );
-                    window.open(`https://wa.me/${formatPhone(order.customerPhone)}?text=${msg}`, "_blank");
+                    const msg = `Hi ${order.customerName},\n\nYour order ${order.orderNumber} has been created.\n\nView receipt: ${shareUrl}\n\nTotal: ${formatCents(order.subtotalCents)}\n\nThank you for choosing ${storeSettings?.storeName || "Desert Technology"}!`;
+                    window.open(buildWhatsAppUrl(order.customerPhone, msg), "_blank");
                   } catch { toast.error("Failed to generate link"); }
                 }}
                 className="inline-flex items-center gap-1 rounded-lg border border-whatsapp/20 bg-whatsapp-soft px-3 py-1.5 text-xs font-semibold text-whatsapp hover:bg-whatsapp hover:text-white transition-colors"

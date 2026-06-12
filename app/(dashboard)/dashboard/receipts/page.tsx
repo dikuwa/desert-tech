@@ -17,6 +17,7 @@ import { FadeIn } from "@/components/ui/fade-in";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { computePaymentFields, formatCents, getStatusBadgeClass, getStatusLabel } from "@/lib/dashboard-data";
 import { formatPhone } from "@/lib/format";
+import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -191,7 +192,7 @@ export default function ReceiptsPage() {
         toast.error("No WhatsApp number available for this customer.");
         return;
       }
-      window.open(`https://wa.me/${customerPhone}?text=${msg}`, "_blank");
+      window.open(buildWhatsAppUrl(customerPhone, msg), "_blank");
     } catch (err) {
       console.error("WhatsApp share failed:", err);
       toast.error("Failed to generate shareable link");

@@ -11,6 +11,7 @@ const publicPaths = [
   "/",
   "/shop",
   "/cart",
+  "/wishlist",
   "/checkout",
   "/order-success",
   "/services",

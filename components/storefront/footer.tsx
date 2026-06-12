@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Phone, MessageCircle, Mail, MapPin, Building2, Banknote } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
+import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
 
@@ -80,7 +81,7 @@ export function StorefrontFooter() {
                 {whatsapps.length > 0 && whatsapps.map((c) => (
                   <li key={c.id}>
                     <a
-                      href={`https://wa.me/${c.value}`}
+                      href={buildWhatsAppUrl(c.value)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors"

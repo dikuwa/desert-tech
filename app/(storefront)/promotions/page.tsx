@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Tag, Sparkles, Percent } from "lucide-react";
+import { ArrowRight, Tag, Sparkles, Percent, MessageCircle, Phone } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
+import { buildWhatsAppUrl, getWhatsAppUrl } from "@/lib/whatsapp-url";
 
 export default function PromotionsPage() {
   const dashboardPromotions = useDashboardStore((s) => s.promotions);
@@ -66,10 +67,9 @@ export default function PromotionsPage() {
           </div>
           <div className="grid gap-6">
             {featuredPromos.map((promo) => (
-              <Link
+<div
                 key={promo.id}
-                href={`/promotions/${promo.slug}`}
-                className="group grid overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 sm:grid-cols-2"
+                className="grid overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 sm:grid-cols-2"
               >
                 {/* Image */}
                 <div className="relative aspect-[4/3] overflow-hidden bg-muted sm:aspect-auto sm:order-last">
@@ -103,12 +103,35 @@ export default function PromotionsPage() {
                   <p className="mt-2 text-sm leading-relaxed text-muted-foreground line-clamp-2">
                     {promo.description}
                   </p>
-                  <div className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary transition-all group-hover:gap-3">
-                    View offer
-                    <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <a
+                      href={buildWhatsAppUrl(process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140", `Hi, I'm interested in this promotion: ${promo.title}.`)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="inline-flex items-center gap-1 rounded-lg border border-whatsapp/20 bg-whatsapp-soft px-3 py-1.5 text-xs font-medium text-whatsapp hover:bg-whatsapp hover:text-white transition-colors"
+                    >
+                      <MessageCircle className="h-3.5 w-3.5" />
+                      Enquire
+                    </a>
+                    <a
+                      href={`tel:${process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140"}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+                    >
+                      <Phone className="h-3.5 w-3.5" />
+                      Call
+                    </a>
+                    <Link
+                      href={`/promotions/${promo.slug}`}
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+                    >
+                      View offer
+                      <ArrowRight className="h-3 w-3" />
+                    </Link>
                   </div>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         </section>
@@ -123,11 +146,11 @@ export default function PromotionsPage() {
           </div>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {otherPromos.map((promo) => (
-              <Link
+<div
                 key={promo.id}
-                href={`/promotions/${promo.slug}`}
-                className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0"
+                className="flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0"
               >
+                <Link href={`/promotions/${promo.slug}`}>
                 <div className="relative aspect-[16/9] overflow-hidden bg-muted">
                   {promo.imageUrl ? (
                     <img
@@ -146,22 +169,48 @@ export default function PromotionsPage() {
                     </div>
                   )}
                 </div>
+                </Link>
                 <div className="flex flex-1 flex-col p-5">
                   <div className="inline-flex w-fit items-center gap-1 rounded-md bg-accent/50 px-2 py-0.5 text-[11px] font-semibold text-primary uppercase tracking-wider">
                     {promo.type === "service" ? "Service" : promo.type === "bundle" ? "Bundle" : "Offer"}
                   </div>
-                  <h3 className="mt-2 text-base font-bold text-foreground group-hover:text-primary transition-colors">
-                    {promo.title}
-                  </h3>
+                  <Link href={`/promotions/${promo.slug}`}>
+                    <h3 className="mt-2 text-base font-bold text-foreground hover:text-primary transition-colors">
+                      {promo.title}
+                    </h3>
+                  </Link>
                   <p className="mt-1.5 flex-1 text-sm leading-relaxed text-muted-foreground line-clamp-2">
                     {promo.description}
                   </p>
-                  <div className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary">
-                    View offer
-                    <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <a
+                      href={buildWhatsAppUrl(process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140", `Hi, I'm interested in this promotion: ${promo.title}.`)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="inline-flex items-center gap-1 rounded-lg border border-whatsapp/20 bg-whatsapp-soft px-2.5 py-1.5 text-[11px] font-medium text-whatsapp hover:bg-whatsapp hover:text-white transition-colors"
+                    >
+                      <MessageCircle className="h-3 w-3" />
+                      Enquire
+                    </a>
+                    <a
+                      href={`tel:${process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140"}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-[11px] font-medium text-foreground hover:bg-muted transition-colors"
+                    >
+                      <Phone className="h-3 w-3" />
+                      Call
+                    </a>
+                    <Link
+                      href={`/promotions/${promo.slug}`}
+                      className="ml-auto inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+                    >
+                      View offer
+                      <ArrowRight className="h-3 w-3" />
+                    </Link>
                   </div>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         </section>

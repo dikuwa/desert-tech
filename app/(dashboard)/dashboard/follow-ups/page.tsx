@@ -6,6 +6,7 @@ import { FadeIn } from "@/components/ui/fade-in";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { getStatusBadgeClass } from "@/lib/dashboard-data";
 import { formatPhone } from "@/lib/format";
+import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -279,7 +280,7 @@ export default function FollowUpsPage() {
                   {/* WhatsApp — only if type is WhatsApp or phone exists */}
                   {(selected.type === "WhatsApp" || selectedOrder?.customerPhone) && (
                     <a
-                      href={`https://wa.me/${formatPhone(selectedOrder?.customerPhone || "")}?text=${encodeURIComponent(`Hi ${selected.customerName}, regarding your order ${selected.orderNumber}...`)}`}
+                      href={buildWhatsAppUrl(selectedOrder?.customerPhone || "", `Hi ${selected.customerName}, regarding your order ${selected.orderNumber}...`)}
                       target="_blank" rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 rounded-lg border border-whatsapp/20 px-3 py-2 text-xs font-medium text-whatsapp hover:bg-whatsapp hover:text-white transition-colors"
                       onClick={() => {

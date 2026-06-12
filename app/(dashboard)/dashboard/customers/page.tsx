@@ -6,6 +6,7 @@ import { Search, Users, MessageCircle, Phone, Mail, ChevronLeft, ChevronRight, P
 import { FadeIn } from "@/components/ui/fade-in";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { formatCents, getStatusBadgeClass, getStatusLabel } from "@/lib/dashboard-data";
+import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
 import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
@@ -178,7 +179,8 @@ export default function CustomersPage() {
                       <Eye className="h-3.5 w-3.5" />
                     </button>
                     {customer.whatsapp && (
-                      <a href={`https://wa.me/${customer.whatsapp.replace(/[^0-9]/g, "")}`} target="_blank" rel="noopener noreferrer"
+                      <a href={buildWhatsAppUrl(customer.whatsapp)}
+                        target="_blank" rel="noopener noreferrer"
                         className="rounded-md p-1.5 text-whatsapp hover:bg-whatsapp/10 transition-colors"><MessageCircle className="h-3.5 w-3.5" /></a>
                     )}
                     <a href={`tel:${customer.phone}`} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"><Phone className="h-3.5 w-3.5" /></a>

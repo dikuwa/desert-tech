@@ -17,6 +17,7 @@ import { formatNAD } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { ProductImage } from "@/components/ui/product-image";
+import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
 
 const WHATSAPP_NUMBER_FALLBACK = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
 const PHONE_NUMBER_FALLBACK = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
@@ -147,7 +148,7 @@ export default function CartPage() {
                   </button>
 
                   <Link
-                    href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Hi, I'm interested in the ${item.name}.`)}`}
+                    href={buildWhatsAppUrl(whatsappNumber, `Hi, I'm interested in the ${item.name}.`)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-1 ml-auto text-xs font-medium text-whatsapp hover:text-whatsapp-hover transition-colors"
@@ -191,7 +192,7 @@ export default function CartPage() {
               </Link>
 
               <a
-                href={`https://wa.me/${whatsappNumber}?text=${cartWhatsAppMessage}`}
+                href={buildWhatsAppUrl(whatsappNumber, decodeURIComponent(cartWhatsAppMessage))}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex w-full items-center justify-center gap-2 rounded-xl border border-whatsapp/20 bg-whatsapp-soft px-5 py-3 text-sm font-semibold text-whatsapp transition-all hover:-translate-y-0.5 hover:border-whatsapp/30 hover:bg-whatsapp hover:text-white hover:shadow-md active:translate-y-0"
