@@ -9,8 +9,11 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Mail, AlertCircle, CheckCircle } from "lucide-react";
 import Image from "next/image";
+import { useDashboardStore } from "@/lib/store/dashboard";
 
 export default function ForgotPasswordPage() {
+  const settings = useDashboardStore((s) => s.settings);
+  const storeName = settings?.storeName || "Desert Technology Consultant";
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -89,7 +92,7 @@ export default function ForgotPasswordPage() {
             <div className="mb-5 flex justify-center">
               <Image
                 src="/images/desertech-auth-logo.svg"
-                alt="Desert Technology Consultants"
+                alt={storeName}
                 width={92}
                 height={80}
                 priority
@@ -124,7 +127,7 @@ export default function ForgotPasswordPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="h-11 w-full rounded-lg border border-border bg-background pl-10 pr-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-                  placeholder="you@deserttech.com"
+                  placeholder="you@company.com"
                   required
                   autoComplete="email"
                   autoFocus
@@ -148,6 +151,13 @@ export default function ForgotPasswordPage() {
               )}
             </button>
           </form>
+
+          {/* Admin contact note */}
+          <div className="mt-4 rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
+            <p>
+              If you do not have access to your login email, contact your Owner/Admin to reset your password manually.
+            </p>
+          </div>
 
           {/* Back to Sign In */}
           <div className="mt-6 text-center">

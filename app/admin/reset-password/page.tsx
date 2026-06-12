@@ -183,7 +183,7 @@ export default function ResetPasswordPage() {
             <div className="mb-5 flex justify-center">
               <Image
                 src="/images/desertech-auth-logo.svg"
-                alt="Desert Technology Consultants"
+                alt="Dashboard"
                 width={92}
                 height={80}
                 priority

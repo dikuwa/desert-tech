@@ -12,11 +12,14 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff, User, Lock, CheckCircle, AlertCircle, ArrowLeft, UserCog } from "lucide-react";
+import { useDashboardStore } from "@/lib/store/dashboard";
 
 export default function InviteAcceptPage() {
   const params = useParams();
   const router = useRouter();
   const code = params.code as string;
+  const settings = useDashboardStore((s) => s.settings);
+  const storeName = settings?.storeName || "Desert Technology Consultant";
 
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
@@ -125,7 +128,7 @@ export default function InviteAcceptPage() {
                 </div>
               </div>
               <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                Welcome to Desert Technology!
+                Welcome to {storeName}!
               </h1>
               <p className="text-sm text-muted-foreground mt-2">
                 Your account has been created successfully. You can now sign in with your email and password.
@@ -190,7 +193,7 @@ export default function InviteAcceptPage() {
               You&apos;re Invited!
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {invitation.name}, you&apos;ve been invited to join the DesertTech dashboard.
+              {invitation.name}, you&apos;ve been invited to join the {storeName} dashboard.
             </p>
           </div>
 

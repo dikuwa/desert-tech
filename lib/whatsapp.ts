@@ -71,13 +71,15 @@ export async function sendPasswordResetWhatsApp(
   phone: string,
   name: string,
   token: string,
+  storeName?: string,
 ): Promise<void> {
   const { getAppUrl } = await import("./app-url");
   const appUrl = getAppUrl();
   const resetUrl = `${appUrl}/admin/reset-password?token=${token}`;
+  const company = storeName || "Desert Technology Consultant";
 
   const message = [
-    `🔐 *Desert Technology — Password Reset*`,
+    `🔐 *${company} — Password Reset*`,
     ``,
     `Hi ${name},`,
     ``,
@@ -90,7 +92,7 @@ export async function sendPasswordResetWhatsApp(
     ``,
     `If you didn't request this, please ignore this message.`,
     ``,
-    `— Desert Technology Consultant`,
+    `— ${company}`,
   ].join("\n");
 
   await sendWhatsApp({ to: phone, body: message });
@@ -105,25 +107,27 @@ export async function sendInvitationWhatsApp(
   token: string,
   role: string,
   inviterName: string,
+  storeName?: string,
 ): Promise<void> {
   const { getAppUrl } = await import("./app-url");
   const appUrl = getAppUrl();
   const acceptUrl = `${appUrl}/admin/invite/accept?token=${token}`;
   const roleDisplay = role.charAt(0) + role.slice(1).toLowerCase();
+  const company = storeName || "Desert Technology Consultant";
 
   const message = [
-    `🎉 *Desert Technology — You're Invited!*`,
+    `🎉 *${company} — You're Invited!*`,
     ``,
     `Hi ${name},`,
     ``,
-    `${inviterName} has invited you to join Desert Technology as a *${roleDisplay}*.`,
+    `${inviterName} has invited you to join ${company} as a *${roleDisplay}*.`,
     ``,
     `Click to accept:`,
     `${acceptUrl}`,
     ``,
-    `This invitation expires in 48 hours.`,
+    `This invitation expires in 7 days.`,
     ``,
-    `— Desert Technology Consultant`,
+    `— ${company}`,
   ].join("\n");
 
   await sendWhatsApp({ to: phone, body: message });
@@ -136,10 +140,12 @@ export async function sendAccountStatusWhatsApp(
   phone: string,
   name: string,
   status: "suspended" | "reactivated",
+  storeName?: string,
 ): Promise<void> {
   const isSuspended = status === "suspended";
+  const company = storeName || "Desert Technology Consultant";
   const message = [
-    `🔔 *Desert Technology — Account ${isSuspended ? "Suspended" : "Reactivated"}*`,
+    `🔔 *${company} — Account ${isSuspended ? "Suspended" : "Reactivated"}*`,
     ``,
     `Hi ${name},`,
     ``,
@@ -149,7 +155,7 @@ export async function sendAccountStatusWhatsApp(
       ? `Please contact your administrator for more information.`
       : `You can now sign in to your dashboard.`,
     ``,
-    `— Desert Technology Consultant`,
+    `— ${company}`,
   ].join("\n");
 
   await sendWhatsApp({ to: phone, body: message });

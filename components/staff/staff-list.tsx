@@ -21,6 +21,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
+import { useDashboardStore } from "@/lib/store/dashboard";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -147,6 +148,8 @@ interface PendingInvitation {
   name: string;
   role: UserRole;
   status: string;
+  phone?: string | null;
+  note?: string | null;
   expiresAt: string;
   createdAt: string;
   invitedBy: { name: string; email: string } | null;
@@ -329,6 +332,8 @@ function QuickPermissionEditor({
 // ============== MAIN COMPONENT ==============
 
 export function StaffList({ staff, pendingInvitations = [], currentUserRole, onUpdate }: StaffListProps) {
+  const settings = useDashboardStore((s) => s.settings);
+  const storeName = settings?.storeName || "Desert Technology Consultant";
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<{
     type: "suspend" | "activate" | "disable" | "reactivate" | "unlock" | "revoke-sessions" | "delete";
@@ -969,13 +974,20 @@ export function StaffList({ staff, pendingInvitations = [], currentUserRole, onU
                       }`}>
                         {inv.role}
                       </span>
+                      {inv.phone && (
+                        <span className="rounded-[3px] border border-green-500/20 bg-green-500/10 px-1.5 py-[2px] text-[10px] font-bold leading-none text-green-600 dark:text-green-400">
+                          WhatsApp
+                        </span>
+                      )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">{inv.email}</p>
-                    {inv.invitedBy && (
-                      <p className="text-[10px] text-muted-foreground mt-0.5">
-                        Invited by {inv.invitedBy.name}
-                      </p>
-                    )}
+                    <div className="flex items-center gap-3 text-[10px] text-muted-foreground mt-0.5 flex-wrap">
+                      {inv.invitedBy && (
+                        <span>Invited by {inv.invitedBy.name}</span>
+                      )}
+                      <span>Created {new Date(inv.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                      <span>Expires {new Date(inv.expiresAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                    </div>
                   </div>
                 </div>
                 <DropdownMenu>
@@ -1320,7 +1332,7 @@ export function StaffList({ staff, pendingInvitations = [], currentUserRole, onU
                 Invite link ready! Share it with {whatsappShare.invitation.name}:
               </p>
               <a
-                href={buildWhatsAppUrl(whatsappShare.phoneClean, `Hi ${whatsappShare.invitation.name}, you've been invited to join the DesertTech dashboard as ${whatsappShare.invitation.role}. Accept your secure invite here: ${whatsappShare.acceptUrl}`)}
+                href={buildWhatsAppUrl(whatsappShare.phoneClean, `Hi ${whatsappShare.invitation.name}, you've been invited to join the ${storeName} dashboard as ${whatsappShare.invitation.role}. Accept your secure invite here: ${whatsappShare.acceptUrl}`)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-md active:translate-y-0"

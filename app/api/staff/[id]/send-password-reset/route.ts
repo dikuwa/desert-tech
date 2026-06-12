@@ -10,6 +10,7 @@ import { db } from "@/lib/db";
 import { Permissions } from "@/lib/permissions";
 import { sendPasswordResetEmail } from "@/lib/email";
 import { sendPasswordResetWhatsApp } from "@/lib/whatsapp";
+import { getStoreSettings } from "@/lib/store-settings";
 
 export async function POST(
   req: NextRequest,
@@ -61,13 +62,15 @@ export async function POST(
       },
     });
 
+    const storeSettings = await getStoreSettings();
+
     // Send email
-    await sendPasswordResetEmail({ to: user.email, token });
+    await sendPasswordResetEmail({ to: user.email, token, storeName: storeSettings.storeName });
 
     // Send WhatsApp if phone is available
     if (user.phone) {
       const phoneClean = user.phone.replace(/^\+/, "");
-      await sendPasswordResetWhatsApp(phoneClean, user.name, token);
+      await sendPasswordResetWhatsApp(phoneClean, user.name, token, storeSettings.storeName);
     }
 
     return NextResponse.json({ success: true });

@@ -8,6 +8,7 @@ import { z } from "zod";
 import { createPasswordResetToken } from "@/lib/auth-server";
 import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
 import { sendPasswordResetEmail } from "@/lib/email";
+import { getStoreSettings } from "@/lib/store-settings";
 
 const requestSchema = z.object({
   email: z.string().email("Valid email required"),
@@ -45,9 +46,11 @@ export async function POST(req: NextRequest) {
     // Send email if user exists
     if (resetData) {
       try {
+        const storeSettings = await getStoreSettings();
         await sendPasswordResetEmail({
           to: resetData.email,
           token: resetData.token,
+          storeName: storeSettings.storeName,
         });
       } catch (emailError) {
         console.error("[API] Failed to send password reset email:", emailError);

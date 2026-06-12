@@ -16,6 +16,7 @@ import { InvitationStatus, UserRole } from "@/lib/enums";
 import { Permissions, type Permission } from "@/lib/permissions";
 import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
 import { sendInvitationEmail } from "@/lib/email";
+import { getStoreSettings } from "@/lib/store-settings";
 
 // Validation schema for creating invitations
 const createInvitationSchema = z.object({
@@ -195,6 +196,7 @@ export async function POST(req: NextRequest) {
 
     if (rawEmail) {
       try {
+        const storeSettings = await getStoreSettings();
         await sendInvitationEmail({
           to: email,
           name,
@@ -202,6 +204,7 @@ export async function POST(req: NextRequest) {
           code: invitation.shortCode,
           role,
           note,
+          storeName: storeSettings.storeName,
         });
         emailSent = true;
       } catch (emailError) {

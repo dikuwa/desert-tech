@@ -10,6 +10,7 @@ import { InvitationStatus } from "@/lib/enums";
 import { Permissions } from "@/lib/permissions";
 import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
 import { sendInvitationEmail } from "@/lib/email";
+import { getStoreSettings } from "@/lib/store-settings";
 
 export async function POST(
   req: NextRequest,
@@ -121,12 +122,14 @@ export async function POST(
       emailSent = true;
     } else {
       try {
+        const storeSettings = await getStoreSettings();
         await sendInvitationEmail({
           to: invitation.email,
           name: invitation.name,
           inviterName: currentUser.name,
           token,
           role: invitation.role,
+          storeName: storeSettings.storeName,
         });
         emailSent = true;
       } catch (err) {

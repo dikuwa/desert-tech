@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, Eye, EyeOff, LogIn, UserPlus } from "lucide-react";
 import { useState } from "react";
+import { useDashboardStore } from "@/lib/store/dashboard";
 
 type AuthMode = "signin" | "signup";
 
@@ -17,6 +18,8 @@ const staffPasswordHint = "Staff@2025";
 
 export function AdminAuthCard({ initialMode = "signin", redirectTo = "/dashboard" }: AdminAuthCardProps) {
   const router = useRouter();
+  const settings = useDashboardStore((s) => s.settings);
+  const storeName = settings?.storeName || "Desert Technology Consultant";
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("admin@deserttech.com");
@@ -89,7 +92,7 @@ export function AdminAuthCard({ initialMode = "signin", redirectTo = "/dashboard
             <div className="mb-5 flex justify-center">
               <Image
                 src="/images/desertech-auth-logo.svg"
-                alt="Desert Technology Consultants"
+                alt={storeName}
                 width={92}
                 height={80}
                 priority
@@ -100,7 +103,7 @@ export function AdminAuthCard({ initialMode = "signin", redirectTo = "/dashboard
               {isSignIn ? "Admin access" : "Create staff account"}
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {isSignIn ? "Sign in to manage Desert Technology" : "Create a dashboard account"}
+              {isSignIn ? `Sign in to manage ${storeName}` : `Create a ${storeName} dashboard account`}
             </p>
           </div>
 

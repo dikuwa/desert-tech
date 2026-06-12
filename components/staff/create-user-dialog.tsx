@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Loader2, Mail, MessageCircle, UserPlus } from "lucide-react";
+import { Check, Loader2, Mail, MessageCircle, UserPlus, AlertCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
 import { Button } from "@/components/ui/button";
+import { useDashboardStore } from "@/lib/store/dashboard";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -181,6 +182,9 @@ export function CreateUserDialog({
   currentUserRole,
   onSuccess,
 }: CreateUserDialogProps) {
+  const settings = useDashboardStore((s) => s.settings);
+  const storeName = settings?.storeName || "Desert Technology Consultant";
+
   // Common fields
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -479,7 +483,7 @@ export function CreateUserDialog({
                   Share the invite link with {name} via your own WhatsApp:
                 </p>
                 <a
-                  href={buildWhatsAppUrl(invitePhone, `Hi ${name}, you've been invited to join the DesertTech dashboard as ${role}. Accept your secure invite here: ${inviteLink}`)}
+                  href={buildWhatsAppUrl(invitePhone, `Hi ${name}, you've been invited to join the ${storeName} dashboard as ${role}. Accept your secure invite here: ${inviteLink}`)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-md active:translate-y-0"
@@ -663,15 +667,16 @@ export function CreateUserDialog({
                     <p className="text-[10px] text-muted-foreground">The invitation link will be sent here</p>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="wa-email">Email (optional)</Label>
+                    <Label htmlFor="wa-email">Email Address</Label>
                     <Input
                       id="wa-email"
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="e.g. john@company.com"
+                      required
                     />
-                    <p className="text-[10px] text-muted-foreground">Also sends an email invitation if provided</p>
+                    <p className="text-[10px] text-muted-foreground">Login email for the user. Required for password-based login.</p>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
@@ -814,6 +819,12 @@ export function CreateUserDialog({
                     <p className="text-xs text-muted-foreground">
                       The user will be required to change this password on first login.
                     </p>
+                    {email && !email.match(/^[^@]+@[^@]+\.[^@]+$/) && (
+                      <p className="text-xs text-warning mt-1 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3 inline" />
+                        This email does not look like a real email address. Forgot password and email recovery will not work. Owner/Admin must reset the password manually.
+                      </p>
+                    )}
                   </div>
 
                   <PermissionsSection />

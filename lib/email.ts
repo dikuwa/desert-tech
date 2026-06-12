@@ -143,17 +143,18 @@ export async function sendEmailWithAttachment(options: EmailWithAttachmentOption
 interface WelcomeEmailParams {
   to: string;
   name: string;
+  storeName?: string;
 }
 
 export async function sendWelcomeEmail(params: WelcomeEmailParams): Promise<void> {
-  const { to, name } = params;
+  const { to, name, storeName = "Desert Technology Consultant" } = params;
 
   const html = `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Welcome to Desert Technology</title>
+  <title>Welcome to ${storeName}</title>
   <style>
     body { font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; color: #111; background: #f7f7f7; margin: 0; padding: 0; }
     .container { max-width: 600px; margin: 0 auto; background: #fff; }
@@ -167,16 +168,16 @@ export async function sendWelcomeEmail(params: WelcomeEmailParams): Promise<void
 <body>
   <div class="container">
     <div class="header">
-      <h1>Desert Technology Consultant</h1>
+      <h1>${storeName}</h1>
     </div>
     <div class="content">
       <h2>Welcome, ${name}!</h2>
-      <p>Your Desert Technology account has been created. You can now sign in to the dashboard.</p>
+      <p>Your ${storeName} account has been created. You can now sign in to the dashboard.</p>
       <p>If you were created via the direct account method, you may need to change your password on first login.</p>
       <p><a href="${appUrl}/admin/login" style="color: #f68923;">Sign in to your account</a></p>
     </div>
     <div class="footer">
-      <p>Desert Technology Consultant | Namibia</p>
+      <p>${storeName} | Namibia</p>
     </div>
   </div>
 </body>
@@ -186,14 +187,14 @@ export async function sendWelcomeEmail(params: WelcomeEmailParams): Promise<void
   const text = `
 Welcome, ${name}!
 
-Your Desert Technology account has been created. You can now sign in to the dashboard.
+Your ${storeName} account has been created. You can now sign in to the dashboard.
 
 Sign in: ${appUrl}/admin/login
 
-Desert Technology Consultant | Namibia
+${storeName} | Namibia
   `.trim();
 
-  await sendEmail({ to, subject: "Welcome to Desert Technology", html, text });
+  await sendEmail({ to, subject: `Welcome to ${storeName}`, html, text });
 }
 
 // ============== TWO-FACTOR EMAILS ==============
@@ -203,16 +204,17 @@ interface TwoFactorEmailParams {
   name: string;
   action: "enabled" | "disabled" | "reset";
   resetBy?: string;
+  storeName?: string;
 }
 
 export async function sendTwoFactorEmail(params: TwoFactorEmailParams): Promise<void> {
-  const { to, name, action, resetBy } = params;
+  const { to, name, action, resetBy, storeName = "Desert Technology Consultant" } = params;
 
   const subject = action === "enabled"
-    ? "Two-Factor Authentication Enabled"
+    ? `Two-Factor Authentication Enabled — ${storeName}`
     : action === "disabled"
-    ? "Two-Factor Authentication Disabled"
-    : "Two-Factor Authentication Reset";
+    ? `Two-Factor Authentication Disabled — ${storeName}`
+    : `Two-Factor Authentication Reset — ${storeName}`;
 
   const html = `
 <!DOCTYPE html>
@@ -233,7 +235,7 @@ export async function sendTwoFactorEmail(params: TwoFactorEmailParams): Promise<
 <body>
   <div class="container">
     <div class="header">
-      <h1>Desert Technology Consultant</h1>
+      <h1>${storeName}</h1>
     </div>
     <div class="content">
       <h2>Hello ${name},</h2>
@@ -248,7 +250,7 @@ export async function sendTwoFactorEmail(params: TwoFactorEmailParams): Promise<
       </div>
     </div>
     <div class="footer">
-      <p>Desert Technology Consultant | Namibia</p>
+      <p>${storeName} | Namibia</p>
     </div>
   </div>
 </body>
@@ -267,7 +269,7 @@ ${action === "enabled"
 
 SECURITY NOTICE: If you didn't authorize this change, please contact your administrator immediately.
 
-Desert Technology Consultant | Namibia
+${storeName} | Namibia
   `.trim();
 
   await sendEmail({ to, subject, html, text });
@@ -280,17 +282,18 @@ interface RoleChangeEmailParams {
   name: string;
   changes: string[];
   changedBy: string;
+  storeName?: string;
 }
 
 export async function sendRoleChangeEmail(params: RoleChangeEmailParams): Promise<void> {
-  const { to, name, changes, changedBy } = params;
+  const { to, name, changes, changedBy, storeName = "Desert Technology Consultant" } = params;
 
   const html = `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Account Role Updated</title>
+  <title>Account Updated — ${storeName}</title>
   <style>
     body { font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; color: #111; background: #f7f7f7; margin: 0; padding: 0; }
     .container { max-width: 600px; margin: 0 auto; background: #fff; }
@@ -305,7 +308,7 @@ export async function sendRoleChangeEmail(params: RoleChangeEmailParams): Promis
 <body>
   <div class="container">
     <div class="header">
-      <h1>Desert Technology Consultant</h1>
+      <h1>${storeName}</h1>
     </div>
     <div class="content">
       <h2>Hello ${name},</h2>
@@ -319,7 +322,7 @@ export async function sendRoleChangeEmail(params: RoleChangeEmailParams): Promis
       <p>These changes take effect immediately. If you notice any issues with your access, please contact your administrator.</p>
     </div>
     <div class="footer">
-      <p>Desert Technology Consultant | Namibia</p>
+      <p>${storeName} | Namibia</p>
     </div>
   </div>
 </body>
@@ -336,10 +339,10 @@ ${changes.map((c) => `- ${c}`).join("\n")}
 
 These changes take effect immediately.
 
-Desert Technology Consultant | Namibia
+${storeName} | Namibia
   `.trim();
 
-  await sendEmail({ to, subject: "Your Account Has Been Updated", html, text });
+  await sendEmail({ to, subject: `Your Account Has Been Updated — ${storeName}`, html, text });
 }
 
 // ============== INVITATION EMAIL ==============
@@ -352,10 +355,11 @@ interface InvitationEmailParams {
   token?: string;
   role: string;
   note?: string;
+  storeName?: string;
 }
 
 export async function sendInvitationEmail(params: InvitationEmailParams): Promise<void> {
-  const { to, name, inviterName, code, token, role, note } = params;
+  const { to, name, inviterName, code, token, role, note, storeName = "Desert Technology Consultant" } = params;
 
   // Use short branded link when available, fall back to long token URL
   const invitationUrl = code
@@ -371,7 +375,7 @@ export async function sendInvitationEmail(params: InvitationEmailParams): Promis
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>You're Invited to Join Desert Technology</title>
+  <title>You're Invited to Join ${storeName}</title>
   <style>
     body { font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; color: #111; background: #f7f7f7; margin: 0; padding: 0; }
     .container { max-width: 600px; margin: 0 auto; background: #fff; }
@@ -392,11 +396,11 @@ export async function sendInvitationEmail(params: InvitationEmailParams): Promis
 <body>
   <div class="container">
     <div class="header">
-      <h1>Desert Technology Consultant</h1>
+      <h1>${storeName}</h1>
     </div>
     <div class="content">
       <h2>Hello ${name},</h2>
-      <p>You've been invited by <strong>${inviterName}</strong> to join the Desert Technology Consultant team as a <strong>${roleDisplay}</strong>.</p>
+      <p>You've been invited by <strong>${inviterName}</strong> to join the ${storeName} team as a <strong>${roleDisplay}</strong>.</p>
 
       ${note ? `<p><strong>Note:</strong> ${note}</p>` : ""}
 
@@ -409,7 +413,7 @@ export async function sendInvitationEmail(params: InvitationEmailParams): Promis
 
       <a href="${invitationUrl}" class="button">Accept Invitation</a>
 
-      <p class="expiry">This invitation expires in 48 hours and can only be used once.</p>
+      <p class="expiry">This invitation expires in 7 days and can only be used once.</p>
 
       <p style="font-size: 13px; color: #6f6f6f; margin-top: 30px;">
         If the button doesn't work, copy and paste this link into your browser:<br>
@@ -417,7 +421,7 @@ export async function sendInvitationEmail(params: InvitationEmailParams): Promis
       </p>
     </div>
     <div class="footer">
-      <p>Desert Technology Consultant | Namibia</p>
+      <p>${storeName} | Namibia</p>
       <p>If you didn't expect this invitation, you can safely ignore this email.</p>
     </div>
   </div>
@@ -428,7 +432,7 @@ export async function sendInvitationEmail(params: InvitationEmailParams): Promis
   const text = `
 Hello ${name},
 
-You've been invited by ${inviterName} to join the Desert Technology Consultant team as a ${roleDisplay}.
+You've been invited by ${inviterName} to join the ${storeName} team as a ${roleDisplay}.
 
 ${note ? `Note: ${note}\n` : ""}
 Your Role: ${roleDisplay}
@@ -437,15 +441,15 @@ Email: ${to}
 Click the link below to set up your account:
 ${invitationUrl}
 
-This invitation expires in 48 hours and can only be used once.
+This invitation expires in 7 days and can only be used once.
 
-Desert Technology Consultant | Namibia
+${storeName} | Namibia
 If you didn't expect this invitation, you can safely ignore this email.
   `.trim();
 
   await sendEmail({
     to,
-    subject: "You're Invited to Join Desert Technology",
+    subject: `You're Invited to Join ${storeName}`,
     html,
     text,
   });
@@ -456,10 +460,11 @@ If you didn't expect this invitation, you can safely ignore this email.
 interface PasswordResetEmailParams {
   to: string;
   token: string;
+  storeName?: string;
 }
 
 export async function sendPasswordResetEmail(params: PasswordResetEmailParams): Promise<void> {
-  const { to, token } = params;
+  const { to, token, storeName = "Desert Technology Consultant" } = params;
 
   const resetUrl = `${appUrl}/admin/reset-password?token=${token}`;
 
@@ -469,7 +474,7 @@ export async function sendPasswordResetEmail(params: PasswordResetEmailParams): 
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reset Your Password</title>
+  <title>Reset Your ${storeName} Password</title>
   <style>
     body { font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; color: #111; background: #f7f7f7; margin: 0; padding: 0; }
     .container { max-width: 600px; margin: 0 auto; background: #fff; }
@@ -486,11 +491,11 @@ export async function sendPasswordResetEmail(params: PasswordResetEmailParams): 
 <body>
   <div class="container">
     <div class="header">
-      <h1>Desert Technology Consultant</h1>
+      <h1>${storeName}</h1>
     </div>
     <div class="content">
       <h2>Reset Your Password</h2>
-      <p>We received a request to reset the password for your Desert Technology account (${to}).</p>
+      <p>We received a request to reset the password for your ${storeName} account (${to}).</p>
 
       <p>Click the button below to reset your password:</p>
 
@@ -508,7 +513,7 @@ export async function sendPasswordResetEmail(params: PasswordResetEmailParams): 
       </p>
     </div>
     <div class="footer">
-      <p>Desert Technology Consultant | Namibia</p>
+      <p>${storeName} | Namibia</p>
     </div>
   </div>
 </body>
@@ -518,7 +523,7 @@ export async function sendPasswordResetEmail(params: PasswordResetEmailParams): 
   const text = `
 Reset Your Password
 
-We received a request to reset the password for your Desert Technology account (${to}).
+We received a request to reset the password for your ${storeName} account (${to}).
 
 Click the link below to reset your password:
 ${resetUrl}
@@ -527,12 +532,12 @@ This link expires in 1 hour and can only be used once.
 
 If you didn't request this password reset, you can safely ignore this email. Your password will remain unchanged.
 
-Desert Technology Consultant | Namibia
+${storeName} | Namibia
   `.trim();
 
   await sendEmail({
     to,
-    subject: "Reset Your Desert Technology Password",
+    subject: `Reset Your ${storeName} Password`,
     html,
     text,
   });
@@ -543,17 +548,18 @@ Desert Technology Consultant | Namibia
 interface PasswordChangedEmailParams {
   to: string;
   name: string;
+  storeName?: string;
 }
 
 export async function sendPasswordChangedEmail(params: PasswordChangedEmailParams): Promise<void> {
-  const { to, name } = params;
+  const { to, name, storeName = "Desert Technology Consultant" } = params;
 
   const html = `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Your Password Has Been Changed</title>
+  <title>Your ${storeName} Password Has Been Changed</title>
   <style>
     body { font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; color: #111; background: #f7f7f7; margin: 0; padding: 0; }
     .container { max-width: 600px; margin: 0 auto; background: #fff; }
@@ -567,11 +573,11 @@ export async function sendPasswordChangedEmail(params: PasswordChangedEmailParam
 <body>
   <div class="container">
     <div class="header">
-      <h1>Desert Technology Consultant</h1>
+      <h1>${storeName}</h1>
     </div>
     <div class="content">
       <h2>Hello ${name},</h2>
-      <p>Your Desert Technology account password has been successfully changed.</p>
+      <p>Your ${storeName} account password has been successfully changed.</p>
 
       <div class="alert">
         <strong>Security Notice:</strong> If you didn't make this change, please contact your administrator immediately.
@@ -580,7 +586,7 @@ export async function sendPasswordChangedEmail(params: PasswordChangedEmailParam
       <p>If you made this change, no further action is required.</p>
     </div>
     <div class="footer">
-      <p>Desert Technology Consultant | Namibia</p>
+      <p>${storeName} | Namibia</p>
     </div>
   </div>
 </body>
@@ -590,18 +596,18 @@ export async function sendPasswordChangedEmail(params: PasswordChangedEmailParam
   const text = `
 Hello ${name},
 
-Your Desert Technology account password has been successfully changed.
+Your ${storeName} account password has been successfully changed.
 
 SECURITY NOTICE: If you didn't make this change, please contact your administrator immediately.
 
 If you made this change, no further action is required.
 
-Desert Technology Consultant | Namibia
+${storeName} | Namibia
   `.trim();
 
   await sendEmail({
     to,
-    subject: "Your Password Has Been Changed",
+    subject: `Your ${storeName} Password Has Been Changed`,
     html,
     text,
   });
@@ -614,15 +620,16 @@ interface AccountStatusEmailParams {
   name: string;
   status: "suspended" | "reactivated";
   reason?: string;
+  storeName?: string;
 }
 
 export async function sendAccountStatusEmail(params: AccountStatusEmailParams): Promise<void> {
-  const { to, name, status, reason } = params;
+  const { to, name, status, reason, storeName = "Desert Technology Consultant" } = params;
 
   const isSuspended = status === "suspended";
   const subject = isSuspended
-    ? "Your Desert Technology Account Has Been Suspended"
-    : "Your Desert Technology Account Has Been Reactivated";
+    ? `Your ${storeName} Account Has Been Suspended`
+    : `Your ${storeName} Account Has Been Reactivated`;
 
   const html = `
 <!DOCTYPE html>
@@ -644,11 +651,11 @@ export async function sendAccountStatusEmail(params: AccountStatusEmailParams): 
 <body>
   <div class="container">
     <div class="header">
-      <h1>Desert Technology Consultant</h1>
+      <h1>${storeName}</h1>
     </div>
     <div class="content">
       <h2>Hello ${name},</h2>
-      <p>Your Desert Technology account has been <strong>${isSuspended ? "suspended" : "reactivated"}</strong>.</p>
+      <p>Your ${storeName} account has been <strong>${isSuspended ? "suspended" : "reactivated"}</strong>.</p>
 
       ${reason ? `
       <div class="reason">
@@ -662,7 +669,7 @@ export async function sendAccountStatusEmail(params: AccountStatusEmailParams): 
       }
     </div>
     <div class="footer">
-      <p>Desert Technology Consultant | Namibia</p>
+      <p>${storeName} | Namibia</p>
     </div>
   </div>
 </body>
@@ -672,7 +679,7 @@ export async function sendAccountStatusEmail(params: AccountStatusEmailParams): 
   const text = `
 Hello ${name},
 
-Your Desert Technology account has been ${isSuspended ? "suspended" : "reactivated"}.
+Your ${storeName} account has been ${isSuspended ? "suspended" : "reactivated"}.
 
 ${reason ? `Reason: ${reason}\n` : ""}
 ${isSuspended
@@ -680,7 +687,7 @@ ${isSuspended
   : "Your account access has been restored. You can now sign in to the dashboard."
 }
 
-Desert Technology Consultant | Namibia
+${storeName} | Namibia
   `.trim();
 
   await sendEmail({
