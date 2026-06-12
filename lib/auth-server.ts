@@ -237,6 +237,33 @@ export function generateInvitationToken(): string {
 }
 
 /**
+ * Generate a short alphanumeric invite code (6 chars) for branded invite links.
+ * Uses a clean character set that avoids confusing characters (I, O, 0, 1).
+ */
+export function generateShortCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < 6; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return code;
+}
+
+/**
+ * Ensure a short code is unique in the database.
+ */
+export async function ensureUniqueShortCode(): Promise<string> {
+  if (!db) return "DEV" + Math.random().toString(36).slice(2, 6).toUpperCase();
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const code = generateShortCode();
+    const existing = await db.invitation.findUnique({ where: { shortCode: code } });
+    if (!existing) return code;
+  }
+  // Fallback: extremely unlikely to reach here
+  return generateShortCode() + Math.random().toString(36).slice(2, 4).toUpperCase();
+}
+
+/**
  * Hash a token for secure storage.
  */
 export async function hashToken(token: string): Promise<string> {
@@ -268,12 +295,15 @@ export async function createInvitation(params: {
     permissions,
     invitedById,
     note,
-    expiresInHours = 48,
+    expiresInHours = 168, // 7 days
   } = params;
 
   // Generate token and hash
   const token = generateInvitationToken();
   const tokenHash = await hashToken(token);
+
+  // Generate short code
+  const shortCode = await ensureUniqueShortCode();
 
   // Calculate expiry
   const expiresAt = new Date();
@@ -287,6 +317,7 @@ export async function createInvitation(params: {
       role,
       permissions: permissions as unknown as any,
       tokenHash,
+      shortCode,
       status: InvitationStatus.PENDING,
       expiresAt,
       invitedById,
@@ -300,10 +331,10 @@ export async function createInvitation(params: {
     targetType: "invitation",
     targetId: invitation.id,
     targetLabel: email,
-    metadata: { role, expiresAt },
+    metadata: { role, expiresAt, shortCode },
   });
 
-  return { invitation, token };
+  return { invitation, token, shortCode };
 }
 
 /**
@@ -340,6 +371,36 @@ export async function validateInvitationToken(token: string) {
 }
 
 /**
+ * Find an invitation by its short code.
+ */
+export async function findInvitationByShortCode(shortCode: string) {
+  if (!db) return null;
+
+  const invitation = await db.invitation.findUnique({
+    where: { shortCode: shortCode.toUpperCase() },
+    include: { invitedBy: { select: { name: true, email: true } } },
+  });
+
+  if (!invitation) return null;
+
+  // Check if expired
+  if (invitation.expiresAt < new Date()) {
+    await db.invitation.update({
+      where: { id: invitation.id },
+      data: { status: InvitationStatus.EXPIRED },
+    });
+    return null;
+  }
+
+  // Check if already accepted or revoked
+  if (invitation.status !== InvitationStatus.PENDING) {
+    return null;
+  }
+
+  return invitation;
+}
+
+/**
  * Accept an invitation and create the user account.
  */
 export async function acceptInvitation(params: {
@@ -356,6 +417,39 @@ export async function acceptInvitation(params: {
   if (!invitation) {
     throw new Error("Invalid or expired invitation");
   }
+
+  return await acceptInvitationInternal(invitation, name, password);
+}
+
+/**
+ * Accept an invitation by short code and create the user account.
+ */
+export async function acceptInvitationByCode(params: {
+  code: string;
+  name: string;
+  password: string;
+}) {
+  if (!db) throw new Error("Database not available");
+
+  const { code, name, password } = params;
+
+  const invitation = await findInvitationByShortCode(code.toUpperCase());
+  if (!invitation) {
+    throw new Error("Invalid or expired invitation");
+  }
+
+  return await acceptInvitationInternal(invitation, name, password);
+}
+
+/**
+ * Internal: create user account from a validated invitation.
+ */
+async function acceptInvitationInternal(
+  invitation: any,
+  name: string,
+  password: string,
+) {
+  if (!db) throw new Error("Database not available");
 
   // Check if user already exists
   const existingUser = await db.user.findUnique({
@@ -381,7 +475,7 @@ export async function acceptInvitation(params: {
           ? undefined
           : invitation.permissions as Prisma.InputJsonValue,
         invitedById: invitation.invitedById,
-        emailVerified: true, // The invitation token proves control of the invited email.
+        emailVerified: true,
       },
     });
 

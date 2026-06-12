@@ -78,9 +78,12 @@ export async function POST(
       // updatedAt is auto-updated by Prisma's @updatedAt
     });
 
-    // Normalize app URL (strip trailing slash to prevent double-slash in URLs)
+    // Use short code for accept URL
+    const shortCode = invitation.shortCode;
     const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/+$/, "");
-    const acceptUrl = `${appUrl}/admin/invite/accept?token=${token}`;
+    const acceptUrl = shortCode
+      ? `${appUrl}/invite/${shortCode}`
+      : `${appUrl}/admin/invite/accept?token=${token}`;
 
     // If WhatsApp-only, skip email and just return the accept URL
     if (whatsappOnly) {

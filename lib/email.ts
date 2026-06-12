@@ -348,15 +348,21 @@ interface InvitationEmailParams {
   to: string;
   name: string;
   inviterName: string;
-  token: string;
+  code?: string | null;
+  token?: string;
   role: string;
   note?: string;
 }
 
 export async function sendInvitationEmail(params: InvitationEmailParams): Promise<void> {
-  const { to, name, inviterName, token, role, note } = params;
+  const { to, name, inviterName, code, token, role, note } = params;
 
-  const invitationUrl = `${appUrl}/admin/invite/accept?token=${token}`;
+  // Use short branded link when available, fall back to long token URL
+  const invitationUrl = code
+    ? `${getAppUrl()}/invite/${code}`
+    : token
+    ? `${getAppUrl()}/admin/invite/accept?token=${token}`
+    : `${getAppUrl()}/admin/login`;
   const roleDisplay = role.charAt(0) + role.slice(1).toLowerCase();
 
   const html = `

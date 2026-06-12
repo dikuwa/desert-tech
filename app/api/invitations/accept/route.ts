@@ -1,17 +1,21 @@
 /**
  * POST /api/invitations/accept
  * Accept an invitation and create user account.
+ * Supports both full token and short code acceptance.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { acceptInvitation } from "@/lib/auth-server";
+import { acceptInvitation, acceptInvitationByCode } from "@/lib/auth-server";
 import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
 
 const acceptInvitationSchema = z.object({
-  token: z.string().min(10, "Invalid token"),
+  token: z.string().optional(),
+  code: z.string().optional(),
   name: z.string().min(2, "Name must be at least 2 characters"),
   password: z.string().min(10, "Password must be at least 10 characters"),
+}).refine((data) => data.token || data.code, {
+  message: "Either token or code is required",
 });
 
 export async function POST(req: NextRequest) {
@@ -37,14 +41,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { token, name, password } = result.data;
+    const { token, code, name, password } = result.data;
 
-    // Accept invitation
-    const { user } = await acceptInvitation({
-      token,
-      name,
-      password,
-    });
+    // Accept via short code or full token
+    const { user } = code
+      ? await acceptInvitationByCode({ code, name, password })
+      : await acceptInvitation({ token: token!, name, password });
 
     return NextResponse.json({
       success: true,

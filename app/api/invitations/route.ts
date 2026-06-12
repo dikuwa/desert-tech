@@ -186,7 +186,8 @@ export async function POST(req: NextRequest) {
       note,
     });
 
-    const acceptUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/admin/invite/accept?token=${token}`;
+    const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/+$/, "");
+    const acceptUrl = `${appUrl}/invite/${invitation.shortCode}`;
 
     // Send invitation via email (only if an actual email was provided)
     let emailSent = false;
@@ -198,7 +199,7 @@ export async function POST(req: NextRequest) {
           to: email,
           name,
           inviterName: currentUser.name,
-          token,
+          code: invitation.shortCode,
           role,
           note,
         });

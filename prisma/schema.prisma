@@ -117,6 +117,7 @@ model Invitation {
   role        UserRole
   permissions Json?            // Array of permission strings
   tokenHash   String           @unique
+  shortCode   String?          @unique
   status      InvitationStatus @default(PENDING)
   expiresAt   DateTime
   invitedById String
@@ -130,6 +131,7 @@ model Invitation {
 
   @@index([email])
   @@index([tokenHash])
+  @@index([shortCode])
   @@index([status])
   @@index([expiresAt])
 }

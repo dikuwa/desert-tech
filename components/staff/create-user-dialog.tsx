@@ -479,7 +479,7 @@ export function CreateUserDialog({
                   Share the invite link with {name} via your own WhatsApp:
                 </p>
                 <a
-                  href={buildWhatsAppUrl(invitePhone, `You've been invited to join Desert Technology!\n\nClick here to accept:\n${inviteLink}`)}
+                  href={buildWhatsAppUrl(invitePhone, `Hi ${name}, you've been invited to join the DesertTech dashboard as ${role}. Accept your secure invite here: ${inviteLink}`)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-md active:translate-y-0"

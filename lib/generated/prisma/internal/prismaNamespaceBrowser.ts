@@ -185,6 +185,7 @@ export const InvitationScalarFieldEnum = {
   role: 'role',
   permissions: 'permissions',
   tokenHash: 'tokenHash',
+  shortCode: 'shortCode',
   status: 'status',
   expiresAt: 'expiresAt',
   invitedById: 'invitedById',

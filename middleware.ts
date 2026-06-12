@@ -23,6 +23,7 @@ const publicPaths = [
   "/admin/forgot-password",
   "/admin/reset-password",
   "/admin/invite/accept",
+  "/invite",
   "/auth/sign-in",
   "/auth/sign-up",
 ];
@@ -63,6 +64,7 @@ export default async function middleware(req: NextRequest) {
   // Allow invitation API routes (needed for acceptance)
   if (pathname.startsWith("/api/invitations/validate")) return NextResponse.next();
   if (pathname.startsWith("/api/invitations/accept")) return NextResponse.next();
+  if (pathname.startsWith("/api/invitations/")) return NextResponse.next();
 
   // Allow public document share routes
   if (pathname.startsWith("/api/documents/share/")) return NextResponse.next();

@@ -340,6 +340,14 @@ export function StaffList({ staff, pendingInvitations = [], currentUserRole, onU
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [resendingId, setResendingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [editInvitation, setEditInvitation] = useState<PendingInvitation | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [invEditRole, setInvEditRole] = useState<string>("");
+  const [invEditSaving, setInvEditSaving] = useState(false);
+  const [invEditError, setInvEditError] = useState<string | null>(null);
   const [whatsappShare, setWhatsappShare] = useState<{
     invitation: PendingInvitation;
     step: "phone" | "ready";
@@ -348,9 +356,7 @@ export function StaffList({ staff, pendingInvitations = [], currentUserRole, onU
     acceptUrl: string;
     loading: boolean;
     error: string | null;
-  } | null>(null);
-
-  // ============== WHATSAPP SHARE HANDLER ==============
+  } | null>(null);      // ============== WHATSAPP SHARE HANDLER ==============
 
   const handleWhatsAppShare = (invitation: PendingInvitation) => {
     setWhatsappShare({
@@ -401,6 +407,86 @@ export function StaffList({ staff, pendingInvitations = [], currentUserRole, onU
         loading: false,
         error: err instanceof Error ? err.message : "Failed to create invite link",
       });
+    }
+  };
+
+  // ============== COPY INVITE LINK HANDLER ==============
+
+  const handleCopyInviteLink = async (inv: PendingInvitation) => {
+    try {
+      const res = await fetch(`/api/invitations/${inv.id}/resend`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ whatsappOnly: true }),
+      });
+      const data = await res.json();
+      if (data.acceptUrl) {
+        await navigator.clipboard.writeText(data.acceptUrl);
+        setCopiedId(inv.id);
+        toast.success("Invite link copied");
+        setTimeout(() => setCopiedId(null), 2000);
+      } else {
+        toast.error("Failed to generate invite link");
+      }
+    } catch {
+      toast.error("Failed to generate invite link");
+    }
+  };
+
+  // ============== DELETE / REVOKE INVITATION HANDLER ==============
+
+  const handleRevokeInvitation = async (invId: string) => {
+    setDeletingId(invId);
+    try {
+      const res = await fetch(`/api/invitations/${invId}/revoke`, { method: "POST" });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to revoke invitation");
+      }
+      toast.success("Invitation revoked");
+      onUpdate();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to revoke invitation");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  // ============== EDIT INVITATION HANDLER ==============
+
+  const openEditInvitation = (inv: PendingInvitation) => {
+    setEditInvitation(inv);
+    setEditName(inv.name);
+    setEditEmail(inv.email);
+    setInvEditRole(inv.role);
+    setInvEditError(null);
+  };
+
+  const handleSaveEditInvitation = async () => {
+    if (!editInvitation) return;
+    setInvEditSaving(true);
+    setInvEditError(null);
+    try {
+      const res = await fetch(`/api/invitations/${editInvitation.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: editName.trim(),
+          email: editEmail.trim().toLowerCase(),
+          role: invEditRole,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to update invitation");
+      }
+      toast.success("Invitation updated");
+      setEditInvitation(null);
+      onUpdate();
+    } catch (err) {
+      setInvEditError(err instanceof Error ? err.message : "Failed to update invitation");
+    } finally {
+      setInvEditSaving(false);
     }
   };
 
@@ -892,62 +978,74 @@ export function StaffList({ staff, pendingInvitations = [], currentUserRole, onU
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 text-xs gap-1.5"
-                    onClick={() => handleWhatsAppShare(inv)}
-                  >
-                    <MessageCircle className="h-3.5 w-3.5" />
-                    WhatsApp
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 text-xs gap-1.5"
-                    disabled={resendingId === inv.id}
-                    onClick={async () => {
-                      setResendingId(inv.id);
-                      try {
-                        const res = await fetch(`/api/invitations/${inv.id}/resend`, { method: "POST" });
-
-                        // Try to read the API response body for error and message
-                        let apiError: string | null = null;
-                        let apiMessage: string | null = null;
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem onClick={() => handleWhatsAppShare(inv)}>
+                      <MessageCircle className="mr-2 h-4 w-4" />
+                      WhatsApp
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={resendingId === inv.id}
+                      onClick={async () => {
+                        setResendingId(inv.id);
                         try {
-                          const body = await res.json();
-                          if (body?.error) apiError = body.error;
-                          if (body?.message) apiMessage = body.message;
-                        } catch {}
-
-                        if (!res.ok) {
-                          if (res.status === 429) {
-                            toast.error("Please wait before resending this invitation.");
-                          } else {
+                          const res = await fetch(`/api/invitations/${inv.id}/resend`, { method: "POST" });
+                          let apiError: string | null = null;
+                          let apiMessage: string | null = null;
+                          try {
+                            const body = await res.json();
+                            if (body?.error) apiError = body.error;
+                            if (body?.message) apiMessage = body.message;
+                          } catch {}
+                          if (!res.ok) {
                             toast.error(apiError || "The invitation email could not be sent. Please try again.");
+                            return;
                           }
-                          return;
+                          toast.success(apiMessage || "Invitation email resent successfully.");
+                          onUpdate();
+                        } catch {
+                          toast.error("The invitation email could not be sent. Please try again.");
+                        } finally {
+                          setResendingId(null);
                         }
-
-                        // Use the API response message (distinguishes dev fallback from production)
-                        toast.success(apiMessage || "Invitation email resent successfully.");
-                        onUpdate();
-                      } catch (err) {
-                        toast.error("The invitation email could not be sent. Please try again.");
-                      } finally {
-                        setResendingId(null);
-                      }
-                    }}
-                  >
-                    {resendingId === inv.id ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Send className="h-3.5 w-3.5" />
-                    )}
-                    {resendingId === inv.id ? "Sending…" : "Resend Email"}
-                  </Button>
-                </div>
+                      }}
+                    >
+                      <Send className="mr-2 h-4 w-4" />
+                      Resend Email
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => handleCopyInviteLink(inv)}>
+                      {copiedId === inv.id ? (
+                        <Check className="mr-2 h-4 w-4 text-success" />
+                      ) : (
+                        <Send className="mr-2 h-4 w-4" />
+                      )}
+                      {copiedId === inv.id ? "Copied!" : "Copy Link"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => openEditInvitation(inv)}>
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => handleRevokeInvitation(inv.id)}
+                      className="text-destructive"
+                      disabled={deletingId === inv.id}
+                    >
+                      {deletingId === inv.id ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="mr-2 h-4 w-4" />
+                      )}
+                      {deletingId === inv.id ? "Revoking..." : "Revoke"}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           ))}
@@ -1222,7 +1320,7 @@ export function StaffList({ staff, pendingInvitations = [], currentUserRole, onU
                 Invite link ready! Share it with {whatsappShare.invitation.name}:
               </p>
               <a
-                href={buildWhatsAppUrl(whatsappShare.phoneClean, `You've been invited to join Desert Technology!\n\nClick here to accept:\n${whatsappShare.acceptUrl}`)}
+                href={buildWhatsAppUrl(whatsappShare.phoneClean, `Hi ${whatsappShare.invitation.name}, you've been invited to join the DesertTech dashboard as ${whatsappShare.invitation.role}. Accept your secure invite here: ${whatsappShare.acceptUrl}`)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-md active:translate-y-0"
@@ -1252,6 +1350,79 @@ export function StaffList({ staff, pendingInvitations = [], currentUserRole, onU
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ============== EDIT INVITATION DIALOG ============== */}
+      <Dialog
+        open={editInvitation !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditInvitation(null);
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Invitation</DialogTitle>
+            <DialogDescription>
+              Update invitation details for {editInvitation?.name}
+            </DialogDescription>
+          </DialogHeader>
+
+          {editError && (
+            <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+              {editError}
+            </div>
+          )}
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Full Name</Label>
+              <Input
+                id="edit-name"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-email">Email Address</Label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={editEmail}
+                onChange={(e) => setEditEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <Select
+                value={invEditRole}
+                onValueChange={(r) => setInvEditRole(r)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={UserRole.STAFF}>Staff</SelectItem>
+                  <SelectItem value={UserRole.ADMIN}>Admin</SelectItem>
+                  {currentUserRole === UserRole.OWNER && (
+                    <SelectItem value={UserRole.OWNER}>Owner</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2 pt-2 border-t border-border">
+              <Button variant="outline" onClick={() => setEditInvitation(null)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveEditInvitation} disabled={invEditSaving}>
+                {invEditSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Save className="mr-2 h-4 w-4" />
+                Save
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </>
