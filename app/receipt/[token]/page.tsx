@@ -6,13 +6,11 @@ import { getStatusBadgeClass } from "@/lib/dashboard-data";
 import { getAppUrl, getDocumentShareUrl } from "@/lib/app-url";
 import { generateDocumentToken } from "@/lib/document-tokens";
 import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
+import { getStoreSettings } from "@/lib/store-settings";
 
 interface PublicReceiptPageProps {
   params: Promise<{ token: string }>;
 }
-
-const WHATSAPP = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
-const PHONE = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
 
 async function fetchDocument(token: string) {
   const baseUrl = getAppUrl();
@@ -50,6 +48,8 @@ export default async function PublicReceiptPage({ params }: PublicReceiptPagePro
   if (!result?.success) {
     notFound();
   }
+
+  const [storeSettings] = await Promise.all([getStoreSettings()]);
 
   const { data } = result;
   const items = data.items || [];
@@ -113,9 +113,9 @@ export default async function PublicReceiptPage({ params }: PublicReceiptPagePro
           {/* Header */}
           <div className="px-6 py-5 border-b border-border flex items-start justify-between">
             <div>
-              <h1 className="text-lg font-bold text-foreground">Desert Technology Consultant</h1>
-              <p className="text-xs text-muted-foreground mt-0.5">Windhoek, Namibia</p>
-              <p className="text-xs text-muted-foreground">{PHONE}</p>
+              <h1 className="text-lg font-bold text-foreground">{storeSettings.storeName}</h1>
+              <p className="text-xs text-muted-foreground mt-0.5">{storeSettings.address}</p>
+              <p className="text-xs text-muted-foreground">{storeSettings.phone}</p>
             </div>
             <div className="text-right">
               <p className="text-sm font-bold text-foreground font-mono">{receiptNumber}</p>
@@ -253,7 +253,7 @@ export default async function PublicReceiptPage({ params }: PublicReceiptPagePro
           </a>
           <div className="grid grid-cols-2 gap-3">
             <a
-              href={buildWhatsAppUrl(WHATSAPP, `Hi DesertTech, I'm enquiring about my order ${data.orderNumber}.`)}
+              href={buildWhatsAppUrl(storeSettings.whatsapp, `Hi DesertTech, I'm enquiring about my order ${data.orderNumber}.`)}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 rounded-xl border border-whatsapp/20 bg-whatsapp-soft px-4 py-3 text-sm font-semibold text-whatsapp hover:bg-whatsapp hover:text-white transition-all"
@@ -262,7 +262,7 @@ export default async function PublicReceiptPage({ params }: PublicReceiptPagePro
               WhatsApp
             </a>
             <a
-              href={`tel:${PHONE}`}
+              href={`tel:${storeSettings.phone}`}
               className="flex items-center justify-center gap-2 rounded-xl border border-border px-4 py-3 text-sm font-semibold text-foreground hover:bg-muted transition-all"
             >
               <Phone className="h-4 w-4" />
@@ -273,7 +273,7 @@ export default async function PublicReceiptPage({ params }: PublicReceiptPagePro
 
         {/* Footer */}
         <p className="mt-8 text-center text-[10px] text-muted-foreground">
-          Desert Technology Consultant &mdash; Windhoek, Namibia
+          {storeSettings.storeName} &mdash; {storeSettings.address}
         </p>
       </div>
     </div>

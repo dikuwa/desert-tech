@@ -1,9 +1,12 @@
+"use client";
+
 import { MessageCircle, Phone } from "lucide-react";
 import { getWhatsAppUrl } from "@/lib/whatsapp-url";
-
-const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
+import { useDashboardStore } from "@/lib/store/dashboard";
 
 export function WhatsAppCTA() {
+  const settings = useDashboardStore((s) => s.settings);
+  const phone = settings.phone || "+264852775140";
   return (
     <section className="bg-background py-14">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -33,7 +36,7 @@ export function WhatsAppCTA() {
                 Chat on WhatsApp
               </a>
               <a
-                href={`tel:${PHONE_NUMBER}`}
+                href={`tel:${phone}`}
                 className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-5 py-2.5 text-sm font-semibold text-foreground transition-all hover:bg-muted active:translate-y-0"
               >
                 <Phone className="h-4 w-4" />

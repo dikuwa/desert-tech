@@ -1,9 +1,14 @@
 "use client";
 
+"use client";
+
 import { MessageCircle, Phone } from "lucide-react";
 import { getWhatsAppUrl } from "@/lib/whatsapp-url";
+import { useDashboardStore } from "@/lib/store/dashboard";
 
 export function MobileStickyCTA() {
+  const settings = useDashboardStore((s) => s.settings);
+  const phone = settings.phone || "+264852775140";
   return (
     <div className="fixed bottom-0 left-0 right-0 z-[70] border-t border-border bg-background lg:hidden">
       <div className="flex items-center gap-2 px-4 py-2">
@@ -17,7 +22,7 @@ export function MobileStickyCTA() {
           WhatsApp Us
         </a>
         <a
-          href={`tel:${process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140"}`}
+          href={`tel:${phone}`}
           className="flex flex-1 items-center justify-center gap-2 rounded-md border border-border px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
         >
           <Phone className="h-5 w-5" />

@@ -9,6 +9,7 @@ interface PublicQuotationPageProps {
 }
 
 import { getAppUrl } from "@/lib/app-url";
+import { getStoreSettings } from "@/lib/store-settings";
 
 async function fetchDocument(token: string) {
   const baseUrl = getAppUrl();
@@ -22,11 +23,6 @@ async function fetchDocument(token: string) {
     return null;
   }
 }
-
-const STORE_NAME = "Desert Technology Consultant";
-const STORE_PHONE = process.env.NEXT_PUBLIC_STORE_PHONE || "+264 85 277 5140";
-const STORE_EMAIL = process.env.NEXT_PUBLIC_STORE_EMAIL || "sales@desertechnam.com";
-const STORE_ADDRESS = "Windhoek, Namibia";
 
 function getStatusBadgeClass(status: string): string {
   const map: Record<string, string> = {
@@ -45,6 +41,8 @@ export default async function PublicQuotationPage({ params }: PublicQuotationPag
   if (!result?.success || result.type !== "quotation") {
     notFound();
   }
+
+  const storeSettings = await getStoreSettings();
 
   const { data } = result;
   const items = data.items || [];
@@ -77,9 +75,9 @@ export default async function PublicQuotationPage({ params }: PublicQuotationPag
           {/* Header */}
           <div className="px-6 py-5 border-b border-border flex items-start justify-between">
             <div>
-              <h1 className="text-lg font-bold text-foreground">{STORE_NAME}</h1>
-              <p className="text-xs text-muted-foreground mt-0.5">{STORE_ADDRESS}</p>
-              <p className="text-xs text-muted-foreground">{STORE_PHONE}</p>
+              <h1 className="text-lg font-bold text-foreground">{storeSettings.storeName}</h1>
+              <p className="text-xs text-muted-foreground mt-0.5">{storeSettings.address}</p>
+              <p className="text-xs text-muted-foreground">{storeSettings.phone}</p>
             </div>
             <div className="text-right">
               <p className="text-sm font-bold text-foreground font-mono">{data.quotationNumber}</p>
@@ -159,8 +157,8 @@ export default async function PublicQuotationPage({ params }: PublicQuotationPag
           <div className="px-6 py-4 bg-muted/30">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Contact Us</p>
             <div className="flex flex-wrap gap-4 text-xs">
-              <a href={`tel:${STORE_PHONE}`} className="text-primary hover:underline">{STORE_PHONE}</a>
-              <a href={`mailto:${STORE_EMAIL}`} className="text-primary hover:underline">{STORE_EMAIL}</a>
+              <a href={`tel:${storeSettings.phone}`} className="text-primary hover:underline">{storeSettings.phone}</a>
+              <a href={`mailto:${storeSettings.email}`} className="text-primary hover:underline">{storeSettings.email}</a>
             </div>
           </div>
         </div>
@@ -184,7 +182,7 @@ export default async function PublicQuotationPage({ params }: PublicQuotationPag
 
         {/* Footer */}
         <p className="mt-8 text-center text-[10px] text-muted-foreground">
-          {STORE_NAME} &mdash; {STORE_ADDRESS}
+          {storeSettings.storeName} &mdash; {storeSettings.address}
         </p>
       </div>
     </div>

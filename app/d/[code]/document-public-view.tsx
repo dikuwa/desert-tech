@@ -4,8 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import type { DocumentType } from "@/lib/document-tokens";
 import { buildWhatsAppUrl, formatWhatsAppPhone } from "@/lib/whatsapp-url";
-
-const BUSINESS_WHATSAPP = "264852775140";
+import { useDashboardStore } from "@/lib/store/dashboard";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -74,6 +73,9 @@ export function DocumentPublicView({
   const isPaidInFull =
     paymentStatus === "PaidInFull" ||
     (totalPaidCents != null && balanceDueCents != null && totalPaidCents >= total);
+
+  const storeSettings = useDashboardStore((s) => s.settings);
+  const BUSINESS_WHATSAPP = storeSettings.whatsapp || "264852775140";
 
   const [pdfLoading, setPdfLoading] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -322,9 +324,9 @@ export function DocumentPublicView({
 
         {/* Footer branding */}
         <div className="text-center text-[10px] text-muted-foreground">
-          <p>Desert Technology Consultant &mdash; Windhoek, Namibia</p>
+          <p>{storeSettings.storeName} &mdash; {storeSettings.address}</p>
           <p className="mt-0.5">
-            +264 85 277 5140 &mdash; sales@desertechnam.com
+            {storeSettings.phone} &mdash; {storeSettings.email}
           </p>
         </div>
       </div>

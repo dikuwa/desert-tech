@@ -7,9 +7,11 @@ import { renderToStream } from "@react-pdf/renderer";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { ReceiptPDF, type ReceiptPDFProps } from "@/components/receipts/receipt-pdf";
+import { QuotationPDF, type QuotationPDFProps } from "@/components/receipts/quotation-pdf";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { getOrderByNumber } from "@/lib/order-store";
 import { computePaymentFields } from "@/lib/dashboard-data";
+import { getStoreSettings } from "@/lib/store-settings";
 import { generateDocumentToken, getPublicDocumentUrl, type DocumentType } from "./document-tokens";
 
 // Load PDF logo once
@@ -133,6 +135,8 @@ export async function generateReceiptDocument(orderId: string): Promise<Document
     day: "numeric",
   });
 
+  // Fetch store settings for PDF branding
+  const storeSettings = await getStoreSettings();
   const receiptProps: ReceiptPDFProps = {
     receiptNumber,
     orderNumber: order.orderNumber,
@@ -147,6 +151,9 @@ export async function generateReceiptDocument(orderId: string): Promise<Document
     fulfillmentMethod: order.fulfillmentMethod,
     courierFeeCents: order.courierFeeCents,
     shipping: order.shipping,
+    storeLocation: storeSettings.address,
+    storePhone: storeSettings.phone,
+    storeName: storeSettings.storeName,
   };
 
   // Generate PDF
@@ -198,13 +205,46 @@ export async function generateQuotationDocument(quotationId: string): Promise<Do
   
   if (!quotation) return null;
 
-  // For now, return placeholder - quotation PDF generation can be added later
-  // This maintains the same interface as receipts
+  const storeSettings = await getStoreSettings();
+  const date = new Date(quotation.createdAt).toLocaleDateString("en-US", {
+    year: "numeric", month: "long", day: "numeric",
+  });
+
+  const quotationProps: QuotationPDFProps = {
+    quotationNumber: quotation.quotationNumber,
+    date,
+    customerName: quotation.customerName,
+    customerPhone: quotation.customerPhone,
+    items: quotation.items.map((item) => ({
+      name: item.name,
+      quantity: item.quantity,
+      unitPrice: item.unitPriceCents,
+      total: item.unitPriceCents * item.quantity,
+      sku: item.sku,
+    })),
+    subtotal: quotation.subtotalCents,
+    notes: quotation.notes,
+    status: quotation.status,
+    storeName: storeSettings.storeName,
+    storeLocation: storeSettings.address,
+    storePhone: storeSettings.phone,
+    storeEmail: storeSettings.email,
+  };
+
+  let pdfBuffer: Buffer;
+  try {
+    const stream = await renderToStream(<QuotationPDF {...quotationProps} logoSrc={PDF_LOGO} />);
+    pdfBuffer = await streamToBuffer(stream);
+  } catch {
+    const stream = await renderToStream(<QuotationPDF {...quotationProps} logoSrc={null} />);
+    pdfBuffer = await streamToBuffer(stream);
+  }
+
   const token = generateDocumentToken("quotation", quotation.id, quotation.quotationNumber);
   const publicUrl = getPublicDocumentUrl(token, "quotation");
 
   return {
-    buffer: Buffer.from([]), // Placeholder - actual PDF generation needed
+    buffer: pdfBuffer,
     filename: `${quotation.quotationNumber}.pdf`,
     contentType: "application/pdf",
     documentNumber: quotation.quotationNumber,

@@ -20,6 +20,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import { sendEmailWithAttachment } from "@/lib/email";
+import { getStoreSettings } from "@/lib/store-settings";
 import { ReceiptPDF, type ReceiptPDFProps } from "@/components/receipts/receipt-pdf";
 import { QuotationPDF, type QuotationPDFProps } from "@/components/receipts/quotation-pdf";
 
@@ -104,6 +105,8 @@ async function generateQuotationPdfBuffer(quotationSnapshot: z.infer<typeof requ
     year: "numeric", month: "long", day: "numeric",
   });
 
+  const storeSettings = await getStoreSettings();
+
   const quotationProps: QuotationPDFProps = {
     quotationNumber: quotationSnapshot.quotationNumber,
     date,
@@ -114,6 +117,10 @@ async function generateQuotationPdfBuffer(quotationSnapshot: z.infer<typeof requ
     subtotal: quotationSnapshot.subtotalCents,
     notes: quotationSnapshot.notes,
     status: quotationSnapshot.status,
+    storeName: storeSettings.storeName,
+    storeLocation: storeSettings.address,
+    storePhone: storeSettings.phone,
+    storeEmail: storeSettings.email,
   };
 
   let pdfBuffer: Buffer;
@@ -134,6 +141,8 @@ async function generateReceiptPdfBuffer(orderSnapshot: z.infer<typeof requestSch
     year: "numeric", month: "long", day: "numeric",
   });
 
+  const storeSettings = await getStoreSettings();
+
   const receiptProps: ReceiptPDFProps = {
     receiptNumber,
     orderNumber: orderSnapshot.orderNumber,
@@ -148,6 +157,9 @@ async function generateReceiptPdfBuffer(orderSnapshot: z.infer<typeof requestSch
     fulfillmentMethod: orderSnapshot.fulfillmentMethod,
     courierFeeCents: orderSnapshot.courierFeeCents,
     shipping: orderSnapshot.shipping,
+    storeLocation: storeSettings.address,
+    storePhone: storeSettings.phone,
+    storeName: storeSettings.storeName,
   };
 
   let pdfBuffer: Buffer;

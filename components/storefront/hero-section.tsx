@@ -15,9 +15,6 @@ import { decodeHTMLEntities } from "@/lib/utils";
 import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
 import { fadeUpVariants, motionTransition } from "@/lib/motion";
 
-const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
-const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
-
 const DEFAULT_HEADING = "Namibia&rsquo;s tech — tested, warranted, and a message away.";
 const DEFAULT_SUBHEADING =
   "Shop laptops, phones, gaming builds, CCTV, networking and POS gear with clear pricing, tested stock and direct local assistance.";
@@ -31,8 +28,8 @@ export function HeroSection() {
   const heading = settings.heroHeading || DEFAULT_HEADING;
   const subheading = settings.heroSubheading || DEFAULT_SUBHEADING;
   const imageUrl = settings.heroImageUrl || DEFAULT_IMAGE;
-  const whatsapp = settings.whatsapp || WHATSAPP_NUMBER;
-  const phone = settings.phone || PHONE_NUMBER;
+  const whatsapp = settings.whatsapp || "264852775140";
+  const phone = settings.phone || "+264852775140";
 
   return (
     <motion.section

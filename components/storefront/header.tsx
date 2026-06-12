@@ -25,8 +25,7 @@ import { useDashboardStore } from "@/lib/store/dashboard";
 import { buildShopUrl, getActiveBrands, groupActiveCategories } from "@/lib/storefront-navigation";
 import { buildWhatsAppUrl, formatWhatsAppPhone } from "@/lib/whatsapp-url";
 
-const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
-const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
+
 
 export function StorefrontHeader() {
   const router = useRouter();
@@ -46,8 +45,8 @@ export function StorefrontHeader() {
 
   const [megaMenuOpen, setMegaMenuOpen] = useState(false);
   const megaMenuRef = useRef<HTMLDivElement>(null);
-  const whatsapp = settings.whatsapp || WHATSAPP_NUMBER;
-  const phone = settings.phone || PHONE_NUMBER;
+  const whatsapp = settings.whatsapp || "264852775140";
+  const phone = settings.phone || "+264852775140";
   const activePayments = paymentMethods.filter((p) => p.isActive);
   const { isOpen: mobileMenuOpen, toggle: toggleMobileMenu, close: closeMobileMenu } = useMobileMenu();
   const [searchQuery, setSearchQuery] = useState("");

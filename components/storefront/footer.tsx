@@ -5,8 +5,6 @@ import { Phone, MessageCircle, Mail, MapPin, Building2, Banknote } from "lucide-
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
 
-const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
-
 export function StorefrontFooter() {
   const contactDetails = useDashboardStore((s) => s.contactDetails);
   const bankDetails = useDashboardStore((s) => s.bankDetails);

@@ -151,6 +151,7 @@ export interface ReceiptPDFProps {
   paymentStatus: string;
   totalPaidCents?: number;
   balanceDueCents?: number;
+  storeName?: string;
   storeLocation?: string;
   storePhone?: string;
   fulfillmentMethod?: "collection" | "courier";
@@ -188,6 +189,7 @@ export function ReceiptPDF({
   paymentStatus,
   totalPaidCents = 0,
   balanceDueCents = 0,
+  storeName = "Desert Technology Consultant",
   storeLocation = "Windhoek, Namibia",
   storePhone = "+264 85 277 5140",
   fulfillmentMethod,
@@ -208,7 +210,7 @@ export function ReceiptPDF({
             <View style={styles.brand}>
               {logoSrc && <Image src={logoSrc} style={styles.logo} />}
               <View>
-                <Text style={styles.companyName}>Desert Technology Consultant</Text>
+                <Text style={styles.companyName}>{storeName || "Desert Technology Consultant"}</Text>
                 <Text style={styles.companyLine}>{storeLocation}</Text>
                 <Text style={styles.companyLine}>{storePhone}</Text>
               </View>

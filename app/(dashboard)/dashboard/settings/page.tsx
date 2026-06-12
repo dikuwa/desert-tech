@@ -175,8 +175,18 @@ export default function SettingsPage() {
   const [paymentForm, setPaymentForm] = useState({ name: "", type: "BankTransfer" as PaymentMethod["type"], details: "", instructions: "", isActive: true });
   const [editingPaymentId, setEditingPaymentId] = useState<string | null>(null);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     updateSettings(form);
+    // Also persist to database via API
+    try {
+      await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+    } catch (err) {
+      console.error("[Settings] Failed to persist to DB:", err);
+    }
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };

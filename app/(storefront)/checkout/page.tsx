@@ -26,9 +26,6 @@ import { ProductImage } from "@/components/ui/product-image";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
 
-const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
-const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
-
 const CONTACT_METHODS = ["WhatsApp", "Phone", "Email"] as const;
 type ContactMethod = (typeof CONTACT_METHODS)[number];
 
@@ -75,8 +72,8 @@ function CheckoutContent() {
   const contactDetails = useDashboardStore((s) => s.contactDetails);
   const paymentMethods = useDashboardStore((s) => s.paymentMethods);
   const bankDetails = useDashboardStore((s) => s.bankDetails);
-  const whatsapp = settings.whatsapp || WHATSAPP_NUMBER;
-  const phone = settings.phone || PHONE_NUMBER;
+  const whatsapp = settings.whatsapp || "264852775140";
+  const phone = settings.phone || "+264852775140";
   const activePayments = paymentMethods.filter((p) => p.isActive);
   const activeBanks = bankDetails.filter((b) => b.isActive);
   const subtotal = getSubtotal();
