@@ -350,9 +350,14 @@ export function StaffList({ staff, pendingInvitations = [], currentUserRole, onU
   const [editInvitation, setEditInvitation] = useState<PendingInvitation | null>(null);
   const [editName, setEditName] = useState("");
   const [editEmail, setEditEmail] = useState("");
+  const [editPhone, setEditPhone] = useState("");
   const [invEditRole, setInvEditRole] = useState<string>("");
   const [invEditSaving, setInvEditSaving] = useState(false);
   const [invEditError, setInvEditError] = useState<string | null>(null);
+  const [tempPasswordDialog, setTempPasswordDialog] = useState<StaffMember | null>(null);
+  const [tempPassword, setTempPassword] = useState("");
+  const [tempPasswordSaving, setTempPasswordSaving] = useState(false);
+  const [tempPasswordError, setTempPasswordError] = useState<string | null>(null);
   const [whatsappShare, setWhatsappShare] = useState<{
     invitation: PendingInvitation;
     step: "phone" | "ready";
@@ -463,6 +468,7 @@ export function StaffList({ staff, pendingInvitations = [], currentUserRole, onU
     setEditInvitation(inv);
     setEditName(inv.name);
     setEditEmail(inv.email);
+    setEditPhone(inv.phone || "");
     setInvEditRole(inv.role);
     setInvEditError(null);
   };
@@ -479,6 +485,7 @@ export function StaffList({ staff, pendingInvitations = [], currentUserRole, onU
           name: editName.trim(),
           email: editEmail.trim().toLowerCase(),
           role: invEditRole,
+          phone: editPhone.trim() || null,
         }),
       });
       if (!res.ok) {
@@ -902,6 +909,11 @@ export function StaffList({ staff, pendingInvitations = [], currentUserRole, onU
                     <DropdownMenuItem onClick={() => handleRequirePasswordChange(member.id)}>
                       <AlertTriangle className="mr-2 h-4 w-4" />
                       Force Password Change
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem onClick={() => { setTempPasswordDialog(member); setTempPassword(""); setTempPasswordError(null); }}>
+                      <Key className="mr-2 h-4 w-4" />
+                      Set Temporary Password
                     </DropdownMenuItem>
 
                     {member.twoFactorEnabled && (
@@ -1407,6 +1419,15 @@ export function StaffList({ staff, pendingInvitations = [], currentUserRole, onU
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="edit-phone">Phone / WhatsApp</Label>
+              <Input
+                id="edit-phone"
+                value={editPhone}
+                onChange={(e) => setEditPhone(e.target.value)}
+                placeholder="e.g. +264 81 123 4567"
+              />
+            </div>
+            <div className="space-y-2">
               <Label>Role</Label>
               <Select
                 value={invEditRole}
@@ -1432,6 +1453,86 @@ export function StaffList({ staff, pendingInvitations = [], currentUserRole, onU
                 {invEditSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 <Save className="mr-2 h-4 w-4" />
                 Save
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ============== SET TEMPORARY PASSWORD DIALOG ============== */}
+      <Dialog
+        open={tempPasswordDialog !== null}
+        onOpenChange={(open) => {
+          if (!open) { setTempPasswordDialog(null); setTempPassword(""); setTempPasswordError(null); }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Set Temporary Password</DialogTitle>
+            <DialogDescription>
+              Set a temporary password for <strong>{tempPasswordDialog?.name}</strong>.
+              The user will be required to change it on next login.
+            </DialogDescription>
+          </DialogHeader>
+
+          {tempPasswordError && (
+            <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{tempPasswordError}</div>
+          )}
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="temp-password">Temporary Password</Label>
+              <Input
+                id="temp-password"
+                type="password"
+                minLength={10}
+                value={tempPassword}
+                onChange={(e) => setTempPassword(e.target.value)}
+                placeholder="Minimum 10 characters"
+                required
+              />
+              <p className="text-xs text-warning flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3" />
+                Use this only when the user cannot receive password reset emails.
+              </p>
+            </div>
+            <div className="flex justify-end gap-2 pt-2 border-t border-border">
+              <Button variant="outline" onClick={() => { setTempPasswordDialog(null); setTempPassword(""); setTempPasswordError(null); }}>
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  if (!tempPasswordDialog || tempPassword.length < 10) {
+                    setTempPasswordError("Password must be at least 10 characters");
+                    return;
+                  }
+                  setTempPasswordSaving(true);
+                  setTempPasswordError(null);
+                  try {
+                    const res = await fetch(`/api/staff/${tempPasswordDialog.id}/set-temporary-password`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ password: tempPassword }),
+                    });
+                    if (!res.ok) {
+                      const data = await res.json();
+                      throw new Error(data.error || "Failed to set password");
+                    }
+                    toast.success("Temporary password set. User must change on next login.");
+                    setTempPasswordDialog(null);
+                    setTempPassword("");
+                    onUpdate();
+                  } catch (err) {
+                    setTempPasswordError(err instanceof Error ? err.message : "Failed to set password");
+                  } finally {
+                    setTempPasswordSaving(false);
+                  }
+                }}
+                disabled={tempPasswordSaving}
+              >
+                {tempPasswordSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Key className="mr-2 h-4 w-4" />
+                Set Password
               </Button>
             </div>
           </div>

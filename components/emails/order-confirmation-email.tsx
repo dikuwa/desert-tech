@@ -40,7 +40,7 @@ export function OrderConfirmationEmail({
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12 }}>
               <Img
                 src={`${baseUrl}/images/receipt-icon.svg`}
-                alt="Desert Technology"
+                alt={storeName}
                 width="40"
                 height="40"
                 style={{ display: "block" }}
@@ -71,7 +71,7 @@ export function OrderConfirmationEmail({
           </Section>
 
           <Section style={ctaSection}>
-            <Link href={`https://wa.me/264852775140?text=${encodeURIComponent("Hi DesertTech, I have a question about my order.")}`} style={button}>
+            <Link href={`https://wa.me/264852775140?text=${encodeURIComponent("Hi, I have a question about my order.")}`} style={button}>
               Contact us on WhatsApp
             </Link>
           </Section>

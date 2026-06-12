@@ -83,15 +83,15 @@ export function buildWhatsAppUrl(phone: string, message?: string): string {
  * Default messages for common contexts.
  */
 export const WHATSAPP_MESSAGES = {
-  general: "Hi DesertTech, I need help with an order/product.",
+  general: "Hi, I need help with an order/product.",
   product: (name: string) =>
-    `Hi DesertTech, I'm interested in this product: ${name}.`,
+    `Hi, I'm interested in this product: ${name}.`,
   promotion: (title: string) =>
-    `Hi DesertTech, I'm interested in this promotion: ${title}.`,
+    `Hi, I'm interested in this promotion: ${title}.`,
   receipt: (orderNumber: string, link: string) =>
-    `Hi DesertTech, please see this document for order ${orderNumber}: ${link}`,
+    `Please see this document for order ${orderNumber}: ${link}`,
   followUp: (customerName: string, orderNumber: string) =>
-    `Hi ${customerName}, this is DesertTech following up on your order ${orderNumber}.`,
+    `Hi ${customerName}, following up on your order ${orderNumber}.`,
   enquiry: (items: string[]) =>
-    `Hi DesertTech, I'm interested in these products: ${items.join(", ")}.`,
+    `Hi, I'm interested in these products: ${items.join(", ")}.`,
 } as const;

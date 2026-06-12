@@ -70,49 +70,49 @@ describe("buildWhatsAppUrl", () => {
 describe("WHATSAPP_MESSAGES", () => {
   it("provides a general message", () => {
     expect(WHATSAPP_MESSAGES.general).toBe(
-      "Hi DesertTech, I need help with an order/product.",
+      "Hi, I need help with an order/product.",
     );
   });
 
   it("generates product message with name", () => {
     const msg = WHATSAPP_MESSAGES.product("iPad Pro 13");
     expect(msg).toBe(
-      "Hi DesertTech, I'm interested in this product: iPad Pro 13.",
+      "Hi, I'm interested in this product: iPad Pro 13.",
     );
   });
 
   it("generates promotion message with title", () => {
     const msg = WHATSAPP_MESSAGES.promotion("Summer Sale");
     expect(msg).toBe(
-      "Hi DesertTech, I'm interested in this promotion: Summer Sale.",
+      "Hi, I'm interested in this promotion: Summer Sale.",
     );
   });
 
   it("generates receipt message with order number and link", () => {
     const msg = WHATSAPP_MESSAGES.receipt("DT-ABC123", "https://example.com/doc");
     expect(msg).toBe(
-      "Hi DesertTech, please see this document for order DT-ABC123: https://example.com/doc",
+      "Please see this document for order DT-ABC123: https://example.com/doc",
     );
   });
 
   it("generates follow-up message", () => {
     const msg = WHATSAPP_MESSAGES.followUp("John", "DT-ABC123");
     expect(msg).toBe(
-      "Hi John, this is DesertTech following up on your order DT-ABC123.",
+      "Hi John, following up on your order DT-ABC123.",
     );
   });
 
   it("generates enquiry message with single item", () => {
     const msg = WHATSAPP_MESSAGES.enquiry(["iPad Pro 13"]);
     expect(msg).toBe(
-      "Hi DesertTech, I'm interested in these products: iPad Pro 13.",
+      "Hi, I'm interested in these products: iPad Pro 13.",
     );
   });
 
   it("generates enquiry message with multiple items", () => {
     const msg = WHATSAPP_MESSAGES.enquiry(["iPad Pro 13", "iPhone 16"]);
     expect(msg).toBe(
-      "Hi DesertTech, I'm interested in these products: iPad Pro 13, iPhone 16.",
+      "Hi, I'm interested in these products: iPad Pro 13, iPhone 16.",
     );
   });
 });

@@ -50,7 +50,7 @@ export function ReceiptEmail({
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12 }}>
               <Img
                 src={`${baseUrl}/images/receipt-icon.svg`}
-                alt="Desert Technology"
+                alt={storeName}
                 width="40"
                 height="40"
                 style={{ display: "block" }}
