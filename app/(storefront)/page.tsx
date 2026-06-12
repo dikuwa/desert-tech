@@ -1,16 +1,26 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { ArrowRight, BadgePercent, Clock3, ShieldCheck, Truck } from "lucide-react";
 import { HeroSection } from "@/components/storefront/hero-section";
 import { CategoryCards } from "@/components/storefront/category-cards";
 import { ProductCard } from "@/components/storefront/product-card";
-import { FeaturedPromotionsCarousel } from "@/components/storefront/featured-promotions-carousel";
 import { TrustSection } from "@/components/storefront/trust-section";
-import { WhatsAppCTA } from "@/components/storefront/whatsapp-cta";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { mergeProducts } from "@/lib/data";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { useMemo } from "react";
+
+const FeaturedPromotionsCarousel = dynamic(
+  () => import("@/components/storefront/featured-promotions-carousel").then((m) => ({ default: m.FeaturedPromotionsCarousel })),
+  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-muted" /> }
+);
+
+const WhatsAppCTA = dynamic(
+  () => import("@/components/storefront/whatsapp-cta").then((m) => ({ default: m.WhatsAppCTA })),
+  { loading: () => <div className="h-24 animate-pulse rounded-xl bg-muted" /> }
+);
 
 const serviceNotes = [
   { label: "New, refurbished and pre-owned", icon: BadgePercent },
@@ -66,14 +76,18 @@ export default function HomePage() {
             })}
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {featuredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          <ErrorBoundary fallback={<p className="text-sm text-muted-foreground py-8 text-center">Failed to load featured products.</p>}>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {featuredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          </ErrorBoundary>
         </div>
       </section>
-      <FeaturedPromotionsCarousel />
+      <ErrorBoundary fallback={<p className="text-sm text-muted-foreground py-8 text-center">Failed to load promotions.</p>}>
+        <FeaturedPromotionsCarousel />
+      </ErrorBoundary>
       <TrustSection />
       <WhatsAppCTA />
     </div>

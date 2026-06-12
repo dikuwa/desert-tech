@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -44,6 +44,20 @@ const checkoutSchema = z.object({
 type CheckoutFormData = z.infer<typeof checkoutSchema>;
 
 export default function CheckoutPage() {
+  return (
+    <Suspense fallback={
+      <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8 text-center text-muted-foreground">
+        <div className="inline-block animate-pulse rounded-full h-8 w-8 bg-muted-foreground/20 mb-4"></div>
+        <div className="mx-auto h-4 w-48 animate-pulse rounded bg-muted-foreground/10 mb-2"></div>
+        <div className="mx-auto h-3 w-64 animate-pulse rounded bg-muted-foreground/10"></div>
+      </div>
+    }>
+      <CheckoutContent />
+    </Suspense>
+  );
+}
+
+function CheckoutContent() {
   const router = useRouter();
   const { items, getSubtotal, clearCart } = useCart();
   const [isSubmitting, setIsSubmitting] = useState(false);
