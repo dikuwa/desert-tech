@@ -16,6 +16,7 @@ const updateInvitationSchema = z.object({
   name: z.string().min(2).max(100).optional(),
   email: z.string().email().optional(),
   role: z.nativeEnum(UserRole).optional(),
+  phone: z.string().max(50).optional(),
 });
 
 export async function PATCH(
@@ -53,7 +54,7 @@ export async function PATCH(
       );
     }
 
-    const { name, email, role } = result.data;
+    const { name, email, role, phone } = result.data;
 
     // Check role permissions
     if (role === UserRole.OWNER && currentUser.role !== UserRole.OWNER) {
@@ -67,6 +68,7 @@ export async function PATCH(
     if (name) updateData.name = name.trim();
     if (email) updateData.email = email.toLowerCase().trim();
     if (role) updateData.role = role;
+    if (phone !== undefined) updateData.phone = phone.trim() || null;
 
     const updated = await db.invitation.update({
       where: { id },

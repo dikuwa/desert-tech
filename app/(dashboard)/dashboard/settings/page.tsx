@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   Save,
   Building2,
@@ -63,6 +64,9 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function SettingsPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const isForceChange = searchParams.get("forceChange") === "true";
   const settings = useDashboardStore((s) => s.settings);
   const contactDetails = useDashboardStore((s) => s.contactDetails);
   const bankDetails = useDashboardStore((s) => s.bankDetails);
@@ -214,8 +218,19 @@ export default function SettingsPage() {
       const contentType = response.headers.get("content-type");
       const data = contentType?.includes("application/json") ? await response.json() : null;
       if (!response.ok) throw new Error(data?.message || data?.error || "Could not change password");
+
+      // Clear mustChangePassword flag
+      try {
+        await fetch("/api/auth/clear-must-change-password", { method: "POST" });
+      } catch { /* non-blocking */ }
+
       setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
       setPasswordMessage("Password changed successfully. Other sessions were revoked.");
+
+      // If user was redirected here to change password, redirect to dashboard
+      if (isForceChange) {
+        setTimeout(() => router.push("/dashboard"), 1500);
+      }
     } catch (error) {
       setPasswordMessage(error instanceof Error ? error.message : "Could not change password");
     } finally {
@@ -467,6 +482,19 @@ export default function SettingsPage() {
           );
         })}
       </div>
+
+      {/* Force password change banner */}
+      {isForceChange && (
+        <div className="rounded-xl border border-warning/30 bg-warning-soft p-4 flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-warning mt-0.5 flex-shrink-0" />
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">Password Change Required</h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              Your account was created with a temporary password. Please set a new password before accessing the dashboard.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-6">
         {/* === SECURITY TAB (2FA Management) === */}

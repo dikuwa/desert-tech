@@ -283,6 +283,7 @@ export async function createInvitation(params: {
   role: UserRole;
   permissions?: Permission[];
   invitedById: string;
+  phone?: string;
   note?: string;
   expiresInHours?: number;
 }) {
@@ -294,6 +295,7 @@ export async function createInvitation(params: {
     role,
     permissions,
     invitedById,
+    phone,
     note,
     expiresInHours = 168, // 7 days
   } = params;
@@ -321,6 +323,7 @@ export async function createInvitation(params: {
       status: InvitationStatus.PENDING,
       expiresAt,
       invitedById,
+      phone,
       note,
     },
   });

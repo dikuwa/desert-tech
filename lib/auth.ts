@@ -181,12 +181,9 @@ export const auth = betterAuth({
         });
       }
 
-      // Force password change for fresh accounts
-      if (user.mustChangePassword) {
-        throw new APIError("FORBIDDEN", {
-          message: "You must change your password before accessing the dashboard. Please use the forgot password flow or contact your administrator.",
-        });
-      }
+      // Note: mustChangePassword is handled by the dashboard layout redirect.
+      // Users with temporary passwords can sign in but are redirected to the
+      // settings page to set a new password before accessing the dashboard.
 
       // Auto-disable 2FA if the user never completed setup (has twoFactorEnabled
       // set but no TwoFactor record with an actual secret). This prevents users

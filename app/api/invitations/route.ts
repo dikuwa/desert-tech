@@ -184,6 +184,7 @@ export async function POST(req: NextRequest) {
       role,
       permissions: permissions as any,
       invitedById: currentUser.id,
+      phone: phone?.trim() || undefined,
       note,
     });
 

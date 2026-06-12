@@ -18,6 +18,11 @@ export default async function DashboardLayout({
     redirect("/admin/login");
   }
 
+  // Redirect users with temporary passwords to settings page to change password
+  if (user.mustChangePassword) {
+    redirect("/dashboard/settings?forceChange=true");
+  }
+
   return (
     <div className="dashboard-shell flex min-h-screen">
       <DashboardNotificationPoller />

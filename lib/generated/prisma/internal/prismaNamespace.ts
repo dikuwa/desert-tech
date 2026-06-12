@@ -2488,6 +2488,7 @@ export const InvitationScalarFieldEnum = {
   invitedById: 'invitedById',
   acceptedAt: 'acceptedAt',
   acceptedById: 'acceptedById',
+  phone: 'phone',
   note: 'note',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
