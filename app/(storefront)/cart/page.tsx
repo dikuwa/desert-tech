@@ -19,9 +19,6 @@ import { useDashboardStore } from "@/lib/store/dashboard";
 import { ProductImage } from "@/components/ui/product-image";
 import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
 
-const WHATSAPP_NUMBER_FALLBACK = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
-const PHONE_NUMBER_FALLBACK = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
-
 export default function CartPage() {
   const { items, removeItem, updateQuantity, clearCart, getSubtotal } = useCart();
   const settings = useDashboardStore((s) => s.settings);
@@ -30,8 +27,8 @@ export default function CartPage() {
   const subtotal = getSubtotal();
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
 
-  const whatsappNumber = settings.whatsapp || WHATSAPP_NUMBER_FALLBACK;
-  const phoneNumber = settings.phone || PHONE_NUMBER_FALLBACK;
+  const whatsappNumber = settings.whatsapp || "264852775140";
+  const phoneNumber = settings.phone || "+264852775140";
 
   const cartWhatsAppMessage = encodeURIComponent(
     `Hi, I'd like to enquire about the following items:\n\n${items.map((i) => `- ${i.name} x${i.quantity} (${formatNAD(i.priceCents * i.quantity)})`).join("\n")}\n\nTotal: ${formatNAD(subtotal)}`,

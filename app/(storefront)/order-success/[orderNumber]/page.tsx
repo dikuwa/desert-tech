@@ -15,9 +15,6 @@ import { formatNAD } from "@/lib/data";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
 
-const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
-const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
-
 interface OrderData {
   orderNumber: string;
   fullName: string;
@@ -34,10 +31,11 @@ export default function OrderSuccessPage() {
   const orderNumber = params.orderNumber as string;
   const contactDetails = useDashboardStore((s) => s.contactDetails);
   const activeContacts = contactDetails.filter((c) => c.isActive);
+  const settings = useDashboardStore((s) => s.settings);
   const whatsappContact = activeContacts.find((c) => c.type === "whatsapp");
   const phoneContact = activeContacts.find((c) => c.type === "phone");
-  const whatsapp = whatsappContact?.value || WHATSAPP_NUMBER;
-  const phone = phoneContact?.value || PHONE_NUMBER;
+  const whatsapp = whatsappContact?.value || settings.whatsapp || "264852775140";
+  const phone = phoneContact?.value || settings.phone || "+264852775140";
   const [order, setOrder] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState(true);
 

@@ -28,6 +28,7 @@ export default function PromotionDetailPage() {
   const params = useParams();
   const slug = params.slug as string;
   const dashboardPromotions = useDashboardStore((s) => s.promotions);
+  const settings = useDashboardStore((s) => s.settings);
   const { addItem, items } = useCart();
   const [hydrated, setHydrated] = useState(false);
   const [addedItems, setAddedItems] = useState<Set<string>>(new Set());
@@ -315,7 +316,7 @@ export default function PromotionDetailPage() {
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               <a
-                href={buildWhatsAppUrl(process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140", WHATSAPP_MESSAGES.promotion(promotion.title))}
+                href={buildWhatsAppUrl(settings.whatsapp || "264852775140", WHATSAPP_MESSAGES.promotion(promotion.title))}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-md active:scale-[0.98]"
@@ -323,7 +324,7 @@ export default function PromotionDetailPage() {
                 Enquire on WhatsApp
               </a>
               <a
-                href={`tel:${process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140"}`}
+                href={`tel:${settings.phone || "+264852775140"}`}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-border px-5 py-2.5 text-sm font-semibold text-foreground transition-all hover:bg-muted active:scale-[0.98]"
               >
                 Call us

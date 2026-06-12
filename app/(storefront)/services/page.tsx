@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Shield, Wifi, Printer, Wrench, MessageCircle, Phone, ArrowRight, CheckCircle2 } from "lucide-react";
+import { useDashboardStore } from "@/lib/store/dashboard";
 import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
 import { fadeUpVariants, motionTransition } from "@/lib/motion";
 
@@ -65,9 +66,8 @@ const services = [
   },
 ];
 
-const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
-
 export default function ServicesPage() {
+  const settings = useDashboardStore((s) => s.settings);
   return (
     <div>
       {/* Hero */}
@@ -145,7 +145,7 @@ export default function ServicesPage() {
 
                   <div className="mt-6 flex flex-col sm:flex-row gap-3">
                     <a
-                      href={buildWhatsAppUrl(process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140", `Hi, I'm interested in your ${service.title} services.`)}
+                      href={buildWhatsAppUrl(settings.whatsapp || "264852775140", `Hi, I'm interested in your ${service.title} services.`)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center justify-center gap-2 rounded-lg border border-whatsapp/20 bg-whatsapp-soft px-5 py-2.5 text-sm font-semibold text-whatsapp transition-all hover:-translate-y-0.5 hover:border-whatsapp/30 hover:bg-whatsapp hover:text-white"
@@ -154,7 +154,7 @@ export default function ServicesPage() {
                       Enquire Now
                     </a>
                     <a
-                      href={`tel:${PHONE_NUMBER}`}
+                      href={`tel:${settings.phone || "+264852775140"}`}
                       className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-5 py-2.5 text-sm font-semibold text-foreground transition-all hover:bg-muted"
                     >
                       <Phone className="h-4 w-4" />
@@ -179,7 +179,7 @@ export default function ServicesPage() {
           </p>
           <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
             <a
-              href={buildWhatsAppUrl(process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140", "Hi DesertTech, I need help with a custom technology solution.")}
+              href={buildWhatsAppUrl(settings.whatsapp || "264852775140", "Hi DesertTech, I need help with a custom technology solution.")}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-xl border border-whatsapp/20 bg-whatsapp-soft px-6 py-3 text-sm font-semibold text-whatsapp transition-all hover:-translate-y-0.5 hover:border-whatsapp/30 hover:bg-whatsapp hover:text-white hover:shadow-md"

@@ -11,16 +11,13 @@ import { buildWhatsAppUrl, WHATSAPP_MESSAGES } from "@/lib/whatsapp-url";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { toast } from "sonner";
 
-const WHATSAPP_NUMBER_FALLBACK = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
-const PHONE_NUMBER_FALLBACK = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
-
 export default function WishlistPage() {
   const { items, removeItem, clearWishlist, getItemCount } = useWishlist();
   const settings = useDashboardStore((s) => s.settings);
   const [removingId, setRemovingId] = useState<string | null>(null);
 
-  const whatsappNumber = settings.whatsapp || WHATSAPP_NUMBER_FALLBACK;
-  const phoneNumber = settings.phone || PHONE_NUMBER_FALLBACK;
+  const whatsappNumber = settings.whatsapp || "264852775140";
+  const phoneNumber = settings.phone || "+264852775140";
 
   const handleRemove = (productId: string) => {
     setRemovingId(productId);

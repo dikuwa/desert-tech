@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { sendEmail } from "@/lib/email";
+import { getStoreSettings } from "@/lib/store-settings";
 
 const contactSchema = z.object({
   fullName: z.string().min(1, "Name is required"),
@@ -31,7 +32,8 @@ export async function POST(request: NextRequest) {
     const { fullName, email, phone, subject, message } = parsed.data;
 
     // Build the email content
-    const businessEmail = process.env.BUSINESS_EMAIL || "sales@desertechnam.com";
+    const storeSettings = await getStoreSettings();
+    const businessEmail = storeSettings.email || process.env.BUSINESS_EMAIL || "sales@desertechnam.com";
     const subjectLine = subject
       ? `New Contact Form Enquiry: ${subject}`
       : `New Contact Form Enquiry from ${fullName}`;

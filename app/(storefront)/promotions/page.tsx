@@ -4,11 +4,12 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, Tag, Sparkles, Percent, MessageCircle, Phone } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
-import { buildWhatsAppUrl, getWhatsAppUrl } from "@/lib/whatsapp-url";
+import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
 import { fadeUpVariants, motionTransition } from "@/lib/motion";
 
 export default function PromotionsPage() {
   const dashboardPromotions = useDashboardStore((s) => s.promotions);
+  const settings = useDashboardStore((s) => s.settings);
 
   const allPromotions = dashboardPromotions
     .filter((p) => p.isActive)
@@ -118,7 +119,7 @@ export default function PromotionsPage() {
                   </p>
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     <a
-                      href={buildWhatsAppUrl(process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140", `Hi, I'm interested in this promotion: ${promo.title}.`)}
+                      href={buildWhatsAppUrl(settings.whatsapp || "264852775140", `Hi, I'm interested in this promotion: ${promo.title}.`)}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
@@ -128,7 +129,7 @@ export default function PromotionsPage() {
                       Enquire
                     </a>
                     <a
-                      href={`tel:${process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140"}`}
+                      href={`tel:${settings.phone || "+264852775140"}`}
                       onClick={(e) => e.stopPropagation()}
                       className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors"
                     >
@@ -202,7 +203,7 @@ export default function PromotionsPage() {
                   </p>
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     <a
-                      href={buildWhatsAppUrl(process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140", `Hi, I'm interested in this promotion: ${promo.title}.`)}
+                      href={buildWhatsAppUrl(settings.whatsapp || "264852775140", `Hi, I'm interested in this promotion: ${promo.title}.`)}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
@@ -212,7 +213,7 @@ export default function PromotionsPage() {
                       Enquire
                     </a>
                     <a
-                      href={`tel:${process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140"}`}
+                      href={`tel:${settings.phone || "+264852775140"}`}
                       onClick={(e) => e.stopPropagation()}
                       className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-[11px] font-medium text-foreground hover:bg-muted transition-colors"
                     >

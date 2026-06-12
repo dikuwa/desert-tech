@@ -31,9 +31,6 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ProductImage } from "@/components/ui/product-image";
 
-const WHATSAPP_NUMBER_FALLBACK = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
-const PHONE_NUMBER_FALLBACK = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
-
 export default function ProductDetailPage() {
   const params = useParams();
   const slug = params.slug as string;
@@ -68,8 +65,8 @@ export default function ProductDetailPage() {
   }
   if (!product) notFound();
 
-  const whatsappNumber = settings.whatsapp || WHATSAPP_NUMBER_FALLBACK;
-  const phoneNumber = settings.phone || PHONE_NUMBER_FALLBACK;
+  const whatsappNumber = settings.whatsapp || "264852775140";
+  const phoneNumber = settings.phone || "+264852775140";
 
   const wishlisted = isWishlisted(product.id);
 

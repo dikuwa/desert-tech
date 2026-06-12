@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { ArrowRight, FileText } from "lucide-react";
+import { getStoreSettings } from "@/lib/store-settings";
 
-const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
-const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
-const STORE_EMAIL = process.env.NEXT_PUBLIC_STORE_EMAIL || "sales@desertechnam.com";
-
-export default function TermsPage() {
+export default async function TermsPage() {
+  const settings = await getStoreSettings();
+  const phoneNumber = settings.phone || "+264852775140";
+  const storeEmail = settings.email || "sales@desertechnam.com";
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
       <Link
@@ -94,8 +94,8 @@ export default function TermsPage() {
         <section>
           <h2 className="text-lg font-semibold text-foreground">8. Contact</h2>
           <p className="leading-relaxed">
-            For any questions about these terms, contact us via WhatsApp at {PHONE_NUMBER}, email
-            at {STORE_EMAIL}, or visit our store in Windhoek.
+            For any questions about these terms, contact us via WhatsApp at {phoneNumber}, email
+            at {storeEmail}, or visit our store in Windhoek.
           </p>
         </section>
       </div>
