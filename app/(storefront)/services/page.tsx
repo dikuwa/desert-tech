@@ -1,5 +1,10 @@
+"use client";
+
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { Shield, Wifi, Printer, Wrench, MessageCircle, Phone, ArrowRight, CheckCircle2 } from "lucide-react";
+import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
+import { fadeUpVariants, motionTransition } from "@/lib/motion";
 
 const services = [
   {
@@ -60,7 +65,6 @@ const services = [
   },
 ];
 
-const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
 const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
 
 export default function ServicesPage() {
@@ -69,13 +73,25 @@ export default function ServicesPage() {
       {/* Hero */}
       <section className="bg-background border-b border-border">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+          <motion.h1
+            variants={fadeUpVariants}
+            initial="hidden"
+            animate="visible"
+            transition={motionTransition(false, 0.3)}
+            className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground"
+          >
             Our Services
-          </h1>
-          <p className="mt-4 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
+          </motion.h1>
+          <motion.p
+            variants={fadeUpVariants}
+            initial="hidden"
+            animate="visible"
+            transition={motionTransition(false, 0.38)}
+            className="mt-4 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto"
+          >
             Professional technology services throughout Namibia. Installation, setup,
             maintenance, and support for homes and businesses.
-          </p>
+          </motion.p>
         </div>
       </section>
 
@@ -86,8 +102,14 @@ export default function ServicesPage() {
             const Icon = service.icon;
             const isReversed = idx % 2 === 1;
             return (
-              <div
-                key={service.title}              className={`grid md:grid-cols-2 gap-8 md:gap-12 items-center`}
+              <motion.div
+                key={service.title}
+                variants={fadeUpVariants}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.12 }}
+                transition={motionTransition(false, 0.3 + idx * 0.08)}
+                className={`grid md:grid-cols-2 gap-8 md:gap-12 items-center`}
               >
                 {/* Image */}
                 <div className={`${isReversed ? "md:order-2" : ""}`}>
@@ -123,7 +145,7 @@ export default function ServicesPage() {
 
                   <div className="mt-6 flex flex-col sm:flex-row gap-3">
                     <a
-                      href={`https://wa.me/${WHATSAPP_NUMBER}`}
+                      href={buildWhatsAppUrl(process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140", `Hi, I'm interested in your ${service.title} services.`)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center justify-center gap-2 rounded-lg border border-whatsapp/20 bg-whatsapp-soft px-5 py-2.5 text-sm font-semibold text-whatsapp transition-all hover:-translate-y-0.5 hover:border-whatsapp/30 hover:bg-whatsapp hover:text-white"
@@ -140,7 +162,7 @@ export default function ServicesPage() {
                     </a>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
@@ -157,7 +179,7 @@ export default function ServicesPage() {
           </p>
           <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
             <a
-              href={`https://wa.me/${WHATSAPP_NUMBER}`}
+              href={buildWhatsAppUrl(process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140", "Hi DesertTech, I need help with a custom technology solution.")}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-xl border border-whatsapp/20 bg-whatsapp-soft px-6 py-3 text-sm font-semibold text-whatsapp transition-all hover:-translate-y-0.5 hover:border-whatsapp/30 hover:bg-whatsapp hover:text-white hover:shadow-md"

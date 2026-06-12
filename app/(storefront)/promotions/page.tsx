@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { ArrowRight, Tag, Sparkles, Percent, MessageCircle, Phone } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { buildWhatsAppUrl, getWhatsAppUrl } from "@/lib/whatsapp-url";
+import { fadeUpVariants, motionTransition } from "@/lib/motion";
 
 export default function PromotionsPage() {
   const dashboardPromotions = useDashboardStore((s) => s.promotions);
@@ -27,7 +29,13 @@ export default function PromotionsPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       {/* Page Header */}
-      <div className="mb-10">
+      <motion.div
+        variants={fadeUpVariants}
+        initial="hidden"
+        animate="visible"
+        transition={motionTransition(false, 0.3)}
+        className="mb-10"
+      >
         <div className="inline-flex items-center gap-2 rounded-full bg-accent px-4 py-1.5 text-xs font-semibold text-primary">
           <Sparkles className="h-3.5 w-3.5" />
           Limited time offers
@@ -39,7 +47,7 @@ export default function PromotionsPage() {
           Take advantage of current deals on tech, security, networking, and services across Namibia. 
           Prices and availability are subject to change.
         </p>
-      </div>
+      </motion.div>
 
       {allPromotions.length === 0 && (
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/50 px-6 py-20 text-center">
@@ -66,9 +74,14 @@ export default function PromotionsPage() {
             </div>
           </div>
           <div className="grid gap-6">
-            {featuredPromos.map((promo) => (
-<div
+            {featuredPromos.map((promo, idx) => (
+<motion.div
                 key={promo.id}
+                variants={fadeUpVariants}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.12 }}
+                transition={motionTransition(false, 0.3 + idx * 0.06)}
                 className="grid overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 sm:grid-cols-2"
               >
                 {/* Image */}
@@ -131,7 +144,7 @@ export default function PromotionsPage() {
                     </Link>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </section>
@@ -145,9 +158,14 @@ export default function PromotionsPage() {
             <h2 className="mt-1 text-xl font-bold text-foreground sm:text-2xl">Other specials</h2>
           </div>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {otherPromos.map((promo) => (
-<div
+            {otherPromos.map((promo, idx) => (
+<motion.div
                 key={promo.id}
+                variants={fadeUpVariants}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.12 }}
+                transition={motionTransition(false, 0.3 + idx * 0.04)}
                 className="flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0"
               >
                 <Link href={`/promotions/${promo.slug}`}>
@@ -210,7 +228,7 @@ export default function PromotionsPage() {
                     </Link>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </section>

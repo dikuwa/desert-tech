@@ -71,7 +71,7 @@ export function OrderConfirmationEmail({
           </Section>
 
           <Section style={ctaSection}>
-            <Link href={`https://wa.me/${process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140"}`} style={button}>
+            <Link href={`https://wa.me/264852775140?text=${encodeURIComponent("Hi DesertTech, I have a question about my order.")}`} style={button}>
               Contact us on WhatsApp
             </Link>
           </Section>

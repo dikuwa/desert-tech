@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { motion } from "framer-motion";
 import {
   ArrowRight,
   BadgeCheck,
@@ -12,6 +13,7 @@ import {
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { decodeHTMLEntities } from "@/lib/utils";
 import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
+import { fadeUpVariants, motionTransition } from "@/lib/motion";
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140";
 const PHONE_NUMBER = process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140";
@@ -33,19 +35,36 @@ export function HeroSection() {
   const phone = settings.phone || PHONE_NUMBER;
 
   return (
-    <section className="relative overflow-hidden border-b border-border bg-background">
+    <motion.section
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className="relative overflow-hidden border-b border-border bg-background"
+    >
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-8 sm:px-6 lg:grid-cols-[0.98fr_1.02fr] lg:px-8 lg:py-12">
         {/* Image first on mobile, second on desktop */}
-        <div className="min-w-0 -mr-4 sm:-mr-6 lg:-mr-8 -mb-8 lg:-mb-12 overflow-hidden lg:order-2">
+        <motion.div
+          variants={fadeUpVariants}
+          initial="hidden"
+          animate="visible"
+          transition={motionTransition(false, 0.35)}
+          className="min-w-0 -mr-4 sm:-mr-6 lg:-mr-8 -mb-8 lg:-mb-12 overflow-hidden lg:order-2"
+        >
           <img
             src={imageUrl}
             alt="Desert Tech electronics showroom"
             className="w-full h-full object-cover"
           />
-        </div>
+        </motion.div>
 
         {/* Text second on mobile, first on desktop */}
-        <div className="flex flex-col justify-center lg:order-1">
+        <motion.div
+          variants={fadeUpVariants}
+          initial="hidden"
+          animate="visible"
+          transition={motionTransition(false, 0.35)}
+          className="flex flex-col justify-center lg:order-1"
+        >
           <div className="mb-5 inline-flex w-fit items-center rounded-full border border-border bg-card px-4 py-1.5 text-xs font-semibold text-muted-foreground shadow-xs">
             Desert Technology Consultant, Namibia
           </div>
@@ -79,7 +98,13 @@ export function HeroSection() {
           </div>
 
           {/* Trust indicators - centered mini feature cards */}
-          <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-6">
+          <motion.div
+            variants={fadeUpVariants}
+            initial="hidden"
+            animate="visible"
+            transition={motionTransition(false, 0.45)}
+            className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-6"
+          >
             {[
               { label: "Tested stock", icon: ShieldCheck },
               { label: "Warranty options", icon: BadgeCheck },
@@ -88,8 +113,10 @@ export function HeroSection() {
             ].map((item) => {
               const Icon = item.icon;
               return (
-                <div
+                <motion.div
                   key={item.label}
+                  whileHover={{ y: -2 }}
+                  transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                   className="flex flex-col items-center gap-2.5 text-center"
                 >
                   <span
@@ -109,12 +136,12 @@ export function HeroSection() {
                     <span>{item.label}</span>
                     {item.sub && <span className="block text-xs">{item.sub}</span>}
                   </div>
-                </div>
+                </motion.div>
               );
             })}
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </div>
-    </section>
+    </motion.section>
   );
 }

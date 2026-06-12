@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Check, Loader2, Mail, MessageCircle, UserPlus } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -478,12 +479,7 @@ export function CreateUserDialog({
                   Share the invite link with {name} via your own WhatsApp:
                 </p>
                 <a
-                  href={`https://wa.me/${invitePhone}?text=${encodeURIComponent(
-                    `You've been invited to join Desert Technology!
-
-Click here to accept:
-${inviteLink}`
-                  )}`}
+                  href={buildWhatsAppUrl(invitePhone, `You've been invited to join Desert Technology!\n\nClick here to accept:\n${inviteLink}`)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-md active:translate-y-0"

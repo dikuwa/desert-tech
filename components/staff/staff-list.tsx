@@ -20,6 +20,7 @@ import {
   Save,
   MessageCircle,
 } from "lucide-react";
+import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -1220,9 +1221,7 @@ export function StaffList({ staff, pendingInvitations = [], currentUserRole, onU
                 Invite link ready! Share it with {whatsappShare.invitation.name}:
               </p>
               <a
-                href={`https://wa.me/${whatsappShare.phoneClean}?text=${encodeURIComponent(
-                  `You've been invited to join Desert Technology!\n\nClick here to accept:\n${whatsappShare.acceptUrl}`
-                )}`}
+                href={buildWhatsAppUrl(whatsappShare.phoneClean, `You've been invited to join Desert Technology!\n\nClick here to accept:\n${whatsappShare.acceptUrl}`)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-md active:translate-y-0"
