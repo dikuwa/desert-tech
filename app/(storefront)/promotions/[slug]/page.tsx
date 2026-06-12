@@ -22,7 +22,7 @@ import { useCart } from "@/lib/store/cart";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ProductImage } from "@/components/ui/product-image";
-import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
+import { buildWhatsAppUrl, WHATSAPP_MESSAGES } from "@/lib/whatsapp-url";
 
 export default function PromotionDetailPage() {
   const params = useParams();
@@ -298,32 +298,38 @@ export default function PromotionDetailPage() {
             </section>
           )}
 
-          {/* Service-type: show service CTA */}
-          {promotion.type === "service" && (
-            <section className="mt-10 rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
+          {/* CTAs for all promotion types */}
+          <section className="mt-10 rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
+            {promotion.type === "service" ? (
               <Wrench className="mx-auto h-10 w-10 text-primary/60" />
-              <h2 className="mt-3 text-xl font-bold text-foreground">Service offer</h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Contact us to enquire about this service. We&apos;ll get back to you with a quote.
-              </p>
-              <div className="mt-6 flex flex-wrap justify-center gap-3">
-                <a
-                  href={buildWhatsAppUrl(process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140", `Hi, I'm interested in the promotion: ${promotion.title}. Please send me a quote.`)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-md active:scale-[0.98]"
-                >
-                  Enquire on WhatsApp
-                </a>
-                <a
-                  href={`tel:${process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140"}`}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-5 py-2.5 text-sm font-semibold text-foreground transition-all hover:bg-muted active:scale-[0.98]"
-                >
-                  Call us
-                </a>
-              </div>
-            </section>
-          )}
+            ) : (
+              <Tag className="mx-auto h-10 w-10 text-primary/60" />
+            )}
+            <h2 className="mt-3 text-xl font-bold text-foreground">
+              {promotion.type === "service" ? "Interested in this service?" : "Interested in this offer?"}
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {promotion.type === "service"
+                ? "Contact us to enquire about this service. We&apos;ll get back to you with a quote."
+                : "Contact us to enquire about this promotion. We&apos;re here to help."}
+            </p>
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              <a
+                href={buildWhatsAppUrl(process.env.NEXT_PUBLIC_STORE_WHATSAPP || "264852775140", WHATSAPP_MESSAGES.promotion(promotion.title))}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-md active:scale-[0.98]"
+              >
+                Enquire on WhatsApp
+              </a>
+              <a
+                href={`tel:${process.env.NEXT_PUBLIC_STORE_PHONE || "+264852775140"}`}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-5 py-2.5 text-sm font-semibold text-foreground transition-all hover:bg-muted active:scale-[0.98]"
+              >
+                Call us
+              </a>
+            </div>
+          </section>
         </div>
 
         {/* Sidebar — Other Promotions */}

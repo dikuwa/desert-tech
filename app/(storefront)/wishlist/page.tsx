@@ -29,14 +29,6 @@ export default function WishlistPage() {
     setTimeout(() => setRemovingId(null), 300);
   };
 
-  const handleWhatsAppEnquiry = () => {
-    const productNames = items.map((i) => i.name);
-    const message = productNames.length === 1
-      ? WHATSAPP_MESSAGES.product(productNames[0])
-      : WHATSAPP_MESSAGES.enquiry(productNames);
-    window.open(buildWhatsAppUrl(whatsappNumber, message), "_blank");
-  };
-
   if (items.length === 0) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8 text-center">
@@ -147,13 +139,15 @@ export default function WishlistPage() {
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
-            <button
-              onClick={handleWhatsAppEnquiry}
+            <a
+              href={buildWhatsAppUrl(whatsappNumber, items.length === 1 ? WHATSAPP_MESSAGES.product(items[0].name) : WHATSAPP_MESSAGES.enquiry(items.map(i => i.name)))}
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-whatsapp/20 bg-whatsapp-soft px-5 py-2.5 text-sm font-semibold text-whatsapp transition-all hover:-translate-y-0.5 hover:border-whatsapp/30 hover:bg-whatsapp hover:text-white active:translate-y-0"
             >
               <MessageCircle className="h-4 w-4" />
               Enquire on WhatsApp
-            </button>
+            </a>
             <a
               href={`tel:${phoneNumber}`}
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-5 py-2.5 text-sm font-semibold text-foreground transition-all hover:bg-muted active:translate-y-0"
