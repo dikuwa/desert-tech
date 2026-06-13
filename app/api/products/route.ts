@@ -55,9 +55,10 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
   });
 
-  return NextResponse.json({
-    products: products.map(productRecordToDashboardProduct),
-  });
+  return NextResponse.json(
+    { products: products.map(productRecordToDashboardProduct) },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }
 
 export async function POST(request: Request) {

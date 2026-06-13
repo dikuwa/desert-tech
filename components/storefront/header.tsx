@@ -24,6 +24,7 @@ import { CartDropdown } from "@/components/storefront/cart-dropdown";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { buildShopUrl, getActiveBrands, groupActiveCategories } from "@/lib/storefront-navigation";
 import { buildWhatsAppUrl, formatWhatsAppPhone } from "@/lib/whatsapp-url";
+import { isPublicPromotion } from "@/lib/promotion-visibility";
 
 
 
@@ -40,8 +41,8 @@ export function StorefrontHeader() {
   const categoryGroups = groupActiveCategories(managedCategories);
   const displayBrands = getActiveBrands(managedBrands).slice(0, 10);
 
-  const activePromo = dashboardPromotions.find(p => p.isActive && p.placement === "HomeHero")
-    || dashboardPromotions.find(p => p.isActive);
+  const activePromo = dashboardPromotions.find(p => isPublicPromotion(p) && p.placement === "HomeHero")
+    || dashboardPromotions.find((p) => isPublicPromotion(p));
 
   const [megaMenuOpen, setMegaMenuOpen] = useState(false);
   const megaMenuRef = useRef<HTMLDivElement>(null);

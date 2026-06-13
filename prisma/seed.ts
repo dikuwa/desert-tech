@@ -2,14 +2,8 @@
  * Prisma seed script — populates the database with initial sample data.
  * Run with: tsx prisma/seed.ts
  *
- * Note: Requires DATABASE_URL + ADMIN_EMAIL/ADMIN_PASSWORD env vars.
+ * Note: Requires DATABASE_URL.
  * Run `prisma db push` first to ensure tables exist.
- *
- * Admin credentials can be set via .env.local:
- *   ADMIN_NAME="Desert Tech Admin"
- *   ADMIN_EMAIL="admin@deserttech.com"
- *   ADMIN_PASSWORD="your-secure-password"
- *   STAFF_PASSWORD="staff-password"   (optional, defaults to "Staff@2025")
  */
 
 import { parseHumanToCents } from "../lib/format";
@@ -17,7 +11,6 @@ import { PrismaClient } from "../lib/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import dotenv from "dotenv";
 import path from "path";
-import { ensureSystemUsers } from "../lib/system-users";
 
 // Load .env.local so the seed script can access DATABASE_URL and ADMIN_* vars
 dotenv.config({ path: path.resolve(__dirname, "../.env.local") });

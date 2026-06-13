@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ProductImage } from "@/components/ui/product-image";
 import { buildWhatsAppUrl, WHATSAPP_MESSAGES } from "@/lib/whatsapp-url";
+import { isPublicPromotion } from "@/lib/promotion-visibility";
 
 export default function PromotionDetailPage() {
   const params = useParams();
@@ -37,7 +38,7 @@ export default function PromotionDetailPage() {
   // Find the promotion from the dashboard store
   const rawPromo = dashboardPromotions.find((p) => p.slug === slug);
 
-  if (!rawPromo) notFound();
+  if (!rawPromo || !isPublicPromotion(rawPromo)) notFound();
 
   const promotion = {
     id: rawPromo.id,
@@ -58,7 +59,7 @@ export default function PromotionDetailPage() {
 
   const relatedProducts = getPromotionProducts(promotion as any);
   const otherPromotions = dashboardPromotions
-    .filter((p) => p.isActive && p.id !== rawPromo.id)
+    .filter((p) => isPublicPromotion(p) && p.id !== rawPromo.id)
     .map((p) => ({
       id: p.id,
       title: p.title,

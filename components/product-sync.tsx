@@ -10,7 +10,7 @@ export function ProductSync() {
   useEffect(() => {
     let active = true;
 
-    fetch("/api/products")
+    fetch("/api/products", { cache: "no-store" })
       .then((response) => response.json())
       .then((data: { products?: DashboardProduct[] }) => {
         if (active && Array.isArray(data.products)) {

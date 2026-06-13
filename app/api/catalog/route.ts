@@ -59,10 +59,13 @@ export async function GET() {
     }),
     db.brand.findMany({ orderBy: { sortOrder: "asc" } }),
   ]);
-  return NextResponse.json({
-    categories: categories.map(mapCategory),
-    brands: brands.map(mapBrand),
-  });
+  return NextResponse.json(
+    {
+      categories: categories.map(mapCategory),
+      brands: brands.map(mapBrand),
+    },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }
 
 export async function POST(request: Request) {

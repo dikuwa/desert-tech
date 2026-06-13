@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowRight, ChevronLeft, ChevronRight, Tag } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
+import { isPublicPromotion } from "@/lib/promotion-visibility";
 
 interface PromoCard {
   id: string;
@@ -91,7 +92,7 @@ export function FeaturedPromotionsCarousel() {
 
   // Filter active + featured promotions from the dashboard store
   const promotions: PromoCard[] = dashboardPromotions
-    .filter((p) => p.isActive && p.isFeatured !== false)
+    .filter((p) => isPublicPromotion(p) && p.isFeatured !== false)
     .map((p) => ({
       id: p.id,
       title: p.title,

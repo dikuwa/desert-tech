@@ -39,7 +39,7 @@ export default function AdminLoginPage() {
         {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requiresTwoFactor ? { code: totpCode } : { email, password }),
+        body: JSON.stringify(requiresTwoFactor ? { code: totpCode } : { email: email.trim().toLowerCase(), password }),
       });
 
       // Defensive JSON parsing — check content type before calling .json()

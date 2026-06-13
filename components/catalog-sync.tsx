@@ -62,7 +62,7 @@ export function CatalogSync({ importLocal = false }: { importLocal?: boolean }) 
           categories: changedCategories,
           brands: changedBrands,
         }),
-      } : undefined);
+      } : { cache: "no-store" });
       if (!response.ok) return;
       const data = await response.json();
       if (!active) return;

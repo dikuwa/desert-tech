@@ -58,12 +58,23 @@ export async function POST(
     const passwordHash = await bcrypt.hash(password, 12);
 
     // Update the user's credential and force password change
-    await db.account.updateMany({
+    await db.account.upsert({
       where: {
+        providerId_accountId: {
+          providerId: "credential",
+          accountId: id,
+        },
+      },
+      update: {
+        userId: id,
+        password: passwordHash,
+      },
+      create: {
         userId: id,
         providerId: "credential",
+        accountId: id,
+        password: passwordHash,
       },
-      data: { password: passwordHash },
     });
 
     await db.user.update({

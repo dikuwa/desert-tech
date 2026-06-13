@@ -11,7 +11,6 @@ import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { UserRole, UserStatus } from "@/lib/enums";
 import { sendPasswordResetEmail } from "@/lib/email";
-import { ensureSystemUsers, SYSTEM_USERS } from "@/lib/system-users";
 
 const productionUrl = "https://desertechnam.vercel.app";
 const baseURL = process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : productionUrl);
@@ -164,10 +163,6 @@ export const auth = betterAuth({
       if (ctx.path !== "/sign-in/email" || !db || !ctx.body?.email) return;
 
       const email = String(ctx.body.email).toLowerCase().trim();
-      if (SYSTEM_USERS.some((user) => user.email === email)) {
-        await ensureSystemUsers(db);
-      }
-
       const user = await db.user.findUnique({
         where: { email },
         select: { id: true, status: true, role: true, twoFactorEnabled: true, mustChangePassword: true, permissions: true },
@@ -206,22 +201,26 @@ export const auth = betterAuth({
       if (ctx.path !== "/sign-in/email" || !db) return;
       const userId = ctx.context.newSession?.user.id;
       if (userId) {
-        const user = await db.user.update({
-          where: { id: userId },
-          data: { lastActiveAt: new Date() },
-          select: { email: true, role: true },
-        });
-        await db.auditLog.create({
-          data: {
-            actorId: userId,
-            actorEmail: user.email,
-            actorRole: user.role,
-            action: "Signed in",
-            targetType: "authentication",
-            targetId: userId,
-            targetLabel: user.email,
-          },
-        });
+        try {
+          const user = await db.user.update({
+            where: { id: userId },
+            data: { lastActiveAt: new Date() },
+            select: { email: true, role: true },
+          });
+          await db.auditLog.create({
+            data: {
+              actorId: userId,
+              actorEmail: user.email,
+              actorRole: user.role,
+              action: "Signed in",
+              targetType: "authentication",
+              targetId: userId,
+              targetLabel: user.email,
+            },
+          });
+        } catch (error) {
+          console.error("[Auth] Could not record successful sign-in:", error);
+        }
       }
     }),
   },

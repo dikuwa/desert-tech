@@ -438,9 +438,7 @@ export const useDashboardStore = create<DashboardState>()(
 
       // === Products ===
       syncProducts: (products) => {
-        if (products.length > 0) {
-          set({ products });
-        }
+        set({ products });
       },
       addProduct: (p) => {
         const id = `p${nextProductId++}`;

@@ -207,22 +207,26 @@ export async function createAuditLog(entry: AuditLogEntry) {
     return;
   }
 
-  const user = await getCurrentUser();
+  try {
+    const user = await getCurrentUser();
 
-  await db.auditLog.create({
-    data: {
-      actorId: user?.id,
-      actorEmail: user?.email,
-      actorRole: user?.role,
-      action: entry.action,
-      targetType: entry.targetType,
-      targetId: entry.targetId,
-      targetLabel: entry.targetLabel,
-      metadata: entry.metadata as Prisma.InputJsonValue | undefined,
-      beforeValues: entry.beforeValues as Prisma.InputJsonValue | undefined,
-      afterValues: entry.afterValues as Prisma.InputJsonValue | undefined,
-    },
-  });
+    await db.auditLog.create({
+      data: {
+        actorId: user?.id,
+        actorEmail: user?.email,
+        actorRole: user?.role,
+        action: entry.action,
+        targetType: entry.targetType,
+        targetId: entry.targetId,
+        targetLabel: entry.targetLabel,
+        metadata: entry.metadata as Prisma.InputJsonValue | undefined,
+        beforeValues: entry.beforeValues as Prisma.InputJsonValue | undefined,
+        afterValues: entry.afterValues as Prisma.InputJsonValue | undefined,
+      },
+    });
+  } catch (error) {
+    console.error("[Audit] Could not save audit log:", error);
+  }
 }
 
 // ============== INVITATION UTILITIES ==============

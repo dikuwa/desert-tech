@@ -4,14 +4,15 @@
 
 The application creates these accounts when they are missing:
 
-| Role | Email | Initial password |
-| --- | --- | --- |
-| Owner | `owner@deserttech.com` | `Root#2027` |
-| Admin | `admin@deserttech.com` | `Admin#2027` |
-| Staff | `staff@deserttech.com` | `Staff#2027` |
+| Role | Email |
+| --- | --- |
+| Owner | `owner@deserttech.com` |
+| Admin | `admin@deserttech.com` |
+| Staff | `staff@deserttech.com` |
 
 They are active, email-verified, and can sign in immediately at `/admin/login`.
-Startup and deployment bootstrap only create missing credentials; they do not reset a
+Initial passwords must be supplied securely when the explicit bootstrap command is run.
+Passwords are never stored in source control. Startup and deployment do not reset a
 password that has already been changed.
 
 ## Create A Permanent Owner

@@ -6,13 +6,14 @@ import { ArrowRight, Tag, Sparkles, Percent, MessageCircle, Phone } from "lucide
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
 import { fadeUpVariants, motionTransition } from "@/lib/motion";
+import { isPublicPromotion } from "@/lib/promotion-visibility";
 
 export default function PromotionsPage() {
   const dashboardPromotions = useDashboardStore((s) => s.promotions);
   const settings = useDashboardStore((s) => s.settings);
 
   const allPromotions = dashboardPromotions
-    .filter((p) => p.isActive)
+    .filter((p) => isPublicPromotion(p))
     .map((p) => ({
       id: p.id,
       title: p.title,
