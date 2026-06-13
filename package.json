@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "tsx scripts/bootstrap-system-users.ts && next dev",
-    "build": "prisma db push --config=prisma.config.ts 2>&1 || echo \"[prisma] Schema sync skipped - continuing build\"; tsx scripts/bootstrap-system-users.ts && next build",
+    "build": "prisma generate --config=prisma.config.ts && next build",
     "start": "tsx scripts/bootstrap-system-users.ts && next start",
     "lint": "next lint",
     "postinstall": "prisma generate --config=prisma.config.ts 2>/dev/null || true",

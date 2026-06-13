@@ -1,5 +1,5 @@
 /**
- * Middleware for Desert Tech authentication and authorization.
+ * Proxy for Desert Tech authentication and authorization.
  * Protects dashboard routes and handles redirects.
  */
 
@@ -45,7 +45,7 @@ function isPublicPath(pathname: string): boolean {
   });
 }
 
-export default async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // ===== DEV AUTH BYPASS =====

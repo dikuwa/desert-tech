@@ -16,7 +16,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 // ── Top progress bar ──
@@ -66,7 +66,6 @@ export function PageTransitionProvider({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const reducedMotion = useReducedMotion();
 
   const prevPathname = useRef(pathname);
@@ -114,7 +113,7 @@ export function PageTransitionProvider({
         routeTimerRef.current = null;
       }
     };
-  }, [pathname, searchParams, reducedMotion]);
+  }, [pathname, reducedMotion]);
 
   const isLoading = phase === "initial-loading";
   const isRouting = phase === "routing";
