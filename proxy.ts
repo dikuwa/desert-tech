@@ -77,6 +77,15 @@ export async function proxy(req: NextRequest) {
   if (pathname.startsWith("/api/password-reset")) return NextResponse.next();
 
   // Redirect old auth paths to new login
+  if (pathname === "/admin" || pathname === "/admin/login") {
+    const signInUrl = new URL("/login", req.url);
+    const redirectTo = req.nextUrl.searchParams.get("redirect");
+    if (redirectTo?.startsWith("/dashboard")) {
+      signInUrl.searchParams.set("redirect", redirectTo);
+    }
+    return NextResponse.redirect(signInUrl);
+  }
+
   if (pathname === "/auth/sign-in" || pathname === "/auth/signin") {
     return NextResponse.redirect(new URL("/login", req.url));
   }
