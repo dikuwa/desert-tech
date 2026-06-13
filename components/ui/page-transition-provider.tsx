@@ -47,18 +47,15 @@ function RouteProgressBar({ visible }: { visible: boolean }) {
   );
 }
 
-// ── Remove the CSS-only initial loader from the DOM ──
+// ── Hide the CSS-only initial loader (don't remove from DOM to avoid confusing React) ──
 
-function removeCssLoader() {
+function hideCssLoader() {
   const el = document.getElementById("dt-initial-loader");
   if (el) {
     el.style.opacity = "0";
+    el.style.pointerEvents = "none";
     el.style.transition = "opacity 0.3s ease";
-    setTimeout(() => el.remove(), 350);
   }
-  // Remove the inline stylesheet too so it doesn't pollute
-  const sheet = document.getElementById("dt-initial-loader-css");
-  if (sheet) sheet.remove();
 }
 
 // ── Main provider ──
@@ -81,8 +78,8 @@ export function PageTransitionProvider({
 
   // ── Initial load ──
   useEffect(() => {
-    // Remove the CSS-only skeleton
-    removeCssLoader();
+    // Hide the CSS-only skeleton (don't remove from DOM — React manages these nodes)
+    hideCssLoader();
 
     if (reducedMotion) {
       setPhase("ready");
