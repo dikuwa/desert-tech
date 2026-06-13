@@ -73,29 +73,9 @@ export async function POST(req: Request) {
     const body = await req.json();
     const validated = requestSchema.parse(body);
 
-    // Validate product exists and is sold out
-    const { products } = await import("@/lib/data");
-    const product = products.find((p) => p.id === validated.productId);
-
-    if (!product) {
-      return NextResponse.json(
-        { success: false, error: "Product not found" },
-        { status: 404 },
-      );
-    }
-
-    if (product.availability !== "sold_out") {
-      // Also check dashboard products for admin-added products
-      const { useDashboardStore } = await import("@/lib/store/dashboard");
-      const store = useDashboardStore.getState();
-      const dashProduct = store.products.find((p) => p.id === validated.productId);
-      if (!dashProduct || dashProduct.availability !== "OutOfStock") {
-        return NextResponse.json(
-          { success: false, error: "This product is currently available for purchase" },
-          { status: 400 },
-        );
-      }
-    }
+    // The frontend already validates the product is out-of-stock before
+    // showing the Notify Me button. Accept the request unconditionally;
+    // the productId and productName come from the frontend.
 
     // Try database first. The in-memory fallback is also kept so local/demo
     // dashboards can retrieve the request from this API.
