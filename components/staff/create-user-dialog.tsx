@@ -211,7 +211,8 @@ export function CreateUserDialog({
     setRole(UserRole.STAFF);
     setJobTitle("");
     setPhone("");
-    setSelectedPermissions([]);
+    // Load STAFF default permissions when dialog opens fresh
+    setSelectedPermissions(getRoleTemplatePermissions(UserRole.STAFF));
     setPassword("");
     setConfirmPassword("");
     setError(null);
@@ -227,28 +228,13 @@ export function CreateUserDialog({
     // Load the default permissions for this role as a starting template
     const template = getRoleTemplatePermissions(newRole);
 
-    // Don't include sensitive permissions for non-OWNER roles in the template
+    // For non-Owner editors, only strip `users:delete` from the template.
+    // Other user-management permissions (view, invite, create, edit) are
+    // allowed if the current user has been explicitly granted them by an Owner.
+    // Financial permissions are handled by the disabled chips in the UI and
+    // blocked by the backend.
     if (newRole !== UserRole.OWNER && currentUserRole !== UserRole.OWNER) {
-      const sensitivePerms: Permission[] = [
-        Permissions.USERS_VIEW,
-        Permissions.USERS_INVITE,
-        Permissions.USERS_CREATE,
-        Permissions.USERS_EDIT,
-        Permissions.USERS_ASSIGN_ROLES,
-        Permissions.USERS_MANAGE_PERMISSIONS,
-        Permissions.USERS_SUSPEND,
-        Permissions.USERS_DISABLE,
-        Permissions.USERS_DELETE,
-        Permissions.PAYMENTS_VIEW,
-        Permissions.PAYMENTS_CREATE,
-        Permissions.PAYMENTS_UPDATE,
-        Permissions.PAYMENTS_REFUND,
-        Permissions.PAYMENTS_EXPORT,
-        Permissions.DASHBOARD_VIEW_FINANCIAL_SUMMARY,
-        Permissions.AUDIT_LOGS_EXPORT,
-        Permissions.SETTINGS_UPDATE,
-      ];
-      setSelectedPermissions(template.filter((p) => !sensitivePerms.includes(p)));
+      setSelectedPermissions(template.filter((p) => p !== Permissions.USERS_DELETE));
     } else {
       setSelectedPermissions(template);
     }
@@ -432,6 +418,42 @@ export function CreateUserDialog({
               <div className="flex flex-wrap gap-1.5">
                 {group.permissions.map((perm) => {
                   const isSelected = selectedPermissions.includes(perm.key);
+
+                  // Determine if this permission is restricted for non-Owner editors
+                  const isOwnerOnlyPermission =
+                    currentUserRole !== UserRole.OWNER &&
+                    perm.key === Permissions.USERS_DELETE;
+
+                  const financialPerms = [
+                    Permissions.PAYMENTS_VIEW,
+                    Permissions.PAYMENTS_CREATE,
+                    Permissions.PAYMENTS_UPDATE,
+                    Permissions.PAYMENTS_REFUND,
+                    Permissions.PAYMENTS_EXPORT,
+                    Permissions.DASHBOARD_VIEW_FINANCIAL_SUMMARY,
+                  ] as const;
+                  const isFinancialRestricted =
+                    currentUserRole !== UserRole.OWNER &&
+                    (financialPerms as readonly string[]).includes(perm.key);
+
+                  const isDisabled = isOwnerOnlyPermission || isFinancialRestricted;
+
+                  if (isDisabled) {
+                    return (
+                      <span
+                        key={perm.key}
+                        className="rounded-md bg-muted px-2 py-1 text-[11px] font-medium text-muted-foreground/50 cursor-not-allowed border border-dashed border-muted-foreground/20"
+                        title={
+                          isOwnerOnlyPermission
+                            ? "Only the Owner can assign this permission"
+                            : "Only the Owner can grant financial access"
+                        }
+                      >
+                        {perm.label}
+                      </span>
+                    );
+                  }
+
                   return (
                     <button
                       key={perm.key}

@@ -13,7 +13,7 @@ import {
   getCurrentUser,
 } from "@/lib/auth-server";
 import { db } from "@/lib/db";
-import { UserRole, UserStatus } from "@/lib/enums";
+import { InvitationStatus, UserRole, UserStatus } from "@/lib/enums";
 import { Permissions, type Permission } from "@/lib/permissions";
 import { sendAccountStatusEmail } from "@/lib/email";
 import { sendAccountStatusWhatsApp } from "@/lib/whatsapp";
@@ -132,8 +132,47 @@ export async function PATCH(
     // If changing permissions, require the manage_permissions permission
     if (permissions) {
       await requirePermission(Permissions.USERS_MANAGE_PERMISSIONS);
+
+      // Block Admin/Staff from granting restricted permissions
+      const restrictedPermissions: string[] = [
+        Permissions.USERS_DELETE,
+        Permissions.PAYMENTS_VIEW,
+        Permissions.PAYMENTS_CREATE,
+        Permissions.PAYMENTS_UPDATE,
+        Permissions.PAYMENTS_REFUND,
+        Permissions.PAYMENTS_EXPORT,
+        Permissions.DASHBOARD_VIEW_FINANCIAL_SUMMARY,
+      ];
+
+      const hasRestricted = permissions.some((p) => restrictedPermissions.includes(p));
+      if (hasRestricted && currentUser.role !== UserRole.OWNER) {
+        return NextResponse.json(
+          { error: "Only the Owner can grant delete or financial permissions." },
+          { status: 403 }
+        );
+      }
+
+      // Admin cannot grant financial permissions to themselves or other Admin
+      if (currentUser.role === UserRole.ADMIN && role !== UserRole.STAFF) {
+        const financialPerms: string[] = [
+          Permissions.PAYMENTS_VIEW,
+          Permissions.PAYMENTS_CREATE,
+          Permissions.PAYMENTS_UPDATE,
+          Permissions.PAYMENTS_REFUND,
+          Permissions.PAYMENTS_EXPORT,
+          Permissions.DASHBOARD_VIEW_FINANCIAL_SUMMARY,
+        ];
+        const hasFinancial = permissions.some((p) => financialPerms.includes(p));
+        if (hasFinancial) {
+          return NextResponse.json(
+            { error: "Admin cannot grant financial permissions. Only the Owner can assign financial access." },
+            { status: 403 }
+          );
+        }
+      }
     }
 
+    // Self-modification restrictions
     if (id === currentUser.id && (role || status || permissions)) {
       return NextResponse.json(
         { error: "Role, status, and permission changes require another authorized administrator" },
@@ -262,7 +301,12 @@ export async function PATCH(
 
 /**
  * DELETE /api/staff/[id]
- * Disable (soft delete) a staff member.
+ * Permanently hard-delete a user (Owner only).
+ * - Only Owner can delete users
+ * - Admin/Staff are blocked even if they have USERS_DELETE permission
+ * - A user cannot delete themselves
+ * - Cannot delete the last remaining active Owner
+ * - All associated records (sessions, accounts, etc.) are cascade-deleted
  */
 export async function DELETE(
   req: NextRequest,
@@ -270,7 +314,17 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+
+    // Require USERS_DELETE permission first
     const currentUser = await requirePermission(Permissions.USERS_DELETE);
+
+    // Only Owner can delete users — block Admin/Staff even if permission assigned
+    if (currentUser.role !== UserRole.OWNER) {
+      return NextResponse.json(
+        { error: "Only the Owner can delete users. This action requires the Owner role." },
+        { status: 403 }
+      );
+    }
 
     if (!db) {
       return NextResponse.json(
@@ -279,11 +333,10 @@ export async function DELETE(
       );
     }
 
-    // Check if can manage this user
-    const canManage = await canManageUser(id);
-    if (!canManage) {
+    // Cannot delete self
+    if (id === currentUser.id) {
       return NextResponse.json(
-        { error: "Cannot modify this user" },
+        { error: "You cannot delete your own account." },
         { status: 403 }
       );
     }
@@ -300,49 +353,69 @@ export async function DELETE(
       );
     }
 
-    if (targetUser.role === UserRole.OWNER && currentUser.role !== UserRole.OWNER) {
-      return NextResponse.json(
-        { error: "Only an Owner can disable another Owner account" },
-        { status: 403 }
-      );
-    }
-
+    // Protect the last remaining active Owner
     if (targetUser.role === UserRole.OWNER) {
-      if (id === currentUser.id) {
-        return NextResponse.json(
-          { error: "You cannot disable your own Owner account" },
-          { status: 403 },
-        );
-      }
       const activeOwnerCount = await db.user.count({
         where: { role: UserRole.OWNER, status: UserStatus.ACTIVE },
       });
       if (activeOwnerCount <= 1) {
         return NextResponse.json(
-          { error: "Create another active Owner before disabling this account" },
-          { status: 409 },
+          { error: "Cannot delete the last active Owner account. Create another Owner first." },
+          { status: 409 }
         );
       }
     }
 
-    // Soft delete by setting status to DELETED and marking deletedAt
-    await db.user.update({
-      where: { id },
-      data: { status: UserStatus.DELETED, deletedAt: new Date() },
+    // HARD DELETE: Remove the user and cascade-deleted associated records.
+    // Records that reference this user (payments, receipts, follow-ups) are
+    // reassigned to the deleting Owner so business history is preserved.
+    // Audit logs are preserved for historical purposes (actorId is set to null).
+    await db.$transaction(async (tx) => {
+      // Reassign business records that reference this user to the deleting Owner
+      await tx.paymentRecord.updateMany({
+        where: { recordedById: id },
+        data: { recordedById: currentUser.id },
+      });
+
+      await tx.receipt.updateMany({
+        where: { issuedById: id },
+        data: { issuedById: currentUser.id },
+      });
+
+      await tx.followUp.updateMany({
+        where: { assignedToId: id },
+        data: { assignedToId: currentUser.id },
+      });
+
+      // Preserve audit logs by disassociating them
+      await tx.auditLog.updateMany({
+        where: { actorId: id },
+        data: { actorId: null },
+      });
+
+      // Delete notifications
+      await tx.notification.deleteMany({ where: { userId: id } });
+
+      // Delete the user (cascades sessions, accounts, twoFactor via Prisma)
+      await tx.user.delete({ where: { id } });
+
+      // Revoke any pending invitations for this user's email
+      await tx.invitation.updateMany({
+        where: { email: targetUser.email, status: InvitationStatus.PENDING },
+        data: { status: InvitationStatus.REVOKED },
+      });
     });
 
-    // Revoke all sessions
-    await revokeAllUserSessions(id);
-
-    // Create audit log
+    // Create audit log (actor still exists since they're performing the action)
     await createAuditLog({
-      action: "user.deleted",
+      action: "user.hard_deleted",
       targetType: "user",
       targetId: id,
       targetLabel: targetUser.name,
+      metadata: { email: targetUser.email, role: targetUser.role },
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, message: "User permanently deleted." });
   } catch (error) {
     console.error("[API] DELETE /api/staff/[id] error:", error);
 
@@ -354,7 +427,7 @@ export async function DELETE(
     }
 
     return NextResponse.json(
-      { error: "Failed to disable staff" },
+      { error: "Failed to delete user" },
       { status: 500 }
     );
   }

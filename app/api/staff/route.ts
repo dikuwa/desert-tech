@@ -145,6 +145,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Block Admin/Staff from creating users with restricted permissions
+    if (permissions && currentUser.role !== UserRole.OWNER) {
+      const restrictedPermissions: string[] = [
+        Permissions.USERS_DELETE,
+        Permissions.PAYMENTS_VIEW,
+        Permissions.PAYMENTS_CREATE,
+        Permissions.PAYMENTS_UPDATE,
+        Permissions.PAYMENTS_REFUND,
+        Permissions.PAYMENTS_EXPORT,
+        Permissions.DASHBOARD_VIEW_FINANCIAL_SUMMARY,
+      ];
+      const hasRestricted = permissions.some((p) => restrictedPermissions.includes(p));
+      if (hasRestricted) {
+        return NextResponse.json(
+          { error: "Only the Owner can grant delete or financial permissions." },
+          { status: 403 }
+        );
+      }
+    }
+
     const existingUser = await db.user.findUnique({ where: { email } });
     if (existingUser) {
       return NextResponse.json(

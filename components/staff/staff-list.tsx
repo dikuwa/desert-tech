@@ -284,6 +284,45 @@ function QuickPermissionEditor({
               </span>
               {group.permissions.map((perm) => {
                 const isOn = perms.includes(perm.key);
+
+                const isOwnerOnlyPermission =
+                  currentUserRole !== UserRole.OWNER &&
+                  perm.key === Permissions.USERS_DELETE;
+
+                const financialPerms = [
+                  Permissions.PAYMENTS_VIEW,
+                  Permissions.PAYMENTS_CREATE,
+                  Permissions.PAYMENTS_UPDATE,
+                  Permissions.PAYMENTS_REFUND,
+                  Permissions.PAYMENTS_EXPORT,
+                  Permissions.DASHBOARD_VIEW_FINANCIAL_SUMMARY,
+                ] as const;
+                const isFinancialRestricted =
+                  currentUserRole !== UserRole.OWNER &&
+                  (financialPerms as readonly string[]).includes(perm.key);
+
+                const isDisabled = isOwnerOnlyPermission || isFinancialRestricted;
+
+                if (isDisabled) {
+                  return (
+                    <span
+                      key={perm.key}
+                      className={`rounded-[3px] px-1.5 py-[1px] text-[9px] font-bold leading-none ${
+                        isOn
+                          ? "bg-muted text-muted-foreground/50 border border-dashed border-muted-foreground/20"
+                          : "bg-muted text-muted-foreground/40 border border-transparent"
+                      }`}
+                      title={
+                        isOwnerOnlyPermission
+                          ? "Only the Owner can assign this permission"
+                          : "Only the Owner can grant financial access"
+                      }
+                    >
+                      {perm.label}
+                    </span>
+                  );
+                }
+
                 return (
                   <button
                     key={perm.key}
@@ -1107,7 +1146,7 @@ export function StaffList({ staff, pendingInvitations = [], currentUserRole, onU
               {confirmAction?.type === "revoke-sessions" &&
                 `Revoke all active sessions for ${confirmAction.member.name}? They will be logged out of all devices.`}
               {confirmAction?.type === "delete" &&
-                `Are you sure you want to delete ${confirmAction.member.name}'s account (${confirmAction.member.email})? This will soft-delete the account. Linked orders, receipts, and audit history will be preserved.`}
+                `Are you sure you want to permanently delete ${confirmAction.member.name}'s account (${confirmAction.member.email})? This action cannot be undone. The user will be completely removed from the system.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1251,6 +1290,45 @@ export function StaffList({ staff, pendingInvitations = [], currentUserRole, onU
                       <div className="flex flex-wrap gap-1.5">
                         {group.permissions.map((perm) => {
                           const isSelected = editPerms.includes(perm.key);
+
+                          const isOwnerOnlyPermission =
+                            currentUserRole !== UserRole.OWNER &&
+                            perm.key === Permissions.USERS_DELETE;
+
+                          const financialPerms = [
+                            Permissions.PAYMENTS_VIEW,
+                            Permissions.PAYMENTS_CREATE,
+                            Permissions.PAYMENTS_UPDATE,
+                            Permissions.PAYMENTS_REFUND,
+                            Permissions.PAYMENTS_EXPORT,
+                            Permissions.DASHBOARD_VIEW_FINANCIAL_SUMMARY,
+                          ] as const;
+                          const isFinancialRestricted =
+                            currentUserRole !== UserRole.OWNER &&
+                            (financialPerms as readonly string[]).includes(perm.key);
+
+                          const isDisabled = isOwnerOnlyPermission || isFinancialRestricted;
+
+                          if (isDisabled) {
+                            return (
+                              <span
+                                key={perm.key}
+                                className={`rounded-md px-2 py-1 text-[11px] font-medium ${
+                                  isSelected
+                                    ? "bg-muted text-muted-foreground/50 border border-dashed border-muted-foreground/20"
+                                    : "bg-muted text-muted-foreground/40 border border-transparent"
+                                } cursor-not-allowed`}
+                                title={
+                                  isOwnerOnlyPermission
+                                    ? "Only the Owner can assign this permission"
+                                    : "Only the Owner can grant financial access"
+                                }
+                              >
+                                {perm.label}
+                              </span>
+                            );
+                          }
+
                           return (
                             <button
                               key={perm.key}

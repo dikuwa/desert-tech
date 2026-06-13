@@ -10,8 +10,8 @@ const resendApiKey = process.env.RESEND_API_KEY;
 // Priority order for From address:
 // 1. RESEND_FROM_EMAIL (explicitly configured verified sender)
 // 2. BUSINESS_EMAIL (the store's business email)
-// 3. Fallback to the original default (may fail if unverified, but error is surfaced)
-const RESEND_FROM = process.env.RESEND_FROM_EMAIL || process.env.BUSINESS_EMAIL || "noreply@deserttechnology.com.na";
+// 3. Fallback to Resend's default test sender (onboarding@resend.dev) - always available
+const RESEND_FROM = process.env.RESEND_FROM_EMAIL || process.env.BUSINESS_EMAIL || "DesertTech <onboarding@resend.dev>";
 const RESEND_REPLY_TO = process.env.RESEND_REPLY_TO_EMAIL || process.env.RESEND_REPLY_TO || process.env.BUSINESS_EMAIL || "sales@desertechnam.com";
 
 import { getAppUrl } from "./app-url";
