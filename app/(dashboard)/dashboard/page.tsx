@@ -9,6 +9,18 @@ import { formatCents } from "@/lib/dashboard-data";
 import { Permissions } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
+// Stable selector to avoid infinite re-render loop in Zustand.
+// Returning a new array literal `[]` on every render causes React's
+// useSyncExternalStore to detect a changed snapshot and re-render forever.
+const EMPTY_PERMISSIONS: string[] = [];
+const selectStaffPermissions = (s: {
+  currentUser: string;
+  staff: { name: string; permissions?: string[] }[];
+}) => {
+  const member = s.staff.find((m) => m.name === s.currentUser);
+  return member?.permissions ?? EMPTY_PERMISSIONS;
+};
+
 export default function DashboardPage() {
   const [profile, setProfile] = useState<{
     name: string; email: string; role: string; status: string; image?: string;
@@ -36,11 +48,7 @@ export default function DashboardPage() {
   const customers = useDashboardStore((s) => s.customers);
   const notifications = useDashboardStore((s) => s.notifications);
   const followUps = useDashboardStore((s) => s.followUps);
-  const staffPermissions = useDashboardStore((s) => {
-    const currentUser = s.currentUser;
-    const member = s.staff.find((m) => m.name === currentUser);
-    return member?.permissions ?? [];
-  });
+  const staffPermissions = useDashboardStore(selectStaffPermissions);
 
   const payments = useDashboardStore((s) => s.payments);
   const recentOrders = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
