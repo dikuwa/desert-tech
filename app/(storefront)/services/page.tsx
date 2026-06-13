@@ -2,7 +2,19 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Shield, Wifi, Printer, Wrench, MessageCircle, Phone, ArrowRight, CheckCircle2 } from "lucide-react";
+import {
+  Shield,
+  Wifi,
+  Printer,
+  Wrench,
+  MessageCircle,
+  Phone,
+  ArrowRight,
+  CheckCircle2,
+  Drill,
+  MessagesSquare,
+  CircleHelp,
+} from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
 import { fadeUpVariants, motionTransition } from "@/lib/motion";
@@ -20,7 +32,7 @@ const services = [
       "Remote viewing setup",
       "Maintenance and support",
     ],
-    image: "https://images.unsplash.com/photo-1558002038-1055907df827?w=600&h=400&fit=crop",
+    image: "/images/services/cctv-security.png",
   },
   {
     title: "Networking",
@@ -34,7 +46,7 @@ const services = [
       "Network security",
       "Managed WiFi solutions",
     ],
-    image: "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=600&h=400&fit=crop",
+    image: "/images/services/networking.png",
   },
   {
     title: "POS Systems",
@@ -48,7 +60,7 @@ const services = [
       "Software setup",
       "Ongoing support",
     ],
-    image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&h=400&fit=crop",
+    image: "/images/services/pos-systems.png",
   },
   {
     title: "Auto & Mechanical",
@@ -62,7 +74,25 @@ const services = [
       "Installation services",
       "Technical support",
     ],
-    image: "https://images.unsplash.com/photo-1487754180451-c456f719a1fc?w=600&h=400&fit=crop",
+    image: "/images/services/auto-mechanical.png",
+  },
+];
+
+const supportServices = [
+  {
+    title: "Product Installation",
+    description: "Professional installation and setup for the technology you buy from us.",
+    icon: Drill,
+  },
+  {
+    title: "Solution Consultation",
+    description: "Practical guidance to choose the right products for your home or business.",
+    icon: MessagesSquare,
+  },
+  {
+    title: "Guided DIY Support",
+    description: "Remote help when you prefer to install or troubleshoot your system yourself.",
+    icon: CircleHelp,
   },
 ];
 
@@ -168,8 +198,41 @@ export default function ServicesPage() {
         </div>
       </section>
 
+      {/* Supporting Services */}
+      <section className="border-t border-border bg-muted py-12">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-7 max-w-xl">
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">
+              Also available
+            </p>
+            <h2 className="mt-2 text-xl font-bold tracking-tight text-foreground">
+              Support beyond the main service
+            </h2>
+          </div>
+
+          <div className="grid gap-px overflow-hidden rounded-xl border border-border bg-border md:grid-cols-3">
+            {supportServices.map((service) => {
+              const Icon = service.icon;
+              return (
+                <div key={service.title} className="flex gap-4 bg-background p-5 sm:p-6">
+                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-accent text-primary">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-foreground">{service.title}</h3>
+                    <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                      {service.description}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
-      <section className="bg-muted border-t border-border py-14">
+      <section className="bg-background border-t border-border py-14">
         <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold tracking-tight text-foreground">
             Need a custom solution?
