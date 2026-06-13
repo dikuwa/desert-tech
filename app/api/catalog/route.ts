@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { authorizePermission } from "@/lib/auth-server";
+import { authorizePermission, createAuditLog } from "@/lib/auth-server";
 import { Permissions } from "@/lib/permissions";
 import { slugifyProduct } from "@/lib/product-records";
 
@@ -120,6 +120,13 @@ export async function POST(request: Request) {
       });
     }),
   ]);
+  await createAuditLog({
+    action: "Catalog updated",
+    targetType: "catalog",
+    targetId: "categories-brands",
+    targetLabel: "Categories and Brands",
+    metadata: { categories: categories.length, brands: brands.length, replaceBrands },
+  });
 
   return GET();
 }

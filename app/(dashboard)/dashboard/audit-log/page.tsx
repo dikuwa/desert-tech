@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { History, Search, ChevronLeft, ChevronRight, Clock, User, Copy, Check, ExternalLink, Download } from "lucide-react";
 import { FadeIn } from "@/components/ui/fade-in";
-import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
+import type { AuditEntry } from "@/lib/dashboard-data";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -108,12 +108,34 @@ function EntityLabel({ entry }: { entry: { entityType: string; entityId: string;
 }
 
 export default function AuditLogPage() {
-  const auditLogs = useDashboardStore((s) => s.auditLogs);
+  const [auditLogs, setAuditLogs] = useState<AuditEntry[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [entityFilter, setEntityFilter] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/audit-logs", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Could not load audit logs");
+        return response.json();
+      })
+      .then((data) => {
+        if (active) setAuditLogs(data.auditLogs ?? []);
+      })
+      .catch(() => {
+        if (active) setAuditLogs([]);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const entityTypes = ["all", "order", "quotation", "product", "payment", "customer", "staff", "category", "promotion", "brand", "backinstock", "notification", "settings"];
 
@@ -246,7 +268,9 @@ export default function AuditLogPage() {
         <div className="flex flex-col items-center py-16 text-center rounded-xl border border-dashed border-border">
           <History className="h-10 w-10 text-muted-foreground/40 mb-3" />
           <p className="text-sm font-medium text-foreground">
-            {search || entityFilter !== "all"
+            {loading
+              ? "Loading audit entries..."
+              : search || entityFilter !== "all"
               ? "No matching audit entries"
               : "No audit entries yet"}
           </p>

@@ -14,6 +14,7 @@ import {
   Drill,
   MessagesSquare,
   CircleHelp,
+  Laptop,
 } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { buildWhatsAppUrl } from "@/lib/whatsapp-url";
@@ -81,17 +82,17 @@ const services = [
 const supportServices = [
   {
     title: "Product Installation",
-    description: "Professional installation and setup for the technology you buy from us.",
+    description: "Professional installation and setup for security, networking, POS, and technology products purchased from us.",
     icon: Drill,
   },
   {
     title: "Solution Consultation",
-    description: "Practical guidance to choose the right products for your home or business.",
+    description: "Practical guidance to help you choose the right technology, security, networking, or POS solution for your home or business.",
     icon: MessagesSquare,
   },
   {
     title: "Guided DIY Support",
-    description: "Remote help when you prefer to install or troubleshoot your system yourself.",
+    description: "Remote guidance for customers who prefer to install, configure, or troubleshoot their systems with expert support.",
     icon: CircleHelp,
   },
 ];
@@ -174,22 +175,26 @@ export default function ServicesPage() {
                   </ul>
 
                   <div className="mt-6 flex flex-col sm:flex-row gap-3">
-                    <a
-                      href={buildWhatsAppUrl(settings.whatsapp || "264852775140", `Hi, I'm interested in your ${service.title} services.`)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center gap-2 rounded-lg border border-whatsapp/20 bg-whatsapp-soft px-5 py-2.5 text-sm font-semibold text-whatsapp transition-all hover:-translate-y-0.5 hover:border-whatsapp/30 hover:bg-whatsapp hover:text-white"
-                    >
-                      <MessageCircle className="h-4 w-4" />
-                      Enquire Now
-                    </a>
-                    <a
-                      href={`tel:${settings.phone || "+264852775140"}`}
-                      className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-5 py-2.5 text-sm font-semibold text-foreground transition-all hover:bg-muted"
-                    >
-                      <Phone className="h-4 w-4" />
-                      Call Us
-                    </a>
+                    {settings.whatsapp && (
+                      <a
+                        href={buildWhatsAppUrl(settings.whatsapp, `Hi, I'm interested in your ${service.title} services.`)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-whatsapp/20 bg-whatsapp-soft px-5 py-2.5 text-sm font-semibold text-whatsapp transition-all hover:-translate-y-0.5 hover:border-whatsapp/30 hover:bg-whatsapp hover:text-white"
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                        Enquire Now
+                      </a>
+                    )}
+                    {settings.phone && (
+                      <a
+                        href={`tel:${settings.phone}`}
+                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-5 py-2.5 text-sm font-semibold text-foreground transition-all hover:bg-muted"
+                      >
+                        <Phone className="h-4 w-4" />
+                        Call Us
+                      </a>
+                    )}
                   </div>
                 </div>
               </motion.div>
@@ -228,6 +233,28 @@ export default function ServicesPage() {
               );
             })}
           </div>
+
+          <div className="mt-6 rounded-xl border border-border bg-background p-5 sm:p-6">
+            <div className="flex flex-col gap-5 md:flex-row md:items-start">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-accent text-primary">
+                <Laptop className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-bold text-foreground">We Buy Selected Pre-Owned Tech</h3>
+                <p className="mt-1.5 max-w-3xl text-sm leading-relaxed text-muted-foreground">
+                  Have a laptop, electronic gadget, or tech device you no longer use? DesertTech buys selected pre-owned laptops, electronics, and related technology items after inspection and condition checks.
+                </p>
+                <ul className="mt-4 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2 lg:grid-cols-3">
+                  {["Pre-owned laptops", "Selected electronic gadgets", "Computer accessories", "Tech devices in good working condition", "Inspection before purchase", "Fair condition-based offers"].map((item) => (
+                    <li key={item} className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-success" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -241,15 +268,17 @@ export default function ServicesPage() {
             Contact us to discuss your specific requirements. We provide free site assessments.
           </p>
           <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <a
-              href={buildWhatsAppUrl(settings.whatsapp || "264852775140", "Hi DesertTech, I need help with a custom technology solution.")}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-whatsapp/20 bg-whatsapp-soft px-6 py-3 text-sm font-semibold text-whatsapp transition-all hover:-translate-y-0.5 hover:border-whatsapp/30 hover:bg-whatsapp hover:text-white hover:shadow-md"
-            >
-              <MessageCircle className="h-5 w-5" />
-              Chat on WhatsApp
-            </a>
+            {settings.whatsapp && (
+              <a
+                href={buildWhatsAppUrl(settings.whatsapp, "Hi DesertTech, I need help with a custom technology solution.")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl border border-whatsapp/20 bg-whatsapp-soft px-6 py-3 text-sm font-semibold text-whatsapp transition-all hover:-translate-y-0.5 hover:border-whatsapp/30 hover:bg-whatsapp hover:text-white hover:shadow-md"
+              >
+                <MessageCircle className="h-5 w-5" />
+                Chat on WhatsApp
+              </a>
+            )}
             <Link
               href="/contact"
               className="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-6 py-3 text-sm font-semibold text-foreground transition-all hover:bg-muted hover:shadow-sm"

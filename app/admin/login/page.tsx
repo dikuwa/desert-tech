@@ -9,7 +9,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Eye, EyeOff, LogIn, AlertTriangle } from "lucide-react";
+import { Eye, EyeOff, LogIn } from "lucide-react";
 import Image from "next/image";
 
 export default function AdminLoginPage() {
@@ -67,19 +67,6 @@ export default function AdminLoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-muted/30 to-background p-4">
       <div className="w-full max-w-md">
-        {/* Development Mode Warning */}
-        {!process.env.NEXT_PUBLIC_APP_URL && (
-          <div className="mb-4 flex items-start gap-3 rounded-lg border border-warning/20 bg-warning-soft p-4 text-sm">
-            <AlertTriangle className="h-5 w-5 flex-shrink-0 text-warning mt-0.5" />
-            <div>
-              <p className="font-semibold text-warning">Development Mode</p>
-              <p className="text-warning/80 mt-1">
-                No database connected. Use any email/password to sign in.
-              </p>
-            </div>
-          </div>
-        )}
-
         <div className="rounded-2xl border border-border bg-card p-8 shadow-sm">
           {/* Logo */}
           <div className="mb-8 text-center">

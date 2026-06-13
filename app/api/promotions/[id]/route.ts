@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { authorizePermission } from "@/lib/auth-server";
+import { authorizePermission, createAuditLog } from "@/lib/auth-server";
 import { Permissions } from "@/lib/permissions";
 
 const updateSchema = z.object({
@@ -30,7 +30,19 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (auth.error) return auth.error;
   if (!db) return NextResponse.json({ error: "Database is not available." }, { status: 503 });
   const { id } = await params;
-  await db.promotion.update({ where: { id }, data: mapData(updateSchema.parse(await request.json())) });
+  const before = await db.promotion.findUnique({
+    where: { id },
+    select: { title: true, isActive: true, isFeatured: true, placement: true },
+  });
+  const promotion = await db.promotion.update({ where: { id }, data: mapData(updateSchema.parse(await request.json())) });
+  await createAuditLog({
+    action: "Promotion updated",
+    targetType: "promotion",
+    targetId: promotion.id,
+    targetLabel: promotion.title,
+    beforeValues: before ?? undefined,
+    afterValues: { title: promotion.title, isActive: promotion.isActive, isFeatured: promotion.isFeatured, placement: promotion.placement },
+  });
   return NextResponse.json({ ok: true });
 }
 
@@ -39,6 +51,13 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   if (auth.error) return auth.error;
   if (!db) return NextResponse.json({ error: "Database is not available." }, { status: 503 });
   const { id } = await params;
-  await db.promotion.delete({ where: { id } });
+  const promotion = await db.promotion.delete({ where: { id } });
+  await createAuditLog({
+    action: "Promotion deleted",
+    targetType: "promotion",
+    targetId: promotion.id,
+    targetLabel: promotion.title,
+    beforeValues: { isActive: promotion.isActive, isFeatured: promotion.isFeatured, placement: promotion.placement },
+  });
   return NextResponse.json({ ok: true });
 }

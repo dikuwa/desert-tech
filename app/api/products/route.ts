@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { authorizePermission } from "@/lib/auth-server";
+import { authorizePermission, createAuditLog } from "@/lib/auth-server";
 import { Permissions } from "@/lib/permissions";
 import {
   normalizeProductImages,
@@ -114,6 +114,13 @@ export async function POST(request: Request) {
         category: true,
         images: { orderBy: { sortOrder: "asc" } },
       },
+    });
+    await createAuditLog({
+      action: "Product created",
+      targetType: "product",
+      targetId: product.id,
+      targetLabel: product.name,
+      afterValues: { sku: product.sku, stockQuantity: product.stockQuantity, priceCents: product.priceCents },
     });
 
     return NextResponse.json({

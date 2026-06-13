@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getStoreSettings, saveStoreSettings } from "@/lib/store-settings";
-import { authorizePermission } from "@/lib/auth-server";
+import { authorizePermission, createAuditLog } from "@/lib/auth-server";
 import { Permissions } from "@/lib/permissions";
 import { z } from "zod";
 
@@ -58,7 +58,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const before = await getStoreSettings();
     const saved = await saveStoreSettings(parsed.data);
+    await createAuditLog({
+      action: "Store settings updated",
+      targetType: "settings",
+      targetId: "store-settings",
+      targetLabel: "Store Settings",
+      metadata: { changedFields: Object.keys(parsed.data) },
+      beforeValues: Object.fromEntries(Object.keys(parsed.data).map((key) => [key, before[key as keyof typeof before]])),
+      afterValues: Object.fromEntries(Object.keys(parsed.data).map((key) => [key, saved[key as keyof typeof saved]])),
+    });
     return NextResponse.json({ success: true, settings: saved });
   } catch (error) {
     console.error("[Settings API] POST error:", error);

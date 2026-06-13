@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { authorizePermission } from "@/lib/auth-server";
+import { authorizePermission, createAuditLog } from "@/lib/auth-server";
 import { Permissions } from "@/lib/permissions";
 import {
   normalizeProductImages,
@@ -60,6 +60,10 @@ export async function PATCH(
     const lowStockThreshold = resolveLowStockThreshold(data.lowStockThreshold, settings.lowStockThreshold);
     const category = await findOrCreateCategory(data.category);
     const imageUrls = normalizeProductImages(data.images, data.imageUrl ?? undefined);
+    const before = await db.product.findUnique({
+      where: { id },
+      select: { name: true, sku: true, stockQuantity: true, priceCents: true },
+    });
 
     const product = await db.$transaction(async (tx) => {
       await tx.productImage.deleteMany({ where: { productId: id } });
@@ -95,6 +99,14 @@ export async function PATCH(
         },
       });
     });
+    await createAuditLog({
+      action: before?.stockQuantity !== product.stockQuantity ? "Product and stock updated" : "Product updated",
+      targetType: "product",
+      targetId: product.id,
+      targetLabel: product.name,
+      beforeValues: before ?? undefined,
+      afterValues: { name: product.name, sku: product.sku, stockQuantity: product.stockQuantity, priceCents: product.priceCents },
+    });
 
     return NextResponse.json({
       product: productRecordToDashboardProduct(product as unknown as ProductWithImages),
@@ -117,6 +129,13 @@ export async function DELETE(
   }
 
   const { id } = await params;
-  await db.product.delete({ where: { id } });
+  const product = await db.product.delete({ where: { id } });
+  await createAuditLog({
+    action: "Product deleted",
+    targetType: "product",
+    targetId: product.id,
+    targetLabel: product.name,
+    beforeValues: { sku: product.sku, stockQuantity: product.stockQuantity, priceCents: product.priceCents },
+  });
   return NextResponse.json({ ok: true });
 }

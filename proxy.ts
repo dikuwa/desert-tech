@@ -36,6 +36,8 @@ const publicApiMethods: Record<string, string[]> = {
   "/api/documents/token": ["GET"],
   "/api/products": ["GET"],
   "/api/catalog": ["GET"],
+  "/api/settings": ["GET"],
+  "/api/promotions": ["GET"],
 };
 
 function isPublicPath(pathname: string): boolean {

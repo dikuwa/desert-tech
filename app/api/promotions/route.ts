@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { authorizePermission } from "@/lib/auth-server";
+import { authorizePermission, createAuditLog } from "@/lib/auth-server";
 import { Permissions } from "@/lib/permissions";
 import { slugifyProduct } from "@/lib/product-records";
 
@@ -82,6 +82,13 @@ export async function POST(request: Request) {
       ctaLabel: data.ctaLabel,
     },
     include: { _count: { select: { products: true } } },
+  });
+  await createAuditLog({
+    action: "Promotion created",
+    targetType: "promotion",
+    targetId: promotion.id,
+    targetLabel: promotion.title,
+    afterValues: { isActive: promotion.isActive, isFeatured: promotion.isFeatured, placement: promotion.placement },
   });
   return NextResponse.json({ promotion: mapPromotion(promotion) });
 }

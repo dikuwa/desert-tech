@@ -205,9 +205,21 @@ export const auth = betterAuth({
       if (ctx.path !== "/sign-in/email" || !db) return;
       const userId = ctx.context.newSession?.user.id;
       if (userId) {
-        await db.user.update({
+        const user = await db.user.update({
           where: { id: userId },
           data: { lastActiveAt: new Date() },
+          select: { email: true, role: true },
+        });
+        await db.auditLog.create({
+          data: {
+            actorId: userId,
+            actorEmail: user.email,
+            actorRole: user.role,
+            action: "Signed in",
+            targetType: "authentication",
+            targetId: userId,
+            targetLabel: user.email,
+          },
         });
       }
     }),
