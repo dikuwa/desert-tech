@@ -16,7 +16,7 @@ export default async function DashboardLayout({
   try {
     user = await requireAuth();
   } catch {
-    redirect("/admin/login");
+    redirect("/login");
   }
 
   // Redirect users with temporary passwords to settings page to change password

@@ -130,7 +130,7 @@ export default function AcceptInvitationPage() {
             </div>
 
             <button
-              onClick={() => router.push("/admin/login")}
+              onClick={() => router.push("/login")}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-md"
             >
               Sign In
@@ -161,7 +161,7 @@ export default function AcceptInvitationPage() {
             </div>
 
             <Link
-              href="/admin/login"
+              href="/login"
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90"
             >
               Go to Sign In
@@ -310,7 +310,7 @@ export default function AcceptInvitationPage() {
           {/* Back */}
           <div className="mt-6 text-center">
             <Link
-              href="/admin/login"
+              href="/login"
               className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80"
             >
               <ArrowLeft className="h-4 w-4" />

@@ -11,6 +11,7 @@ import { Permissions } from "@/lib/permissions";
 import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
 import { sendInvitationEmail } from "@/lib/email";
 import { getStoreSettings } from "@/lib/store-settings";
+import { getAppUrl } from "@/lib/app-url";
 
 export async function POST(
   req: NextRequest,
@@ -81,7 +82,7 @@ export async function POST(
 
     // Use short code for accept URL
     const shortCode = invitation.shortCode;
-    const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/+$/, "");
+    const appUrl = getAppUrl();
     const acceptUrl = shortCode
       ? `${appUrl}/invite/${shortCode}`
       : `${appUrl}/admin/invite/accept?token=${token}`;

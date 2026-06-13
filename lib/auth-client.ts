@@ -6,7 +6,7 @@
 import { createAuthClient } from "better-auth/react";
 
 export const authClient = createAuthClient({
-  baseURL: (typeof window !== "undefined" ? window.location.origin : process.env.NEXT_PUBLIC_APP_URL) || "https://deserttechnology.com.na",
+  baseURL: (typeof window !== "undefined" ? window.location.origin : process.env.NEXT_PUBLIC_APP_URL) || "https://desertechnam.vercel.app",
 });
 
 // Re-export commonly used helpers

@@ -174,7 +174,7 @@ export async function sendWelcomeEmail(params: WelcomeEmailParams): Promise<void
       <h2>Welcome, ${name}!</h2>
       <p>Your ${storeName} account has been created. You can now sign in to the dashboard.</p>
       <p>If you were created via the direct account method, you may need to change your password on first login.</p>
-      <p><a href="${appUrl}/admin/login" style="color: #f68923;">Sign in to your account</a></p>
+      <p><a href="${appUrl}/login" style="color: #f68923;">Sign in to your account</a></p>
     </div>
     <div class="footer">
       <p>${storeName} | Namibia</p>
@@ -189,7 +189,7 @@ Welcome, ${name}!
 
 Your ${storeName} account has been created. You can now sign in to the dashboard.
 
-Sign in: ${appUrl}/admin/login
+Sign in: ${appUrl}/login
 
 ${storeName} | Namibia
   `.trim();
@@ -366,7 +366,7 @@ export async function sendInvitationEmail(params: InvitationEmailParams): Promis
     ? `${getAppUrl()}/invite/${code}`
     : token
     ? `${getAppUrl()}/admin/invite/accept?token=${token}`
-    : `${getAppUrl()}/admin/login`;
+    : `${getAppUrl()}/login`;
   const roleDisplay = role.charAt(0) + role.slice(1).toLowerCase();
 
   const html = `

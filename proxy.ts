@@ -18,6 +18,7 @@ const publicPaths = [
   "/promotions",
   "/contact",
   "/search",
+  "/login",
   "/admin",
   "/admin/login",
   "/admin/forgot-password",
@@ -77,11 +78,11 @@ export async function proxy(req: NextRequest) {
 
   // Redirect old auth paths to new login
   if (pathname === "/auth/sign-in" || pathname === "/auth/signin") {
-    return NextResponse.redirect(new URL("/admin/login", req.url));
+    return NextResponse.redirect(new URL("/login", req.url));
   }
 
   if (pathname === "/auth/sign-up" || pathname === "/auth/signup") {
-    return NextResponse.redirect(new URL("/admin/login", req.url));
+    return NextResponse.redirect(new URL("/login", req.url));
   }
 
   // Allow public paths
@@ -115,7 +116,7 @@ export async function proxy(req: NextRequest) {
     if (!sessionCookie?.value) {
       // Redirect to login for dashboard routes
       if (pathname.startsWith("/dashboard")) {
-        const signInUrl = new URL("/admin/login", req.url);
+        const signInUrl = new URL("/login", req.url);
         signInUrl.searchParams.set("redirect", pathname);
         return NextResponse.redirect(signInUrl);
       }

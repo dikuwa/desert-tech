@@ -9,5 +9,5 @@ export default async function AdminPage({
   const redirectTo = params.redirect?.startsWith("/") ? params.redirect : "/dashboard";
 
   // Redirect to the new login page
-  redirect(`/admin/login?redirect=${encodeURIComponent(redirectTo)}`);
+  redirect(`/login?redirect=${encodeURIComponent(redirectTo)}`);
 }

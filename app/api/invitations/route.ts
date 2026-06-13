@@ -17,6 +17,7 @@ import { Permissions, type Permission } from "@/lib/permissions";
 import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
 import { sendInvitationEmail } from "@/lib/email";
 import { getStoreSettings } from "@/lib/store-settings";
+import { getAppUrl } from "@/lib/app-url";
 
 // Validation schema for creating invitations
 const createInvitationSchema = z.object({
@@ -188,7 +189,7 @@ export async function POST(req: NextRequest) {
       note,
     });
 
-    const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/+$/, "");
+    const appUrl = getAppUrl();
     const acceptUrl = `${appUrl}/invite/${invitation.shortCode}`;
 
     // Send invitation via email (only if an actual email was provided)

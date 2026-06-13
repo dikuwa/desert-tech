@@ -70,7 +70,7 @@ export default function ForgotPasswordPage() {
 
             <div className="mt-6 text-center">
               <Link
-                href="/admin/login"
+                href="/login"
                 className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80"
               >
                 <ArrowLeft className="h-4 w-4" />
@@ -162,7 +162,7 @@ export default function ForgotPasswordPage() {
           {/* Back to Sign In */}
           <div className="mt-6 text-center">
             <Link
-              href="/admin/login"
+              href="/login"
               className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80"
             >
               <ArrowLeft className="h-4 w-4" />

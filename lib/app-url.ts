@@ -10,7 +10,7 @@
  * silently generating broken temporary deployment links.
  */
 
-const PRODUCTION_DOMAIN = "https://deserttechnology.com.na";
+const PRODUCTION_DOMAIN = "https://desertechnam.vercel.app";
 
 export function getAppUrl(): string {
   const url =
@@ -40,7 +40,7 @@ export function getAppUrl(): string {
   // Warn if the URL looks like a Vercel preview deployment
   if (
     clean.includes("vercel.app") &&
-    !clean.replace("https://", "").startsWith("deserttechnology.com.na")
+    clean !== PRODUCTION_DOMAIN
   ) {
     console.error(
       "[app-url] CRITICAL: The configured URL",
