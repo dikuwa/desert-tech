@@ -9,6 +9,8 @@ import {
   slugifyProduct,
   type ProductWithImages,
 } from "@/lib/product-records";
+import { getProductAvailability, resolveLowStockThreshold } from "@/lib/product-sku";
+import { getStoreSettings } from "@/lib/store-settings";
 
 const productUpdateSchema = z.object({
   name: z.string().min(2).max(160),
@@ -17,7 +19,7 @@ const productUpdateSchema = z.object({
   condition: z.string().default("New"),
   priceCents: z.number().int().nonnegative(),
   stockQuantity: z.number().int().nonnegative().default(0),
-  lowStockThreshold: z.number().int().nonnegative().default(5),
+  lowStockThreshold: z.number().int().nonnegative().optional(),
   availability: z.string().optional(),
   isPublished: z.boolean().default(true),
   isFeatured: z.boolean().default(false),
@@ -54,6 +56,8 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
     const data = productUpdateSchema.parse(body);
+    const settings = await getStoreSettings();
+    const lowStockThreshold = resolveLowStockThreshold(data.lowStockThreshold, settings.lowStockThreshold);
     const category = await findOrCreateCategory(data.category);
     const imageUrls = normalizeProductImages(data.images, data.imageUrl ?? undefined);
 
@@ -72,14 +76,8 @@ export async function PATCH(
           priceCents: data.priceCents,
           compareAtPriceCents: data.compareAtPriceCents || null,
           stockQuantity: data.stockQuantity,
-          lowStockThreshold: data.lowStockThreshold,
-          availability:
-            data.availability ??
-            (data.stockQuantity <= 0
-              ? "OutOfStock"
-              : data.stockQuantity <= data.lowStockThreshold
-                ? "LowStock"
-                : "InStock"),
+          lowStockThreshold,
+          availability: getProductAvailability(data.stockQuantity, lowStockThreshold),
           warranty: data.warranty || null,
           isFeatured: data.isFeatured,
           isPublished: data.isPublished,

@@ -7,7 +7,7 @@ import Link from "next/link";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { MoneyInput } from "@/components/ui/money-input";
 import { useDashboardStore } from "@/lib/store/dashboard";
-import { generateProductSku } from "@/lib/product-sku";
+import { generateProductSku, getProductAvailability, resolveLowStockThreshold } from "@/lib/product-sku";
 import { toast } from "sonner";
 import { ProductImage } from "@/components/ui/product-image";
 import { DesertCheckbox } from "@/components/ui/desert-checkbox";
@@ -26,6 +26,7 @@ export default function EditProductPage() {
 
   const brands = useDashboardStore((s) => s.brands);
   const categories = useDashboardStore((s) => s.categories);
+  const settings = useDashboardStore((s) => s.settings);
 
   const [form, setForm] = useState(() => {
     if (!product) return null;
@@ -38,7 +39,7 @@ export default function EditProductPage() {
       stockQuantity: product.stockQuantity,
       reorderLimit: product.lowStockThreshold,
       description: product.description || "",
-      sku: product.sku || generateProductSku(product.category, products),
+      sku: product.sku || generateProductSku(product.category, products, settings.receiptPrefix),
       skuWasManuallyEdited: false,
       warranty: product.warranty || "",
       isFeatured: product.isFeatured,
@@ -49,9 +50,9 @@ export default function EditProductPage() {
   useEffect(() => {
     setForm((prev) => {
       if (!prev || prev.skuWasManuallyEdited || product?.sku) return prev;
-      return { ...prev, sku: generateProductSku(prev.category, products) };
+      return { ...prev, sku: generateProductSku(prev.category, products, settings.receiptPrefix) };
     });
-  }, [product?.sku, products]);
+  }, [product?.sku, products, settings.receiptPrefix]);
 
   const updateField = (field: string, value: string | boolean | number) =>
     setForm(prev => {
@@ -61,6 +62,7 @@ export default function EditProductPage() {
         updated.sku = generateProductSku(
           value,
           products.filter((existing) => existing.id !== product?.id),
+          settings.receiptPrefix,
         );
       }
       return updated;
@@ -124,6 +126,7 @@ export default function EditProductPage() {
     setSubmitting(true);
     const stockWasUnavailable = product.availability === "OutOfStock" || product.stockQuantity <= 0;
     const stockIsAvailable = form.stockQuantity > 0;
+    const lowStockThreshold = resolveLowStockThreshold(form.reorderLimit, settings.lowStockThreshold);
     const payload = {
       name: form.name.trim(),
       brand: form.brand.trim(),
@@ -131,8 +134,8 @@ export default function EditProductPage() {
       condition: form.condition,
       priceCents: form.priceCents,
       stockQuantity: form.stockQuantity,
-      lowStockThreshold: form.reorderLimit || 5,
-      availability: form.stockQuantity <= 0 ? "OutOfStock" : form.stockQuantity <= form.reorderLimit ? "LowStock" : "InStock",
+      lowStockThreshold,
+      availability: getProductAvailability(form.stockQuantity, lowStockThreshold),
       isPublished: true,
       isFeatured: form.isFeatured,
       sku: form.sku || undefined,

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { ProductSync } from "@/components/product-sync";
 import { CatalogSync } from "@/components/catalog-sync";
 import { DashboardToaster } from "@/components/ui/dashboard-toaster";
+import { StoreDataSync } from "@/components/store-data-sync";
 
 export default async function DashboardLayout({
   children,
@@ -27,7 +28,8 @@ export default async function DashboardLayout({
     <div className="dashboard-shell flex min-h-screen">
       <DashboardNotificationPoller />
       <ProductSync />
-      <CatalogSync importLocal />
+      <CatalogSync />
+      <StoreDataSync />
       <DashboardSidebar
         user={{
           name: user.name,

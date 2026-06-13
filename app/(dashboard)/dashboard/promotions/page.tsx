@@ -18,13 +18,18 @@ import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { DesertCheckbox } from "@/components/ui/desert-checkbox";
+import { toast } from "sonner";
 
 export default function DashboardPromotionsPage() {
   const promotions = useDashboardStore((s) => s.promotions);
-  const addPromotion = useDashboardStore((s) => s.addPromotion);
-  const updatePromotion = useDashboardStore((s) => s.updatePromotion);
-  const deletePromotion = useDashboardStore((s) => s.deletePromotion);
-  const togglePromotionActive = useDashboardStore((s) => s.togglePromotionActive);
+  const syncPromotions = useDashboardStore((s) => s.syncPromotions);
+
+  const refreshPromotions = async () => {
+    const response = await fetch("/api/promotions", { cache: "no-store" });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Could not load promotions.");
+    syncPromotions(data.promotions ?? []);
+  };
 
   const [showAdd, setShowAdd] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -66,39 +71,58 @@ export default function DashboardPromotionsPage() {
     }
   };
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!form.title.trim()) return;
-    addPromotion({
-      title: form.title.trim(),
-      description: form.description.trim(),
-      imageUrl: form.imageUrl || undefined,
-      images: form.images.length > 0 ? form.images : undefined,
-      discountLabel: form.discountLabel || undefined,
-      placement: form.placement,
-      type: form.type as any,
-      isFeatured: form.isFeatured,
-      isActive: true,
-      startsAt: new Date().toISOString().split("T")[0],
-      endsAt: undefined,
-    });
-    resetForm();
-    setShowAdd(false);
+    try {
+      const response = await fetch("/api/promotions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, title: form.title.trim(), description: form.description.trim(), isActive: true }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not create promotion.");
+      await refreshPromotions();
+      resetForm();
+      setShowAdd(false);
+      toast.success("Promotion created");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not create promotion.");
+    }
   };
 
-  const handleEdit = (id: string) => {
+  const handleEdit = async (id: string) => {
     if (!form.title.trim()) return;
-    updatePromotion(id, {
-      title: form.title.trim(),
-      description: form.description.trim(),
-      imageUrl: form.imageUrl || undefined,
-      images: form.images.length > 0 ? form.images : undefined,
-      discountLabel: form.discountLabel || undefined,
-      placement: form.placement,
-      type: form.type as any,
-      isFeatured: form.isFeatured,
+    try {
+      const response = await fetch(`/api/promotions/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, title: form.title.trim(), description: form.description.trim() }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not update promotion.");
+      await refreshPromotions();
+      resetForm();
+      setEditId(null);
+      toast.success("Promotion updated");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not update promotion.");
+    }
+  };
+
+  const handleToggle = async (id: string, isActive: boolean) => {
+    const response = await fetch(`/api/promotions/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isActive: !isActive }),
     });
-    resetForm();
-    setEditId(null);
+    if (!response.ok) return toast.error("Could not update promotion.");
+    await refreshPromotions();
+  };
+
+  const handleDelete = async (id: string) => {
+    const response = await fetch(`/api/promotions/${id}`, { method: "DELETE" });
+    if (!response.ok) return toast.error("Could not delete promotion.");
+    await refreshPromotions();
   };
 
   const startEdit = (promo: typeof promotions[0]) => {
@@ -392,7 +416,7 @@ export default function DashboardPromotionsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
-                  <button onClick={() => togglePromotionActive(promo.id)}
+                  <button onClick={() => handleToggle(promo.id, promo.isActive)}
                     className={cn("rounded-lg p-1.5 transition-colors", promo.isActive ? "text-success hover:bg-success-soft" : "text-muted-foreground hover:bg-muted")}>
                     {promo.isActive ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
                   </button>
@@ -414,7 +438,7 @@ export default function DashboardPromotionsPage() {
         confirm={{
           label: "Delete Promotion",
           onClick: () => {
-            if (deleteConfirm) deletePromotion(deleteConfirm);
+            if (deleteConfirm) void handleDelete(deleteConfirm);
             setDeleteConfirm(null);
           },
           variant: "danger",

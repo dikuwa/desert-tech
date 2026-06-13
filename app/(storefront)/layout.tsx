@@ -5,6 +5,7 @@ import { MobileDrawer } from "@/components/storefront/mobile-drawer";
 import { ProductSync } from "@/components/product-sync";
 import { CatalogSync } from "@/components/catalog-sync";
 import { StorefrontToaster } from "@/components/ui/storefront-toaster";
+import { StoreDataSync } from "@/components/store-data-sync";
 
 export default function StorefrontLayout({
   children,
@@ -15,6 +16,7 @@ export default function StorefrontLayout({
     <>
       <ProductSync />
       <CatalogSync />
+      <StoreDataSync />
       <StorefrontHeader />
       <main className="flex-1">{children}</main>
       <StorefrontFooter />

@@ -1,15 +1,13 @@
 /**
  * Server-side store settings helper.
  * Fetches saved store settings from the database.
- * Falls back to defaults from dashboard-data if no DB record exists.
+ * Uses one normalized default record when no saved database record exists.
  *
  * Use this in API routes, server components, and PDF generation.
  * For client components, use useDashboardStore(s => s.settings) instead.
  */
 
 import { db } from "@/lib/db";
-import { storeSettings as fallbackSettings } from "@/lib/dashboard-data";
-
 export interface StoreSettings {
   storeName: string;
   phone: string;
@@ -28,21 +26,58 @@ export interface StoreSettings {
   heroImageUrl: string;
 }
 
+export const DEFAULT_STORE_SETTINGS: StoreSettings = {
+  storeName: "Desert Technology Consultant",
+  phone: "+264 85 277 5140",
+  whatsapp: "264852775140",
+  email: "sales@desertechnam.com",
+  address: "Windhoek, Namibia",
+  bankName: "",
+  bankAccountName: "",
+  bankAccountNumber: "",
+  bankBranchCode: "",
+  receiptPrefix: "DT",
+  lowStockThreshold: 5,
+  currency: "NAD",
+  heroHeading: "",
+  heroSubheading: "",
+  heroImageUrl: "",
+};
+
+export function normalizeStoreSettings(data: Partial<StoreSettings>): StoreSettings {
+  const receiptPrefix = String(data.receiptPrefix ?? DEFAULT_STORE_SETTINGS.receiptPrefix)
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 12);
+  const threshold = Number(data.lowStockThreshold);
+
+  return {
+    ...DEFAULT_STORE_SETTINGS,
+    ...data,
+    receiptPrefix: receiptPrefix || DEFAULT_STORE_SETTINGS.receiptPrefix,
+    lowStockThreshold: Number.isInteger(threshold) && threshold >= 0
+      ? threshold
+      : DEFAULT_STORE_SETTINGS.lowStockThreshold,
+    currency: String(data.currency ?? DEFAULT_STORE_SETTINGS.currency).trim().toUpperCase() || "NAD",
+  };
+}
+
 export async function getStoreSettings(): Promise<StoreSettings> {
-  if (!db) return fallbackSettings;
+  if (!db) return DEFAULT_STORE_SETTINGS;
 
   try {
     const record = await db.storeSetting.findUnique({
       where: { id: "default" },
     });
 
-    if (!record?.data) return fallbackSettings;
+    if (!record?.data) return DEFAULT_STORE_SETTINGS;
 
     const parsed = JSON.parse(record.data) as Partial<StoreSettings>;
-    return { ...fallbackSettings, ...parsed };
+    return normalizeStoreSettings(parsed);
   } catch (error) {
     console.error("[StoreSettings] Failed to fetch:", error);
-    return fallbackSettings;
+    return DEFAULT_STORE_SETTINGS;
   }
 }
 
@@ -54,14 +89,13 @@ export async function saveStoreSettings(
   data: Partial<StoreSettings>,
 ): Promise<StoreSettings> {
   if (!db) {
-    console.warn("[StoreSettings] No database — settings not saved");
-    return { ...fallbackSettings, ...data };
+    throw new Error("Database is not available.");
   }
 
   try {
     // Merge with existing settings
     const existing = await getStoreSettings();
-    const merged = { ...existing, ...data };
+    const merged = normalizeStoreSettings({ ...existing, ...data });
 
     await db.storeSetting.upsert({
       where: { id: "default" },
@@ -77,6 +111,6 @@ export async function saveStoreSettings(
     return merged;
   } catch (error) {
     console.error("[StoreSettings] Failed to save:", error);
-    return { ...fallbackSettings, ...data };
+    throw error;
   }
 }

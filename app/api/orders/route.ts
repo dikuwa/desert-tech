@@ -3,6 +3,7 @@ import { z } from "zod";
 import { addOrder, getOrders } from "@/lib/order-store";
 import { authorizePermission } from "@/lib/auth-server";
 import { Permissions } from "@/lib/permissions";
+import { getStoreSettings } from "@/lib/store-settings";
 
 const orderSchema = z.object({
   fullName: z.string().min(2).max(100),
@@ -35,7 +36,8 @@ export async function POST(req: Request) {
     // Generate a unique order number
     const timestamp = Date.now().toString(36).toUpperCase();
     const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-    const orderNumber = `DT-${timestamp}${random}`;
+    const settings = await getStoreSettings();
+    const orderNumber = `${settings.receiptPrefix}-${timestamp}${random}`;
 
     const subtotalCents = validated.items.reduce(
       (sum, item) => sum + item.priceCents * item.quantity,

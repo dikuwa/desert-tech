@@ -9,6 +9,8 @@ import {
   slugifyProduct,
   type ProductWithImages,
 } from "@/lib/product-records";
+import { generateProductSku, getProductAvailability, resolveLowStockThreshold } from "@/lib/product-sku";
+import { getStoreSettings } from "@/lib/store-settings";
 
 const productSchema = z.object({
   name: z.string().min(2).max(160),
@@ -17,7 +19,7 @@ const productSchema = z.object({
   condition: z.string().default("New"),
   priceCents: z.number().int().nonnegative(),
   stockQuantity: z.number().int().nonnegative().default(0),
-  lowStockThreshold: z.number().int().nonnegative().default(5),
+  lowStockThreshold: z.number().int().nonnegative().optional(),
   availability: z.string().optional(),
   isPublished: z.boolean().default(true),
   isFeatured: z.boolean().default(false),
@@ -69,17 +71,24 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const data = productSchema.parse(body);
+    const settings = await getStoreSettings();
+    const lowStockThreshold = resolveLowStockThreshold(data.lowStockThreshold, settings.lowStockThreshold);
     const category = await findOrCreateCategory(data.category);
     const imageUrls = normalizeProductImages(data.images, data.imageUrl ?? undefined);
     const slugBase = slugifyProduct(data.name);
     const slugExists = await db.product.findUnique({ where: { slug: slugBase } });
     const slug = slugExists ? `${slugBase}-${Date.now().toString(36)}` : slugBase;
 
+    const existingProducts = await db.product.findMany({ select: { sku: true } });
+    const sku = data.sku?.trim() || generateProductSku(data.category, existingProducts, settings.receiptPrefix);
+    if (existingProducts.some((product) => product.sku?.toLowerCase() === sku.toLowerCase())) {
+      return NextResponse.json({ error: `SKU "${sku}" already exists.` }, { status: 409 });
+    }
     const product = await db.product.create({
       data: {
         name: data.name,
         slug,
-        sku: data.sku || null,
+        sku,
         brand: data.brand,
         categoryId: category.id,
         condition: data.condition,
@@ -88,14 +97,8 @@ export async function POST(request: Request) {
         priceCents: data.priceCents,
         compareAtPriceCents: data.compareAtPriceCents || null,
         stockQuantity: data.stockQuantity,
-        lowStockThreshold: data.lowStockThreshold,
-        availability:
-          data.availability ??
-          (data.stockQuantity <= 0
-            ? "OutOfStock"
-            : data.stockQuantity <= data.lowStockThreshold
-              ? "LowStock"
-              : "InStock"),
+        lowStockThreshold,
+        availability: getProductAvailability(data.stockQuantity, lowStockThreshold),
         warranty: data.warranty?.trim() || "6 Months",
         isFeatured: data.isFeatured,
         isPublished: data.isPublished,

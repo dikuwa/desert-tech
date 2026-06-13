@@ -52,9 +52,11 @@ const CATEGORY_SKU_CODES: Record<string, string> = {
 export function generateProductSku(
   category: string,
   existingProducts: { sku?: string | null }[],
+  prefix = "DT",
 ): string {
   const code = CATEGORY_SKU_CODES[category] || "GEN";
-  const skuPattern = new RegExp(`^DT-${code}-(\\d+)$`, "i");
+  const normalizedPrefix = prefix.trim().toUpperCase().replace(/[^A-Z0-9]/g, "") || "DT";
+  const skuPattern = new RegExp(`^${normalizedPrefix}-${code}-(\\d+)$`, "i");
   let maxSequence = 0;
 
   for (const product of existingProducts) {
@@ -65,5 +67,14 @@ export function generateProductSku(
     if (sequence > maxSequence) maxSequence = sequence;
   }
 
-  return `DT-${code}-${String(maxSequence + 1).padStart(4, "0")}`;
+  return `${normalizedPrefix}-${code}-${String(maxSequence + 1).padStart(4, "0")}`;
+}
+
+export function resolveLowStockThreshold(productThreshold: number | undefined, storeThreshold: number): number {
+  return productThreshold && productThreshold > 0 ? productThreshold : Math.max(0, storeThreshold);
+}
+
+export function getProductAvailability(stockQuantity: number, threshold: number): "OutOfStock" | "LowStock" | "InStock" {
+  if (stockQuantity <= 0) return "OutOfStock";
+  return stockQuantity <= threshold ? "LowStock" : "InStock";
 }

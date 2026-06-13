@@ -287,7 +287,14 @@ model Promotion {
   startsAt       DateTime?
   endsAt         DateTime?
   isActive       Boolean  @default(true)
+  isFeatured     Boolean  @default(true)
   placement      String   @default("FeaturedSection")
+  type           String   @default("general")
+  images         Json?
+  linkedProductId String?
+  linkedCategory String?
+  serviceSlug    String?
+  ctaLabel       String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

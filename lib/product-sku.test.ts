@@ -15,4 +15,8 @@ describe("generateProductSku", () => {
   it("uses the general category code for an unknown category", () => {
     expect(generateProductSku("Other", [])).toBe("DT-GEN-0001");
   });
+
+  it("uses the current store prefix", () => {
+    expect(generateProductSku("General", [{ sku: "DTC-GEN-0009" }], "DTC")).toBe("DTC-GEN-0010");
+  });
 });

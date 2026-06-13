@@ -1,20 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import {
-  mockOrders as initialOrders,
-  mockProducts as initialProducts,
-  mockCustomers as initialCustomers,
-  mockPromotions as initialPromotions,
-  mockStaff as initialStaff,
-  mockFollowUps as initialFollowUps,
-  mockNotifications as initialNotifications,
-  mockBackInStockRequests as initialBackInStockRequests,
-  mockPayments as initialPayments,
-  mockQuotations as initialQuotations,
   storeSettings as initialSettings,
-  defaultContactDetails,
-  defaultBankDetails,
-  defaultPaymentMethods,
 } from "@/lib/dashboard-data";
 import type {
   DashboardOrder,
@@ -60,6 +47,7 @@ interface DashboardState {
   customers: DashboardCustomer[];
   categories: DashboardCategory[];
   promotions: DashboardPromotion[];
+  syncPromotions: (promotions: DashboardPromotion[]) => void;
   staff: DashboardStaff[];
   followUps: DashboardFollowUp[];
   notifications: DashboardNotification[];
@@ -146,6 +134,7 @@ interface DashboardState {
 
   // Settings
   updateSettings: (data: Partial<typeof initialSettings>) => void;
+  syncSettings: (data: Partial<typeof initialSettings>) => void;
 
   // Contact Details CRUD
   addContactDetail: (c: Omit<ContactDetail, "id">) => void;
@@ -245,28 +234,48 @@ export const useDashboardStore = create<DashboardState>()(
   persist(
     (set, get) => ({
 
-      orders: initialOrders,
-      products: initialProducts,
-      customers: initialCustomers,
+      orders: [],
+      products: [],
+      customers: [],
       categories: [],
-      promotions: initialPromotions,
-      staff: initialStaff,
-      followUps: initialFollowUps,
-      notifications: initialNotifications,
-      quotations: initialQuotations,
+      promotions: [],
+      staff: [],
+      followUps: [],
+      notifications: [],
+      quotations: [],
       brands: [],
-      payments: initialPayments,
-      contactDetails: defaultContactDetails,
-      bankDetails: defaultBankDetails,
-      paymentMethods: defaultPaymentMethods,
+      payments: [],
+      contactDetails: [],
+      bankDetails: [],
+      paymentMethods: [],
       settings: initialSettings,
-      backInStockRequests: initialBackInStockRequests,
+      backInStockRequests: [],
       userRole: "Admin",
       currentUser: "Admin User",
       invites: [],
       auditLogs: [],
 
       // === Settings ===
+      syncSettings: (data) => set((s) => {
+        const settings = { ...s.settings, ...data };
+        return {
+          settings,
+          contactDetails: [
+            { id: "settings-phone", type: "phone", label: "Main", value: settings.phone, isActive: Boolean(settings.phone) },
+            { id: "settings-whatsapp", type: "whatsapp", label: "Sales", value: settings.whatsapp, isActive: Boolean(settings.whatsapp) },
+            { id: "settings-email", type: "email", label: "General", value: settings.email, isActive: Boolean(settings.email) },
+            { id: "settings-address", type: "address", label: "Physical", value: settings.address, isActive: Boolean(settings.address) },
+          ],
+          bankDetails: settings.bankName ? [{
+            id: "settings-bank",
+            bankName: settings.bankName,
+            accountName: settings.bankAccountName,
+            accountNumber: settings.bankAccountNumber,
+            branchCode: settings.bankBranchCode,
+            isActive: true,
+          }] : [],
+        };
+      }),
       updateSettings: (data) => {
         const changedFields = Object.keys(data).join(", ");
         set((s) => {
@@ -595,6 +604,7 @@ export const useDashboardStore = create<DashboardState>()(
         })),
 
       // === Promotions ===
+      syncPromotions: (promotions) => set({ promotions }),
       addPromotion: (p) => {
         const id = `pr${nextPromotionId++}`;
         const newPromo: DashboardPromotion = {
@@ -623,7 +633,7 @@ export const useDashboardStore = create<DashboardState>()(
       // === Orders ===
       addOrder: (o) => {
         const id = `o${nextOrderId++}`;
-        const orderNumber = `DT-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+        const orderNumber = `${get().settings.receiptPrefix}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
         const now = new Date().toISOString();
         const paymentStatus: DashboardOrder["paymentStatus"] = o.payment
           ? o.payment.amountCents >= o.subtotalCents
@@ -964,7 +974,7 @@ export const useDashboardStore = create<DashboardState>()(
       // === Quotations ===
       addQuotation: (q) => {
         const id = `qtn${nextQuotationId++}`;
-        const quotationNumber = `QTN-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+        const quotationNumber = `${get().settings.receiptPrefix}-QTN-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
         const now = new Date().toISOString();
         const newQuotation: DashboardQuotation = {
           id,
@@ -1061,7 +1071,7 @@ export const useDashboardStore = create<DashboardState>()(
     }),
     {
       name: "desert-tech-dashboard",
-      version: 3,
+      version: 4,
     },
   ),
 );

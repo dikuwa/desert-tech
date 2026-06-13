@@ -134,6 +134,7 @@ export default function SettingsPage() {
 
   const [saved, setSaved] = useState(false);
   const [form, setForm] = useState(settings);
+  useEffect(() => setForm(settings), [settings]);
 
   const [uploading, setUploading] = useState(false);
   const [profileUploading, setProfileUploading] = useState(false);
@@ -180,19 +181,22 @@ export default function SettingsPage() {
   const [editingPaymentId, setEditingPaymentId] = useState<string | null>(null);
 
   const handleSave = async () => {
-    updateSettings(form);
-    // Also persist to database via API
     try {
-      await fetch("/api/settings", {
+      const response = await fetch("/api/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
+      const data = await response.json();
+      if (!response.ok || !data.settings) throw new Error(data.error || "Could not save settings.");
+      updateSettings(data.settings);
+      setForm(data.settings);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
     } catch (err) {
       console.error("[Settings] Failed to persist to DB:", err);
+      toast.error(err instanceof Error ? err.message : "Could not save settings.");
     }
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
   };
 
   const handlePasswordChange = async (event: React.FormEvent) => {
@@ -239,7 +243,10 @@ export default function SettingsPage() {
   };
 
   const updateField = (field: string, value: string) =>
-    setForm((prev) => ({ ...prev, [field]: value }));
+    setForm((prev) => ({
+      ...prev,
+      [field]: field === "lowStockThreshold" ? Number.parseInt(value, 10) || 0 : value,
+    }));
 
   const handleHeroImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

@@ -7,7 +7,7 @@ import Link from "next/link";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { MoneyInput } from "@/components/ui/money-input";
 import { useDashboardStore } from "@/lib/store/dashboard";
-import { generateProductSku } from "@/lib/product-sku";
+import { generateProductSku, getProductAvailability, resolveLowStockThreshold } from "@/lib/product-sku";
 import { cn } from "@/lib/utils";
 import { ProductImage } from "@/components/ui/product-image";
 import { DesertCheckbox } from "@/components/ui/desert-checkbox";
@@ -130,6 +130,7 @@ export default function NewProductPage() {
   const products = useDashboardStore((s) => s.products);
   const brands = useDashboardStore((s) => s.brands);
   const categories = useDashboardStore((s) => s.categories);
+  const settings = useDashboardStore((s) => s.settings);
   
   const [submitting, setSubmitting] = useState(false);
   const [images, setImages] = useState<string[]>([]);
@@ -143,9 +144,9 @@ export default function NewProductPage() {
     condition: "New" as const,
     priceCents: 0,
     stockQuantity: 1,
-    reorderLimit: 0,
+    reorderLimit: settings.lowStockThreshold,
     description: "",
-    sku: generateProductSku("General", products),
+    sku: generateProductSku("General", products, settings.receiptPrefix),
     skuWasManuallyEdited: false,
     warranty: "6 Months",
     isFeatured: false,
@@ -155,15 +156,15 @@ export default function NewProductPage() {
   useEffect(() => {
     setForm((prev) => prev.skuWasManuallyEdited
       ? prev
-      : { ...prev, sku: generateProductSku(prev.category || "General", products) });
-  }, [products]);
+      : { ...prev, sku: generateProductSku(prev.category || "General", products, settings.receiptPrefix) });
+  }, [products, settings.receiptPrefix]);
 
   const updateField = (field: string, value: string | boolean | number) => {
     setForm(prev => {
       const updated = { ...prev, [field]: value };
       // Auto-generate SKU when category changes and SKU hasn't been manually edited
       if (field === "category" && typeof value === "string" && !prev.skuWasManuallyEdited) {
-        updated.sku = generateProductSku(value || "General", products);
+        updated.sku = generateProductSku(value || "General", products, settings.receiptPrefix);
       }
       return updated;
     });
@@ -225,6 +226,7 @@ export default function NewProductPage() {
     
     setSubmitting(true);
     
+    const lowStockThreshold = resolveLowStockThreshold(form.reorderLimit, settings.lowStockThreshold);
     const payload = {
       name: form.name.trim(),
       brand: form.brand.trim(),
@@ -232,12 +234,12 @@ export default function NewProductPage() {
       condition: form.condition,
       priceCents: form.priceCents,
       stockQuantity: form.stockQuantity || 0,
-      lowStockThreshold: form.reorderLimit || 5,
-      availability: form.stockQuantity <= 0 ? "OutOfStock" : form.stockQuantity <= form.reorderLimit ? "LowStock" : "InStock",
+      lowStockThreshold,
+      availability: getProductAvailability(form.stockQuantity, lowStockThreshold),
       isPublished: true,
       isFeatured: form.isFeatured,
       sku: form.sku || undefined,
-      imageUrl: images[0] || "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=200&h=200&fit=crop",
+      imageUrl: images[0] || "",
       images: images.length > 0 ? images : undefined,
       description: form.description.trim() || undefined,
       warranty: form.warranty.trim() || undefined,

@@ -21,6 +21,8 @@ import { uploadFile } from "@/lib/storage";
 import { computePaymentFields } from "@/lib/dashboard-data";
 import { authorizePermission } from "@/lib/auth-server";
 import { Permissions } from "@/lib/permissions";
+import { getStoreSettings } from "@/lib/store-settings";
+import { createDocumentReference } from "@/lib/document-reference";
 
 const orderSnapshotSchema = z.object({
   orderNumber: z.string().min(1),
@@ -169,7 +171,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate receipt number
-    const receiptNumber = `RCP-${order.orderNumber.replace("DT-", "")}-${Date.now().toString(36).toUpperCase().slice(-4)}`;
+    const storeSettings = await getStoreSettings();
+    const receiptNumber = createDocumentReference(
+      storeSettings.receiptPrefix,
+      "RCP",
+      order.orderNumber,
+      Date.now().toString(36).toUpperCase().slice(-4),
+    );
     const date = new Date(order.createdAt).toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",

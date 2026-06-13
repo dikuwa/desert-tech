@@ -5,8 +5,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getStoreSettings, saveStoreSettings } from "@/lib/store-settings";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { authorizePermission } from "@/lib/auth-server";
+import { Permissions } from "@/lib/permissions";
 import { z } from "zod";
 
 const settingsSchema = z.object({
@@ -19,8 +19,8 @@ const settingsSchema = z.object({
   bankAccountName: z.string().optional(),
   bankAccountNumber: z.string().optional(),
   bankBranchCode: z.string().optional(),
-  receiptPrefix: z.string().optional(),
-  lowStockThreshold: z.number().optional(),
+  receiptPrefix: z.string().trim().min(1).max(12).regex(/^[a-z0-9]+$/i).optional(),
+  lowStockThreshold: z.coerce.number().int().nonnegative().optional(),
   currency: z.string().optional(),
   heroHeading: z.string().optional(),
   heroSubheading: z.string().optional(),
@@ -30,7 +30,10 @@ const settingsSchema = z.object({
 export async function GET() {
   try {
     const settings = await getStoreSettings();
-    return NextResponse.json({ success: true, settings });
+    return NextResponse.json(
+      { success: true, settings },
+      { headers: { "Cache-Control": "no-store" } },
+    );
   } catch (error) {
     console.error("[Settings API] GET error:", error);
     return NextResponse.json(
@@ -42,17 +45,8 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    // Require auth
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: "Authentication required" },
-        { status: 401 },
-      );
-    }
+    const auth = await authorizePermission(Permissions.SETTINGS_UPDATE);
+    if (auth.error) return auth.error;
 
     const body = await request.json();
     const parsed = settingsSchema.safeParse(body);

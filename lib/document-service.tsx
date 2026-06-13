@@ -12,6 +12,7 @@ import { useDashboardStore } from "@/lib/store/dashboard";
 import { getOrderByNumber } from "@/lib/order-store";
 import { computePaymentFields } from "@/lib/dashboard-data";
 import { getStoreSettings } from "@/lib/store-settings";
+import { createDocumentReference } from "@/lib/document-reference";
 import { generateDocumentToken, getPublicDocumentUrl, type DocumentType } from "./document-tokens";
 
 // Load PDF logo once
@@ -128,7 +129,13 @@ export async function generateReceiptDocument(orderId: string): Promise<Document
   const order = findOrderWithPayments(orderId);
   if (!order) return null;
 
-  const receiptNumber = `RCP-${order.orderNumber.replace("DT-", "")}-${Date.now().toString(36).toUpperCase().slice(-4)}`;
+  const storeSettings = await getStoreSettings();
+  const receiptNumber = createDocumentReference(
+    storeSettings.receiptPrefix,
+    "RCP",
+    order.orderNumber,
+    Date.now().toString(36).toUpperCase().slice(-4),
+  );
   const date = new Date(order.createdAt).toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -136,7 +143,6 @@ export async function generateReceiptDocument(orderId: string): Promise<Document
   });
 
   // Fetch store settings for PDF branding
-  const storeSettings = await getStoreSettings();
   const receiptProps: ReceiptPDFProps = {
     receiptNumber,
     orderNumber: order.orderNumber,

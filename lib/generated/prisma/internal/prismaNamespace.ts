@@ -2634,7 +2634,14 @@ export const PromotionScalarFieldEnum = {
   startsAt: 'startsAt',
   endsAt: 'endsAt',
   isActive: 'isActive',
+  isFeatured: 'isFeatured',
   placement: 'placement',
+  type: 'type',
+  images: 'images',
+  linkedProductId: 'linkedProductId',
+  linkedCategory: 'linkedCategory',
+  serviceSlug: 'serviceSlug',
+  ctaLabel: 'ctaLabel',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

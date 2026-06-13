@@ -176,7 +176,7 @@ describe("Audit Log - quotation operations", () => {
     const creationLog = logs.find((l) => l.action === "Quotation created");
     expect(creationLog).toBeTruthy();
     expect(creationLog!.entityType).toBe("quotation");
-    expect(creationLog!.entityLabel).toMatch(/^QTN-/);
+    expect(creationLog!.entityLabel).toMatch(/^DT-QTN-/);
   });
 
   it("should log quotation status updates", () => {
