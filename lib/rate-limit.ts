@@ -23,6 +23,7 @@ const RATE_LIMITS: Record<string, RateLimitConfig> = {
   "invitation-accept": { maxRequests: 5, windowMinutes: 15 },
   "invitation-resend": { maxRequests: 3, windowMinutes: 60 },
   "2fa-verify": { maxRequests: 5, windowMinutes: 15 },
+  "backinstock-request": { maxRequests: 5, windowMinutes: 15 },
 };
 
 /**

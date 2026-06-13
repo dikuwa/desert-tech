@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { authorizePermission } from "@/lib/auth-server";
 import { Permissions } from "@/lib/permissions";
+import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
 
 const requestSchema = z.object({
   productId: z.string().min(1),
@@ -72,6 +73,20 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const validated = requestSchema.parse(body);
+
+    // Rate limiting: max 5 requests per IP per 15 min
+    const clientIP = getClientIP(req);
+    const rateLimit = await checkRateLimit("backinstock-request", clientIP);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Too many requests. Please try again later.",
+          retryAfter: rateLimit.retryAfter,
+        },
+        { status: 429 },
+      );
+    }
 
     // The frontend already validates the product is out-of-stock before
     // showing the Notify Me button. Accept the request unconditionally;
