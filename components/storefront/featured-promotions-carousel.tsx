@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, ImageIcon } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
 import { isPublicPromotion } from "@/lib/promotion-visibility";
@@ -43,6 +43,8 @@ function PromotionCard({
 }) {
   const href = getPromotionHref(promo);
   const cta = getPromotionCta(promo);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   return (
     <Link
@@ -55,17 +57,37 @@ function PromotionCard({
     >
       {/* Image - full visibility using contain, soft background */}
       <div className="relative order-last flex h-[280px] items-center justify-center bg-muted/25 p-4 sm:h-[340px] sm:p-5 md:h-[380px] md:p-6 lg:h-[420px]">
-        {promo.imageUrl ? (
-          <img
-            src={promo.imageUrl}
-            alt={promo.title}
-            className="h-full w-full object-contain"
-            onLoad={() => onImageReady?.(promo.id)}
-            onError={() => onImageReady?.(promo.id)}
-          />
+        {promo.imageUrl && !imageError ? (
+          <>
+            {/* Soft loading placeholder while image loads */}
+            {!imageLoaded && (
+              <div className="absolute inset-0 flex items-center justify-center bg-muted/40">
+                <ImageIcon className="h-10 w-10 text-muted-foreground/20" />
+              </div>
+            )}
+            <img
+              src={promo.imageUrl}
+              alt={promo.title}
+              className={cn(
+                "h-full w-full object-contain transition-opacity duration-500",
+                imageLoaded ? "opacity-100" : "opacity-0",
+              )}
+              onLoad={() => {
+                setImageLoaded(true);
+                onImageReady?.(promo.id);
+              }}
+              onError={() => {
+                setImageError(true);
+                onImageReady?.(promo.id);
+              }}
+            />
+          </>
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground/40">
-            <span className="text-sm font-medium">No image</span>
+          <div className="flex h-full w-full items-center justify-center bg-muted">
+            <div className="flex flex-col items-center gap-2 text-muted-foreground/40">
+              <ImageIcon className="h-10 w-10" />
+              <span className="text-xs font-medium">Image unavailable</span>
+            </div>
           </div>
         )}
         {promo.discountLabel && (
@@ -75,7 +97,7 @@ function PromotionCard({
         )}
       </div>
 
-      {/* Content */}
+      {/* Content - always visible, even if image is loading */}
       <div className="order-first flex flex-col justify-center p-7 sm:p-9 lg:p-11">
         <div className="inline-flex w-fit items-center gap-1.5 rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
           {promo.type === "service" ? "Service" : "Promotion"}
@@ -121,12 +143,49 @@ export function FeaturedPromotionsCarousel() {
   const [activeIndex, setActiveIndex] = useState(totalSlides > 1 ? 1 : 0);
   const [isTransitioning, setIsTransitioning] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(() => totalSlides > 0);
   const [readyPromotionIds, setReadyPromotionIds] = useState<Set<string>>(
     () => new Set(promotions.filter((promo) => !promo.imageUrl).map((promo) => promo.id)),
   );
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const touchStartRef = useRef<number | null>(null);
+  const promotionsKeyRef = useRef("");
+
+  // Track promotions identity so we can detect changes
+  const promotionsKey = promotions.map((p) => p.id).join(",");
+
+  // Reset slider state when promotions data changes
+  useEffect(() => {
+    if (totalSlides === 0) {
+      // Only set hasLoadedOnce to false on initial mount, not after data has been loaded
+      // This preserves the "loaded with empty" state distinction
+      return;
+    }
+    setHasLoadedOnce(true);
+
+    if (promotionsKey !== promotionsKeyRef.current) {
+      promotionsKeyRef.current = promotionsKey;
+
+      // Reset active index to the correct starting position
+      if (totalSlides > 1) {
+        setActiveIndex(1);
+        setIsTransitioning(true);
+      } else {
+        setActiveIndex(0);
+      }
+
+      // Reinitialize ready state for promotions without images
+      setReadyPromotionIds(
+        new Set(promotions.filter((promo) => !promo.imageUrl).map((promo) => promo.id)),
+      );
+
+      // Unpause when data changes
+      setIsPaused(false);
+    }
+    // Intentionally only depend on the key and count — promotions array is derived on every render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [promotionsKey, totalSlides]);
 
   // The "real" index (0-based in original array)
   const realIndex = totalSlides > 1
@@ -154,8 +213,9 @@ export function FeaturedPromotionsCarousel() {
   }, []);
 
   const pauseIfReady = useCallback(() => {
+    if (totalSlides <= 1) return;
     if (isCurrentSlideReady) setIsPaused(true);
-  }, [isCurrentSlideReady]);
+  }, [isCurrentSlideReady, totalSlides]);
 
   const goNext = useCallback(() => {
     if (totalSlides <= 1) return;
@@ -195,11 +255,12 @@ export function FeaturedPromotionsCarousel() {
     }
   }, [activeIndex, totalSlides]);
 
-  // Auto-slide
+  // Auto-slide - only start when data is loaded and slider is ready
   const AUTO_INTERVAL = 7000;
 
   useEffect(() => {
     if (totalSlides <= 1) return;
+    if (!hasLoadedOnce) return;
     if (isPaused) return;
 
     intervalRef.current = setInterval(() => {
@@ -209,7 +270,7 @@ export function FeaturedPromotionsCarousel() {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [isPaused, goNext, totalSlides]);
+  }, [isPaused, goNext, totalSlides, hasLoadedOnce]);
 
   // Touch swipe
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -227,7 +288,26 @@ export function FeaturedPromotionsCarousel() {
     touchStartRef.current = null;
   };
 
-  // Empty state
+  // Loading state: promotions store hasn't been populated yet
+  if (!hasLoadedOnce && totalSlides === 0) {
+    return (
+      <section className="bg-background py-14">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-6">
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">
+              Limited offers
+            </p>
+            <h2 className="mt-1 text-2xl font-semibold text-foreground">
+              Featured promotions
+            </h2>
+          </div>
+          <div className="h-[340px] animate-pulse rounded-2xl bg-muted/60 sm:h-[400px] md:h-[440px] lg:h-[480px]" />
+        </div>
+      </section>
+    );
+  }
+
+  // Loaded with empty promotions — hide section
   if (totalSlides === 0) {
     return null;
   }
