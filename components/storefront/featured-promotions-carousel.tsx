@@ -34,7 +34,13 @@ function getPromotionCta(promo: PromoCard): string {
   }
 }
 
-function PromotionCard({ promo }: { promo: PromoCard }) {
+function PromotionCard({
+  promo,
+  onImageReady,
+}: {
+  promo: PromoCard;
+  onImageReady?: (promoId: string) => void;
+}) {
   const href = getPromotionHref(promo);
   const cta = getPromotionCta(promo);
 
@@ -42,18 +48,20 @@ function PromotionCard({ promo }: { promo: PromoCard }) {
     <Link
       href={href}
       className={cn(
-        "group grid overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all duration-500",
-        "hover:-translate-y-0.5 hover:shadow-md active:translate-y-0",
+        "group grid overflow-hidden rounded-2xl border border-border/60 bg-card shadow-[0_12px_40px_rgba(0,0,0,0.035)] transition-all duration-500",
+        "hover:-translate-y-0.5 hover:shadow-[0_16px_45px_rgba(0,0,0,0.055)] active:translate-y-0",
         "grid-cols-1 md:grid-cols-[2fr_3fr]",
       )}
     >
       {/* Image - full visibility using contain, soft background */}
-      <div className="relative order-first flex min-h-[260px] items-center justify-center bg-[#f8f8f8] md:order-last md:min-h-[320px]">
+      <div className="relative order-last flex h-[280px] items-center justify-center bg-muted/25 p-4 sm:h-[340px] sm:p-5 md:h-[380px] md:p-6 lg:h-[420px]">
         {promo.imageUrl ? (
           <img
             src={promo.imageUrl}
             alt={promo.title}
-            className="max-h-full max-w-full object-contain p-4 sm:p-5 md:p-6"
+            className="h-full w-full object-contain"
+            onLoad={() => onImageReady?.(promo.id)}
+            onError={() => onImageReady?.(promo.id)}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground/40">
@@ -68,8 +76,8 @@ function PromotionCard({ promo }: { promo: PromoCard }) {
       </div>
 
       {/* Content */}
-      <div className="flex flex-col justify-center p-6 sm:p-8 lg:p-10">
-        <div className="inline-flex w-fit items-center gap-1.5 rounded-md bg-accent/50 px-2.5 py-1 text-xs font-semibold text-primary uppercase tracking-wider">
+      <div className="order-first flex flex-col justify-center p-7 sm:p-9 lg:p-11">
+        <div className="inline-flex w-fit items-center gap-1.5 rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
           {promo.type === "service" ? "Service" : "Promotion"}
         </div>
         <h3 className="mt-4 text-xl font-bold leading-snug text-foreground sm:text-2xl">
@@ -113,9 +121,10 @@ export function FeaturedPromotionsCarousel() {
   const [activeIndex, setActiveIndex] = useState(totalSlides > 1 ? 1 : 0);
   const [isTransitioning, setIsTransitioning] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [readyPromotionIds, setReadyPromotionIds] = useState<Set<string>>(
+    () => new Set(promotions.filter((promo) => !promo.imageUrl).map((promo) => promo.id)),
+  );
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const touchStartRef = useRef<number | null>(null);
 
@@ -123,13 +132,30 @@ export function FeaturedPromotionsCarousel() {
   const realIndex = totalSlides > 1
     ? ((activeIndex - 1) % totalSlides + totalSlides) % totalSlides
     : 0;
+  const currentPromotion = promotions[realIndex];
+  const isCurrentSlideReady = Boolean(
+    currentPromotion && (!currentPromotion.imageUrl || readyPromotionIds.has(currentPromotion.id)),
+  );
 
   const goToSlide = useCallback((rawIdx: number, animate = true) => {
     if (totalSlides <= 1) return;
     setIsTransitioning(animate);
     setActiveIndex(rawIdx);
-    setProgress(0);
+    setIsPaused(false);
   }, [totalSlides]);
+
+  const handleImageReady = useCallback((promoId: string) => {
+    setReadyPromotionIds((current) => {
+      if (current.has(promoId)) return current;
+      const next = new Set(current);
+      next.add(promoId);
+      return next;
+    });
+  }, []);
+
+  const pauseIfReady = useCallback(() => {
+    if (isCurrentSlideReady) setIsPaused(true);
+  }, [isCurrentSlideReady]);
 
   const goNext = useCallback(() => {
     if (totalSlides <= 1) return;
@@ -171,28 +197,17 @@ export function FeaturedPromotionsCarousel() {
 
   // Auto-slide
   const AUTO_INTERVAL = 7000;
-  const PROGRESS_INTERVAL = 50;
 
   useEffect(() => {
     if (totalSlides <= 1) return;
-    if (isPaused) {
-      if (progressRef.current) clearInterval(progressRef.current);
-      return;
-    }
-
-    const progressStep = PROGRESS_INTERVAL / AUTO_INTERVAL;
+    if (isPaused) return;
 
     intervalRef.current = setInterval(() => {
       goNext();
     }, AUTO_INTERVAL);
 
-    progressRef.current = setInterval(() => {
-      setProgress((prev) => Math.min(prev + progressStep, 1));
-    }, PROGRESS_INTERVAL);
-
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
-      if (progressRef.current) clearInterval(progressRef.current);
     };
   }, [isPaused, goNext, totalSlides]);
 
@@ -269,29 +284,14 @@ export function FeaturedPromotionsCarousel() {
 
         {/* Carousel */}
         <div
-          className="relative overflow-hidden rounded-xl"
-          onMouseEnter={() => setIsPaused(true)}
+          className="relative overflow-hidden rounded-2xl"
+          onMouseEnter={pauseIfReady}
           onMouseLeave={() => setIsPaused(false)}
-          onFocus={() => setIsPaused(true)}
+          onFocus={pauseIfReady}
           onBlur={() => setIsPaused(false)}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
-          {/* Auto-play progress bar */}
-          <div className="absolute top-0 left-0 right-0 z-10 h-1 bg-black/5">
-            <div
-              className="h-full bg-primary/60 rounded-r-full transition-none"
-              style={{ width: `${progress * 100}%` }}
-            />
-          </div>
-
-          {/* Pause overlay indicator */}
-          {isPaused && (
-            <div className="absolute top-2 right-3 z-10 rounded-full bg-black/40 px-2.5 py-0.5 text-[10px] font-medium text-white/90 backdrop-blur-sm">
-              Paused
-            </div>
-          )}
-
           {/* Slide track */}
           <div
             ref={trackRef}
@@ -306,7 +306,7 @@ export function FeaturedPromotionsCarousel() {
           >
             {slides.map((promo, idx) => (
               <div key={`${promo.id}-${idx}`} className="w-full flex-shrink-0">
-                <PromotionCard promo={promo} />
+                <PromotionCard promo={promo} onImageReady={handleImageReady} />
               </div>
             ))}
           </div>
@@ -326,7 +326,7 @@ export function FeaturedPromotionsCarousel() {
             <ChevronLeft className="h-4 w-4" />
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             {promotions.map((promo, idx) => (
               <button
                 key={promo.id}
@@ -334,8 +334,8 @@ export function FeaturedPromotionsCarousel() {
                 className={cn(
                   "rounded-full transition-all duration-500",
                   idx === realIndex
-                    ? "h-2.5 w-6 bg-primary"
-                    : "h-2.5 w-2.5 bg-border hover:bg-muted-foreground/40",
+                    ? "h-2 w-5 bg-primary/80"
+                    : "h-2 w-2 bg-border/70 hover:bg-muted-foreground/30",
                 )}
                 aria-label={`Go to promotion ${idx + 1}`}
               />
