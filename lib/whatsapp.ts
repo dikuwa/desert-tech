@@ -104,14 +104,14 @@ export async function sendPasswordResetWhatsApp(
 export async function sendInvitationWhatsApp(
   phone: string,
   name: string,
-  token: string,
+  shortCode: string,
   role: string,
   inviterName: string,
   storeName?: string,
 ): Promise<void> {
   const { getAppUrl } = await import("./app-url");
   const appUrl = getAppUrl();
-  const acceptUrl = `${appUrl}/admin/invite/accept?token=${token}`;
+  const acceptUrl = `${appUrl}/invite/${shortCode}`;
   const roleDisplay = role.charAt(0) + role.slice(1).toLowerCase();
   const company = storeName || "Desert Technology Consultant";
 

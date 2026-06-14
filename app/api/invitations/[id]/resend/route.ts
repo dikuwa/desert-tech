@@ -4,7 +4,13 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { requirePermission, createAuditLog } from "@/lib/auth-server";
+import {
+  requirePermission,
+  createAuditLog,
+  ensureUniqueShortCode,
+  generateInvitationToken,
+  hashToken,
+} from "@/lib/auth-server";
 import { db } from "@/lib/db";
 import { InvitationStatus } from "@/lib/enums";
 import { Permissions } from "@/lib/permissions";
@@ -66,9 +72,9 @@ export async function POST(
     }
 
     // Generate new token
-    const { generateInvitationToken, hashToken } = await import("@/lib/auth-server");
     const token = generateInvitationToken();
     const tokenHash = await hashToken(token);
+    const shortCode = invitation.shortCode || await ensureUniqueShortCode();
 
     // Update expiry (resets the 48-hour window)
     const expiresAt = new Date();
@@ -76,16 +82,12 @@ export async function POST(
 
     await db.invitation.update({
       where: { id },
-      data: { tokenHash, expiresAt },
+      data: { tokenHash, shortCode, expiresAt },
       // updatedAt is auto-updated by Prisma's @updatedAt
     });
 
-    // Use short code for accept URL
-    const shortCode = invitation.shortCode;
     const appUrl = getAppUrl();
-    const acceptUrl = shortCode
-      ? `${appUrl}/invite/${shortCode}`
-      : `${appUrl}/admin/invite/accept?token=${token}`;
+    const acceptUrl = `${appUrl}/invite/${shortCode}`;
 
     // If WhatsApp-only, skip email and just return the accept URL
     if (whatsappOnly) {
@@ -128,7 +130,7 @@ export async function POST(
           to: invitation.email,
           name: invitation.name,
           inviterName: currentUser.name,
-          token,
+          code: shortCode,
           role: invitation.role,
           storeName: storeSettings.storeName,
         });
