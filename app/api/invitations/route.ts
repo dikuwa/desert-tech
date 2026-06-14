@@ -8,12 +8,11 @@ import { z } from "zod";
 import {
   requirePermission,
   createInvitation,
-  createAuditLog,
-  getCurrentUser,
 } from "@/lib/auth-server";
 import { db } from "@/lib/db";
 import { InvitationStatus, UserRole } from "@/lib/enums";
-import { Permissions, type Permission } from "@/lib/permissions";
+import type { Prisma } from "@/lib/generated/prisma/client";
+import { DEFAULT_ROLE_PERMISSIONS, Permissions, type Permission } from "@/lib/permissions";
 import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
 import { sendInvitationEmail } from "@/lib/email";
 import { getStoreSettings } from "@/lib/store-settings";
@@ -55,9 +54,9 @@ export async function GET(req: NextRequest) {
     const skip = (page - 1) * limit;
 
     // Build filter
-    const where: any = {};
+    const where: Prisma.InvitationWhereInput = {};
     if (status && Object.values(InvitationStatus).includes(status as InvitationStatus)) {
-      where.status = status;
+      where.status = status as InvitationStatus;
     }
 
     // Fetch invitations
@@ -140,6 +139,9 @@ export async function POST(req: NextRequest) {
     }
 
     const { email: rawEmail, name, role, permissions, note, phone } = result.data;
+    const resolvedPermissions = permissions?.length
+      ? permissions
+      : DEFAULT_ROLE_PERMISSIONS[role];
 
     // If no email provided but phone is, use a unique placeholder
     const email = rawEmail || `wa-${(phone || "").replace(/[^\d]/g, "")}@invite.desertechnam.com`;
@@ -179,11 +181,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Create invitation
-    const { invitation, token } = await createInvitation({
+    const { invitation } = await createInvitation({
       email,
       name,
       role,
-      permissions: permissions as any,
+      permissions: resolvedPermissions,
       invitedById: currentUser.id,
       phone: phone?.trim() || undefined,
       note,

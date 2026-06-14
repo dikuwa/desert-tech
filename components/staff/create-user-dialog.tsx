@@ -191,7 +191,9 @@ export function CreateUserDialog({
   const [role, setRole] = useState<UserRole>(UserRole.STAFF);
   const [jobTitle, setJobTitle] = useState("");
   const [phone, setPhone] = useState("");
-  const [selectedPermissions, setSelectedPermissions] = useState<Permission[]>([]);
+  const [selectedPermissions, setSelectedPermissions] = useState<Permission[]>(
+    () => getRoleTemplatePermissions(UserRole.STAFF),
+  );
 
   // Create-specific fields
   const [password, setPassword] = useState("");
