@@ -351,9 +351,9 @@ export function StorefrontHeader() {
               {megaMenuOpen && (
                 <div
                   id="storefront-shop-menu"
-                  className="absolute top-full left-1/2 z-50 mt-0.5 w-[92vw] max-w-6xl -translate-x-1/2 rounded-b-xl border border-border bg-background p-6 shadow-xl"
+                  className="absolute left-1/2 z-50 mt-0.5 w-[95vw] max-w-4xl lg:max-w-6xl -translate-x-1/2 rounded-b-xl border border-border bg-background p-4 sm:p-6 shadow-xl"
                 >
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-6 text-left">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 text-left">
                     {/* Column 1: Shop All */}
                     <div>
                       <h4 className="font-bold text-foreground mb-3 uppercase tracking-wider text-[11px]">Shop All</h4>
@@ -440,7 +440,7 @@ export function StorefrontHeader() {
 
                     {/* Column 5: Brands & Promo Card */}
                     {activePromo ? (
-                      <div className="grid grid-cols-2 col-span-2 gap-6 border-l border-border pl-6">
+                      <div className="grid grid-cols-2 sm:col-span-3 lg:col-span-2 gap-4 sm:gap-6 border-l border-border pl-4 sm:pl-6">
                         <div>
                           <h4 className="font-bold text-foreground mb-3 uppercase tracking-wider text-[11px]">Popular Brands</h4>
                           <ul className="space-y-2 text-sm text-muted-foreground font-normal">

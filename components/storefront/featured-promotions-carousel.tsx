@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, ChevronLeft, ChevronRight, Tag } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn } from "@/lib/utils";
 import { isPublicPromotion } from "@/lib/promotion-visibility";
@@ -48,7 +48,7 @@ function PromotionCard({ promo }: { promo: PromoCard }) {
       )}
     >
       {/* Image - top on mobile, right on desktop */}
-      <div className="relative order-first aspect-[4/3] overflow-hidden bg-gray-100 md:aspect-auto md:order-last">
+      <div className="relative order-first aspect-[4/3] overflow-hidden bg-gray-100 md:order-last">
         {promo.imageUrl ? (
           <img
             src={promo.imageUrl}
@@ -103,37 +103,96 @@ export function FeaturedPromotionsCarousel() {
       type: p.type || "general",
     }));
 
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const touchStartRef = useRef<number | null>(null);
-
   const totalSlides = promotions.length;
 
-  const goTo = useCallback((index: number) => {
-    if (totalSlides === 0) return;
-    setCurrentIndex(((index % totalSlides) + totalSlides) % totalSlides);
+  // Build the infinite slide array: [lastClone, ...originals, firstClone]
+  const slides = totalSlides > 1
+    ? [promotions[totalSlides - 1], ...promotions, promotions[0]]
+    : promotions;
+
+  const [activeIndex, setActiveIndex] = useState(totalSlides > 1 ? 1 : 0);
+  const [isTransitioning, setIsTransitioning] = useState(true);
+  const [isPaused, setIsPaused] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const touchStartRef = useRef<number | null>(null);
+
+  // The "real" index (0-based in original array)
+  const realIndex = totalSlides > 1
+    ? ((activeIndex - 1) % totalSlides + totalSlides) % totalSlides
+    : 0;
+
+  const goToSlide = useCallback((rawIdx: number, animate = true) => {
+    if (totalSlides <= 1) return;
+    setIsTransitioning(animate);
+    setActiveIndex(rawIdx);
+    setProgress(0);
   }, [totalSlides]);
 
   const goNext = useCallback(() => {
-    goTo(currentIndex + 1);
-  }, [goTo, currentIndex]);
+    if (totalSlides <= 1) return;
+    goToSlide(activeIndex + 1);
+  }, [goToSlide, activeIndex, totalSlides]);
 
   const goPrev = useCallback(() => {
-    goTo(currentIndex - 1);
-  }, [goTo, currentIndex]);
+    if (totalSlides <= 1) return;
+    goToSlide(activeIndex - 1);
+  }, [goToSlide, activeIndex, totalSlides]);
+
+  // Seamless loop: after transition ends, jump without animation
+  const handleTransitionEnd = useCallback((e: React.TransitionEvent) => {
+    // Only respond to the track's own transform transition, not bubbled events from children
+    if (e.propertyName !== "transform" || e.target !== e.currentTarget) return;
+    if (totalSlides <= 1) return;
+    // If at the clone of the first slide (end), jump to real first slide
+    if (activeIndex === totalSlides + 1) {
+      setIsTransitioning(false);
+      setActiveIndex(1);
+      // Force reflow so the browser applies the no-transition jump
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setIsTransitioning(true);
+        });
+      });
+    }
+    // If at the clone of the last slide (beginning), jump to real last slide
+    if (activeIndex === 0) {
+      setIsTransitioning(false);
+      setActiveIndex(totalSlides);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setIsTransitioning(true);
+        });
+      });
+    }
+  }, [activeIndex, totalSlides]);
 
   // Auto-slide
+  const AUTO_INTERVAL = 7000;
+  const PROGRESS_INTERVAL = 50;
+
   useEffect(() => {
     if (totalSlides <= 1) return;
-    if (isPaused) return;
+    if (isPaused) {
+      if (progressRef.current) clearInterval(progressRef.current);
+      return;
+    }
+
+    const progressStep = PROGRESS_INTERVAL / AUTO_INTERVAL;
 
     intervalRef.current = setInterval(() => {
       goNext();
-    }, 6000);
+    }, AUTO_INTERVAL);
+
+    progressRef.current = setInterval(() => {
+      setProgress((prev) => Math.min(prev + progressStep, 1));
+    }, PROGRESS_INTERVAL);
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
+      if (progressRef.current) clearInterval(progressRef.current);
     };
   }, [isPaused, goNext, totalSlides]);
 
@@ -158,10 +217,29 @@ export function FeaturedPromotionsCarousel() {
     return null;
   }
 
+  // Single slide — no carousel
+  if (totalSlides === 1) {
+    return (
+      <section className="bg-background py-14">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-6">
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">
+              Limited offers
+            </p>
+            <h2 className="mt-1 text-2xl font-semibold text-foreground">
+              Featured promotions
+            </h2>
+          </div>
+          <PromotionCard promo={promotions[0]} />
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="bg-background py-14">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-6">
+        <div className="mb-6 flex items-end justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-primary">
               Limited offers
@@ -169,6 +247,23 @@ export function FeaturedPromotionsCarousel() {
             <h2 className="mt-1 text-2xl font-semibold text-foreground">
               Featured promotions
             </h2>
+          </div>
+          {/* Desktop arrow controls */}
+          <div className="hidden sm:flex items-center gap-2">
+            <button
+              onClick={goPrev}
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              aria-label="Previous promotion"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              onClick={goNext}
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              aria-label="Next promotion"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
           </div>
         </div>
 
@@ -182,55 +277,79 @@ export function FeaturedPromotionsCarousel() {
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
+          {/* Auto-play progress bar */}
+          <div className="absolute top-0 left-0 right-0 z-10 h-1 bg-black/5">
+            <div
+              className="h-full bg-primary/60 rounded-r-full transition-none"
+              style={{ width: `${progress * 100}%` }}
+            />
+          </div>
+
+          {/* Pause overlay indicator */}
+          {isPaused && (
+            <div className="absolute top-2 right-3 z-10 rounded-full bg-black/40 px-2.5 py-0.5 text-[10px] font-medium text-white/90 backdrop-blur-sm">
+              Paused
+            </div>
+          )}
+
           {/* Slide track */}
           <div
-            className="flex transition-transform duration-500 ease-out"
-            style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+            ref={trackRef}
+            className="flex"
+            style={{
+              transform: `translateX(-${activeIndex * 100}%)`,
+              transition: isTransitioning
+                ? "transform 800ms cubic-bezier(0.4, 0, 0.2, 1)"
+                : "none",
+            }}
+            onTransitionEnd={handleTransitionEnd}
           >
-            {promotions.map((promo) => (
-              <div key={promo.id} className="w-full flex-shrink-0">
+            {slides.map((promo, idx) => (
+              <div key={`${promo.id}-${idx}`} className="w-full flex-shrink-0">
                 <PromotionCard promo={promo} />
               </div>
             ))}
           </div>
+
+          {/* Decorative gradient edges */}
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-background to-transparent z-10" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-background to-transparent z-10" />
         </div>
 
         {/* Pagination dots + mobile arrows */}
-        {totalSlides > 1 && (
-          <div className="mt-5 flex items-center justify-center gap-3">
-            <button
-              onClick={goPrev}
-              className="flex sm:hidden h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              aria-label="Previous promotion"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
+        <div className="mt-5 flex items-center justify-center gap-3">
+          <button
+            onClick={goPrev}
+            className="flex sm:hidden h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            aria-label="Previous promotion"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
 
-            <div className="flex items-center gap-2">
-              {promotions.map((promo, idx) => (
-                <button
-                  key={promo.id}
-                  onClick={() => goTo(idx)}
-                  className={cn(
-                    "rounded-full transition-all duration-300",
-                    idx === currentIndex
-                      ? "h-2.5 w-6 bg-primary"
-                      : "h-2.5 w-2.5 bg-border hover:bg-muted-foreground/40",
-                  )}
-                  aria-label={`Go to promotion ${idx + 1}`}
-                />
-              ))}
-            </div>
-
-            <button
-              onClick={goNext}
-              className="flex sm:hidden h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              aria-label="Next promotion"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
+          <div className="flex items-center gap-2">
+            {promotions.map((promo, idx) => (
+              <button
+                key={promo.id}
+                onClick={() => goToSlide(idx + 1)}
+                className={cn(
+                  "rounded-full transition-all duration-500",
+                  idx === realIndex
+                    ? "h-2.5 w-6 bg-primary"
+                    : "h-2.5 w-2.5 bg-border hover:bg-muted-foreground/40",
+                )}
+                aria-label={`Go to promotion ${idx + 1}`}
+              />
+            ))}
           </div>
-        )}
+
+          <button
+            onClick={goNext}
+            className="flex sm:hidden h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            aria-label="Next promotion"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
       </div>
     </section>
   );

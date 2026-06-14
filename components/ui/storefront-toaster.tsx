@@ -5,7 +5,9 @@ import { Toaster } from "sonner";
 export function StorefrontToaster() {
   return (
     <Toaster
-      position="bottom-right"
+      position="bottom-center"
+      visibleToasts={3}
+      expand={false}
       toastOptions={{
         className: "text-sm font-medium",
         style: {
