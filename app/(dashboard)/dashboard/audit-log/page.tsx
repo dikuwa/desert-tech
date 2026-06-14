@@ -35,6 +35,10 @@ const ENTITY_COLORS: Record<string, string> = {
   brand: "bg-indigo-50 text-indigo-700 border-indigo-200",
   notification: "bg-slate-50 text-slate-700 border-slate-200",
   settings: "bg-gray-50 text-gray-700 border-gray-200",
+  invitation: "bg-orange-50 text-orange-700 border-orange-200",
+  user: "bg-violet-50 text-violet-700 border-violet-200",
+  authentication: "bg-sky-50 text-sky-700 border-sky-200",
+  catalog: "bg-lime-50 text-lime-700 border-lime-200",
 };
 
 // ─── Entity detail route map ──────────────────────────────────────────────
@@ -51,6 +55,10 @@ const ENTITY_ROUTES: Record<string, (id: string) => string> = {
   backinstock: () => `/dashboard/back-in-stock`,
   brand: () => `/dashboard/categories?tab=brands`,
   notification: () => `/dashboard/notifications`,
+  invitation: () => `/dashboard/staff`,
+  user: () => `/dashboard/staff`,
+  authentication: () => `/dashboard/staff`,
+  catalog: () => `/dashboard/products`,
 };
 
 const ENTITY_TYPES = [
@@ -67,6 +75,10 @@ const ENTITY_TYPES = [
   "backinstock",
   "notification",
   "settings",
+  "invitation",
+  "user",
+  "authentication",
+  "catalog",
 ] as const;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -78,8 +90,89 @@ const ENTITY_TYPES = [
  */
 function formatAction(action: string): string {
   return action
+    .replace(/\./g, " ")
     .replace(/_/g, " ") // underscores → spaces
     .replace(/\b\w/g, (c) => c.toUpperCase()); // title case
+}
+
+function formatLabel(value: string): string {
+  return value
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+function formatValue(value: unknown): string {
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (value === null || value === undefined || value === "") return "None";
+  if (Array.isArray(value)) return value.map((item) => formatValue(item)).join(", ");
+  if (typeof value === "object") {
+    return Object.entries(value as Record<string, unknown>)
+      .map(([key, nestedValue]) => `${formatLabel(key)}: ${formatValue(nestedValue)}`)
+      .join(", ");
+  }
+  return String(value);
+}
+
+function normalizeDetails(details: AuditEntry["details"]) {
+  if (!details) return undefined;
+  if (typeof details !== "string") return details;
+
+  try {
+    const parsed = JSON.parse(details);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? { metadata: parsed as Record<string, unknown> }
+      : { metadata: { details } };
+  } catch {
+    return { metadata: { details } };
+  }
+}
+
+function Details({ details }: { details: AuditEntry["details"] }) {
+  const normalized = normalizeDetails(details);
+  if (!normalized) return null;
+
+  const changedFields = Array.from(new Set([
+    ...(normalized.changedFields ?? []),
+    ...(Array.isArray(normalized.metadata?.changedFields)
+      ? normalized.metadata.changedFields.filter((field): field is string => typeof field === "string")
+      : []),
+  ]));
+  const metadata = Object.entries(normalized.metadata ?? {}).filter(
+    ([key]) => key !== "changedFields",
+  );
+
+  if (changedFields.length === 0 && metadata.length === 0) return null;
+
+  return (
+    <div className="mt-2 space-y-2 text-xs font-normal leading-relaxed text-muted-foreground">
+      {changedFields.length > 0 && (
+        <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
+          <span className="text-[11px] font-medium text-foreground/70">Changed fields:</span>
+          {changedFields.map((field) => (
+            <span
+              key={field}
+              className="rounded-md border border-border bg-muted/40 px-1.5 py-0.5 text-[11px] font-normal text-muted-foreground"
+            >
+              {formatLabel(field)}
+            </span>
+          ))}
+        </div>
+      )}
+      {metadata.length > 0 && (
+        <dl className="grid gap-x-4 gap-y-1 sm:grid-cols-2">
+          {metadata.map(([key, value]) => (
+            <div key={key} className="min-w-0 break-words [overflow-wrap:anywhere]">
+              <dt className="inline text-[11px] font-medium text-foreground/70">
+                {formatLabel(key)}:
+              </dt>{" "}
+              <dd className="inline font-normal">{formatValue(value)}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+    </div>
+  );
 }
 
 /** Shorten a long ID for display, keeping first & last chars. */
@@ -122,19 +215,19 @@ function EntityLabel({ entry }: { entry: AuditEntry }) {
   const route = ENTITY_ROUTES[entry.entityType]?.(entry.entityId);
 
   return (
-    <div className="min-w-0 space-y-0.5">
-      <div className="flex items-center gap-1.5">
+    <div className="min-w-0 space-y-1 break-words [overflow-wrap:anywhere]">
+      <div className="flex min-w-0 items-start gap-1.5">
         {route ? (
           <Link
             href={route}
-            className="text-xs font-semibold text-foreground hover:text-primary truncate flex items-center gap-1 transition-colors"
+            className="flex min-w-0 items-start gap-1 text-xs font-medium leading-relaxed text-foreground transition-colors hover:text-primary"
             title={`View ${entry.entityType}: ${entry.entityLabel}`}
           >
-            {entry.entityLabel}
+            <span className="break-words [overflow-wrap:anywhere]">{entry.entityLabel}</span>
             <ExternalLink className="h-2.5 w-2.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
           </Link>
         ) : (
-          <span className="text-xs font-semibold text-foreground truncate">
+          <span className="break-words text-xs font-medium leading-relaxed text-foreground [overflow-wrap:anywhere]">
             {entry.entityLabel}
           </span>
         )}
@@ -243,7 +336,7 @@ export default function AuditLogPage() {
       e.entityId,
       e.performedBy,
       new Date(e.timestamp).toISOString(),
-      e.details || "",
+      typeof e.details === "string" ? e.details : e.details ? JSON.stringify(e.details) : "",
     ]);
     const csv = [
       headers.join(","),
@@ -298,7 +391,7 @@ export default function AuditLogPage() {
               className="h-10 w-full rounded-lg border border-input bg-background pl-9 pr-3 text-sm placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors"
             />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="grid grid-cols-2 items-center gap-2 sm:flex">
             <input
               type="date"
               value={dateFrom}
@@ -306,7 +399,7 @@ export default function AuditLogPage() {
                 setDateFrom(e.target.value);
                 setCurrentPage(1);
               }}
-              className="h-10 rounded-lg border border-input bg-background px-3 text-xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors"
+              className="h-10 min-w-0 rounded-lg border border-input bg-background px-3 text-xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors"
               title="From date"
             />
             <span className="text-xs text-muted-foreground/50 hidden sm:inline">–</span>
@@ -317,7 +410,7 @@ export default function AuditLogPage() {
                 setDateTo(e.target.value);
                 setCurrentPage(1);
               }}
-              className="h-10 rounded-lg border border-input bg-background px-3 text-xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors"
+              className="h-10 min-w-0 rounded-lg border border-input bg-background px-3 text-xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors"
               title="To date"
             />
           </div>
@@ -382,7 +475,7 @@ export default function AuditLogPage() {
       ) : (
         <div className="rounded-xl border border-border bg-card overflow-hidden">
           {/* Table header — hidden on small screens */}
-          <div className="hidden md:grid grid-cols-[80px_1fr_180px_140px_120px] gap-3 px-5 py-3 border-b border-border bg-muted/40 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <div className="hidden lg:grid grid-cols-[100px_minmax(280px,1fr)_minmax(160px,220px)_minmax(130px,180px)_130px] gap-4 px-5 py-3 border-b border-border bg-muted/40 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             <span>Entity</span>
             <span>Action &amp; Details</span>
             <span>Entity Details</span>
@@ -394,12 +487,12 @@ export default function AuditLogPage() {
           <div className="divide-y divide-border">
             {paginated.map((entry, i) => (
               <FadeIn key={entry.id} delay={i * 0.02}>
-                <div className="grid grid-cols-1 md:grid-cols-[80px_1fr_180px_140px_120px] gap-2 md:gap-3 px-5 py-3.5 hover:bg-muted/20 transition-colors group">
+                <div className="grid grid-cols-1 gap-3 px-4 py-4 transition-colors hover:bg-muted/20 sm:px-5 lg:grid-cols-[100px_minmax(280px,1fr)_minmax(160px,220px)_minmax(130px,180px)_130px] lg:gap-4">
                   {/* Entity type badge */}
-                  <div>
+                  <div className="flex items-start">
                     <span
                       className={cn(
-                        "inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-semibold capitalize",
+                        "inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-medium capitalize",
                         ENTITY_COLORS[entry.entityType] ||
                           "bg-gray-50 text-gray-700 border-gray-200",
                       )}
@@ -409,31 +502,27 @@ export default function AuditLogPage() {
                   </div>
 
                   {/* Action + details */}
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-foreground leading-snug">
+                  <div className="min-w-0 break-words [overflow-wrap:anywhere]">
+                    <p className="text-sm font-medium text-foreground leading-snug">
                       {formatAction(entry.action)}
                     </p>
-                    {entry.details && (
-                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 leading-relaxed">
-                        {entry.details}
-                      </p>
-                    )}
+                    <Details details={entry.details} />
                   </div>
 
                   {/* Entity label + ID */}
                   <EntityLabel entry={entry} />
 
                   {/* Staff */}
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex min-w-0 items-start gap-1.5">
                     <User className="h-3 w-3 text-muted-foreground shrink-0" />
-                    <span className="text-xs text-foreground truncate">
+                    <span className="break-words text-xs font-normal text-foreground [overflow-wrap:anywhere]">
                       {entry.performedBy}
                     </span>
                   </div>
 
                   {/* Timestamp */}
-                  <div className="flex items-center justify-start md:justify-end gap-1.5">
-                    <Clock className="h-3 w-3 text-muted-foreground shrink-0 md:hidden" />
+                  <div className="flex items-center justify-start gap-1.5 lg:justify-end">
+                    <Clock className="h-3 w-3 text-muted-foreground shrink-0 lg:hidden" />
                     <time
                       className="text-xs text-muted-foreground whitespace-nowrap"
                       title={new Date(entry.timestamp).toLocaleString()}
@@ -446,7 +535,7 @@ export default function AuditLogPage() {
                       })}
                     </time>
                     {/* Small clock icon on desktop */}
-                    <Clock className="h-3 w-3 text-muted-foreground/50 shrink-0 hidden md:inline" />
+                    <Clock className="h-3 w-3 text-muted-foreground/50 shrink-0 hidden lg:inline" />
                   </div>
                 </div>
               </FadeIn>
@@ -457,7 +546,7 @@ export default function AuditLogPage() {
 
       {/* ── Pagination ─────────────────────────────────────────────────── */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between gap-2 rounded-xl border border-border bg-card px-5 py-3">
+        <div className="flex flex-col items-start justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 sm:flex-row sm:items-center sm:px-5">
           <span className="text-xs text-muted-foreground">
             Showing{" "}
             <span className="font-semibold text-foreground">
@@ -474,7 +563,7 @@ export default function AuditLogPage() {
             {filtered.length === 1 ? "entry" : "entries"}
           </span>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex max-w-full items-center gap-1.5 overflow-x-auto pb-0.5">
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}

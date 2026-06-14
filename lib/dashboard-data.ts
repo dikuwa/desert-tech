@@ -226,12 +226,15 @@ export interface DashboardBrand {
 export interface AuditEntry {
   id: string;
   action: string;
-  entityType: "order" | "quotation" | "product" | "payment" | "customer" | "settings" | "backinstock" | "brand" | "notification" | "staff";
+  entityType: string;
   entityId: string;
   entityLabel: string;
   performedBy: string;
   timestamp: string;
-  details?: string;
+  details?: string | {
+    metadata?: Record<string, unknown>;
+    changedFields?: string[];
+  };
 }
 
 export interface DashboardPayment {
