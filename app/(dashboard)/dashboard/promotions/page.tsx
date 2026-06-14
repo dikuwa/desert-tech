@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef } from "react";
 import {
   Megaphone,
   Plus,
@@ -24,7 +24,6 @@ import {
 import {
   SortableContext,
   useSortable,
-  rectSortingStrategy,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -36,13 +35,13 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { DesertCheckbox } from "@/components/ui/desert-checkbox";
 import { toast } from "sonner";
 import type { DashboardPromotion } from "@/lib/dashboard-data";
+import { SortableImageGallery } from "@/components/ui/sortable-image-gallery";
 
 // ============== Sortable Promotion Card ==============
 function SortablePromotionCard({
   promo,
   isEditing,
-  isFirst,
-  isLast,
+  position,
   onEdit,
   onDelete,
   onToggle,
@@ -51,8 +50,7 @@ function SortablePromotionCard({
 }: {
   promo: DashboardPromotion;
   isEditing: boolean;
-  isFirst: boolean;
-  isLast: boolean;
+  position: number;
   onEdit: () => void;
   onDelete: () => void;
   onToggle: () => void;
@@ -87,10 +85,12 @@ function SortablePromotionCard({
             <button
               {...attributes}
               {...listeners}
-              className="mt-1 cursor-grab active:cursor-grabbing rounded p-0.5 text-muted-foreground/30 hover:text-muted-foreground transition-colors touch-none"
+              className="mt-0.5 flex h-14 w-10 touch-none cursor-grab flex-col items-center justify-center gap-0.5 rounded-lg border border-dashed border-primary/30 bg-primary/5 text-primary/80 transition-colors hover:border-primary/60 hover:bg-primary/10 active:cursor-grabbing"
               title="Drag to reorder"
+              aria-label={`Drag ${promo.title} to reorder`}
             >
               <GripVertical className="h-4 w-4" />
+              <span className="text-[9px] font-bold">{position}</span>
             </button>
           )}
           {promo.imageUrl ? (
@@ -131,70 +131,6 @@ function SortablePromotionCard({
         </div>
       </div>
       {isEditing && children}
-    </div>
-  );
-}
-
-// ============== Sortable Image Thumbnail ==============
-function SortableImageThumbnail({
-  url,
-  idx,
-  isSelected,
-  total,
-  onSelect,
-  onRemove,
-}: {
-  url: string;
-  idx: number;
-  isSelected: boolean;
-  total: number;
-  onSelect: () => void;
-  onRemove: () => void;
-}) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: `img-${idx}`,
-  });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={cn(
-        "relative group w-14 h-14 rounded-lg border overflow-hidden transition-all",
-        isSelected ? "border-primary ring-1 ring-primary" : "border-border hover:border-primary/50",
-        isDragging && "z-50 shadow-lg opacity-90"
-      )}
-    >
-      <div className="flex items-center justify-center w-full h-full cursor-pointer" onClick={onSelect}>
-        <img
-          src={url}
-          alt={`Thumbnail ${idx + 1}`}
-          className="w-full h-full object-cover"
-          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-        />
-      </div>
-      {/* Drag handle overlay */}
-      <button
-        {...attributes}
-        {...listeners}
-        className="absolute inset-x-0 top-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity py-0.5 cursor-grab active:cursor-grabbing touch-none"
-        title="Drag to reorder"
-      >
-        <GripVertical className="h-3 w-3 text-white" />
-      </button>
-      {/* Delete button */}
-      <button
-        onClick={(e) => { e.stopPropagation(); onRemove(); }}
-        className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-destructive text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-        title="Remove image"
-      >
-        <X className="h-3 w-3" />
-      </button>
     </div>
   );
 }
@@ -283,12 +219,7 @@ export default function DashboardPromotionsPage() {
     if (removedUrl) deleteImageFromStorage(removedUrl);
   };
 
-  const handleImageDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const oldIdx = parseInt(String(active.id).replace("img-", ""));
-    const newIdx = parseInt(String(over.id).replace("img-", ""));
-    if (isNaN(oldIdx) || isNaN(newIdx)) return;
+  const handleImageReorder = (oldIdx: number, newIdx: number) => {
     const newImages = [...form.images];
     const [moved] = newImages.splice(oldIdx, 1);
     newImages.splice(newIdx, 0, moved);
@@ -399,12 +330,9 @@ export default function DashboardPromotionsPage() {
     setSelectedImage(0);
   };
 
-  // Sort promotions: active first, then by sortOrder
+  // sortOrder is the single source of truth across admin and storefront.
   const getSortedPromotions = () =>
-    [...promotions].sort((a, b) => {
-      if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
-      return (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
-    });
+    [...promotions].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
 
   const sortedPromotions = getSortedPromotions();
 
@@ -416,7 +344,7 @@ export default function DashboardPromotionsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Promotions</h1>
-          <p className="text-sm text-muted-foreground mt-1">{promotions.filter(p => p.isActive).length} active promotions — drag to reorder</p>
+          <p className="text-sm text-muted-foreground mt-1">{promotions.filter(p => p.isActive).length} active promotions — use the numbered drag handles to set storefront order</p>
         </div>
         <button onClick={() => { setShowAdd(true); resetForm(); }} className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
           <Plus className="h-3.5 w-3.5" /> Add Promotion
@@ -438,7 +366,7 @@ export default function DashboardPromotionsPage() {
               selectedImage={selectedImage}
               onSelectImage={setSelectedImage}
               onRemoveImage={handleRemoveImage}
-              onDragEnd={handleImageDragEnd}
+              onReorder={handleImageReorder}
               onUploadClick={() => addImageInputRef.current?.click()}
               uploading={uploading}
             />
@@ -502,8 +430,7 @@ export default function DashboardPromotionsPage() {
                 <SortablePromotionCard
                   promo={promo}
                   isEditing={editId === promo.id}
-                  isFirst={i === 0}
-                  isLast={i === sortedPromotions.length - 1}
+                  position={i + 1}
                   onEdit={() => handleEdit(promo.id)}
                   onDelete={() => setDeleteConfirm(promo.id)}
                   onToggle={() => handleToggle(promo.id, promo.isActive)}
@@ -522,7 +449,7 @@ export default function DashboardPromotionsPage() {
                       selectedImage={selectedImage}
                       onSelectImage={setSelectedImage}
                       onRemoveImage={handleRemoveImage}
-                      onDragEnd={handleImageDragEnd}
+                      onReorder={handleImageReorder}
                       onUploadClick={() => editImageInputRef.current?.click()}
                       uploading={uploading}
                     />
@@ -598,7 +525,7 @@ function ImageDnDZone({
   selectedImage,
   onSelectImage,
   onRemoveImage,
-  onDragEnd,
+  onReorder,
   onUploadClick,
   uploading,
 }: {
@@ -606,15 +533,10 @@ function ImageDnDZone({
   selectedImage: number;
   onSelectImage: (idx: number) => void;
   onRemoveImage: (idx: number) => void;
-  onDragEnd: (event: DragEndEvent) => void;
+  onReorder: (oldIndex: number, newIndex: number) => void;
   onUploadClick: () => void;
   uploading: boolean;
 }) {
-  const imageSensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
-  );
-  const imageIds = images.map((_, idx) => `img-${idx}`);
-
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
@@ -632,27 +554,18 @@ function ImageDnDZone({
               onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
             />
           </div>
-          <DndContext sensors={imageSensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-            <SortableContext items={imageIds} strategy={rectSortingStrategy}>
-              <div className="flex flex-wrap gap-2">
-                {images.map((url, idx) => (
-                  <SortableImageThumbnail
-                    key={`img-${idx}`}
-                    url={url}
-                    idx={idx}
-                    isSelected={selectedImage === idx}
-                    total={images.length}
-                    onSelect={() => onSelectImage(idx)}
-                    onRemove={() => onRemoveImage(idx)}
-                  />
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
+          <SortableImageGallery
+            images={images}
+            selectedImage={selectedImage}
+            onSelectImage={onSelectImage}
+            onRemoveImage={onRemoveImage}
+            onReorder={onReorder}
+          />
         </div>
       )}
 
       <button
+        type="button"
         onClick={onUploadClick}
         disabled={uploading}
         className="flex items-center gap-2 rounded-lg border border-dashed border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:border-primary/50 hover:bg-muted/50 transition-all w-full justify-center"

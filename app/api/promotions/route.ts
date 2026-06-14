@@ -15,7 +15,7 @@ const promotionSchema = z.object({
   type: z.string().default("general"),
   isFeatured: z.boolean().default(true),
   isActive: z.boolean().default(true),
-  sortOrder: z.number().int().default(0),
+  sortOrder: z.number().int().optional(),
   linkedProductId: z.string().optional(),
   linkedCategory: z.string().optional(),
   serviceSlug: z.string().optional(),
@@ -66,6 +66,9 @@ export async function POST(request: Request) {
   const data = promotionSchema.parse(await request.json());
   const baseSlug = slugifyProduct(data.title);
   const exists = await db.promotion.findUnique({ where: { slug: baseSlug } });
+  const lastPromotion = data.sortOrder === undefined
+    ? await db.promotion.findFirst({ orderBy: { sortOrder: "desc" }, select: { sortOrder: true } })
+    : null;
   const promotion = await db.promotion.create({
     data: {
       title: data.title,
@@ -82,7 +85,7 @@ export async function POST(request: Request) {
       linkedCategory: data.linkedCategory,
       serviceSlug: data.serviceSlug,
       ctaLabel: data.ctaLabel,
-      sortOrder: data.sortOrder,
+      sortOrder: data.sortOrder ?? (lastPromotion?.sortOrder ?? -1) + 1,
     },
     include: { _count: { select: { products: true } } },
   });
