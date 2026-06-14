@@ -10,7 +10,6 @@ import {
   type ProductWithImages,
 } from "@/lib/product-records";
 import { generateProductSku, getProductAvailability, resolveLowStockThreshold } from "@/lib/product-sku";
-import { repairLegacyProductSkuPrefixes } from "@/lib/product-sku-repair";
 import { getStoreSettings } from "@/lib/store-settings";
 
 const productSchema = z.object({
@@ -46,8 +45,6 @@ export async function GET() {
   if (!db) {
     return NextResponse.json({ products: [] });
   }
-
-  await repairLegacyProductSkuPrefixes();
 
   const products = await db.product.findMany({
     where: { isPublished: true },
