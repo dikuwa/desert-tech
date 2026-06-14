@@ -44,16 +44,16 @@ function PromotionCard({ promo }: { promo: PromoCard }) {
       className={cn(
         "group grid overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all duration-500",
         "hover:-translate-y-0.5 hover:shadow-md active:translate-y-0",
-        "grid-cols-1 md:grid-cols-2",
+        "grid-cols-1 md:grid-cols-[2fr_3fr]",
       )}
     >
-      {/* Image - top on mobile, right on desktop */}
-      <div className="relative order-first aspect-[4/3] overflow-hidden bg-gray-100 md:order-last">
+      {/* Image - full visibility using contain, soft background */}
+      <div className="relative order-first flex min-h-[260px] items-center justify-center bg-[#f8f8f8] md:order-last md:min-h-[320px]">
         {promo.imageUrl ? (
           <img
             src={promo.imageUrl}
             alt={promo.title}
-            className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.04]"
+            className="max-h-full max-w-full object-contain p-4 sm:p-5 md:p-6"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground/40">
