@@ -106,6 +106,7 @@ export interface DashboardPromotion {
   discountLabel?: string;
   placement: string;
   isActive: boolean;
+  sortOrder: number;
   startsAt?: string;
   endsAt?: string;
   productCount: number;
@@ -280,9 +281,9 @@ export const mockCustomers: DashboardCustomer[] = [
 ];
 
 export const mockPromotions: DashboardPromotion[] = [
-  { id: "pr1", title: "Gaming Setup Bundle", slug: "gaming-bundle", description: "Complete gaming rig bundle", imageUrl: "https://images.unsplash.com/photo-1593640408182-31c70c8268f5?w=900&h=500&fit=crop", discountLabel: "Save up to N$ 2,000", placement: "HomeHero", isActive: true, startsAt: "2026-05-01", endsAt: "2026-06-30", productCount: 5 },
-  { id: "pr2", title: "Back to School Special", slug: "back-to-school", description: "Student discounts on laptops", imageUrl: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=900&h=500&fit=crop", discountLabel: "Up to 15% off", placement: "FeaturedSection", isActive: true, startsAt: "2026-05-15", endsAt: "2026-07-15", productCount: 8 },
-  { id: "pr3", title: "CCTV Bundle Deals", slug: "cctv-bundle", description: "Security camera bundles", imageUrl: "https://images.unsplash.com/photo-1558002038-1055907df827?w=900&h=500&fit=crop", discountLabel: "Save up to N$ 1,500", placement: "FeaturedSection", isActive: false, startsAt: "2026-04-01", endsAt: "2026-05-31", productCount: 3 },
+  { id: "pr1", title: "Gaming Setup Bundle", slug: "gaming-bundle", description: "Complete gaming rig bundle", imageUrl: "https://images.unsplash.com/photo-1593640408182-31c70c8268f5?w=900&h=500&fit=crop", discountLabel: "Save up to N$ 2,000", placement: "HomeHero", isActive: true, sortOrder: 0, startsAt: "2026-05-01", endsAt: "2026-06-30", productCount: 5 },
+  { id: "pr2", title: "Back to School Special", slug: "back-to-school", description: "Student discounts on laptops", imageUrl: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=900&h=500&fit=crop", discountLabel: "Up to 15% off", placement: "FeaturedSection", isActive: true, sortOrder: 1, startsAt: "2026-05-15", endsAt: "2026-07-15", productCount: 8 },
+  { id: "pr3", title: "CCTV Bundle Deals", slug: "cctv-bundle", description: "Security camera bundles", imageUrl: "https://images.unsplash.com/photo-1558002038-1055907df827?w=900&h=500&fit=crop", discountLabel: "Save up to N$ 1,500", placement: "FeaturedSection", isActive: false, sortOrder: 2, startsAt: "2026-04-01", endsAt: "2026-05-31", productCount: 3 },
 ];
 
 export const mockStaff: DashboardStaff[] = [

@@ -55,6 +55,48 @@ export async function uploadFile(
   return { url: dataUrl, key: filename };
 }
 
+/**
+ * Delete a file from storage by its key.
+ * No-op in dev/fallback mode since files aren't persisted to a remote store.
+ */
+export async function deleteFile(key: string): Promise<void> {
+  const config = getR2Config();
+
+  if (
+    config.endpoint &&
+    config.accessKeyId &&
+    config.secretAccessKey &&
+    config.bucketName
+  ) {
+    const { S3Client, DeleteObjectCommand } = await import(
+      "@aws-sdk/client-s3"
+    );
+
+    const client = new S3Client({
+      region: "auto",
+      endpoint: config.endpoint,
+      credentials: {
+        accessKeyId: config.accessKeyId!,
+        secretAccessKey: config.secretAccessKey!,
+      },
+    });
+
+    try {
+      await client.send(
+        new DeleteObjectCommand({
+          Bucket: config.bucketName!,
+          Key: key,
+        }),
+      );
+      console.log(`[Storage] Deleted file: ${key}`);
+    } catch (error) {
+      console.error(`[Storage] Failed to delete file ${key}:`, error);
+      // Don't throw — deletion is best-effort
+    }
+  }
+  // In fallback mode (data URLs), files are ephemeral so nothing to delete
+}
+
 async function uploadToR2(
   buffer: Buffer,
   filename: string,

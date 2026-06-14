@@ -15,6 +15,7 @@ const promotionSchema = z.object({
   type: z.string().default("general"),
   isFeatured: z.boolean().default(true),
   isActive: z.boolean().default(true),
+  sortOrder: z.number().int().default(0),
   linkedProductId: z.string().optional(),
   linkedCategory: z.string().optional(),
   serviceSlug: z.string().optional(),
@@ -34,6 +35,7 @@ function mapPromotion(promotion: any) {
     type: promotion.type,
     isFeatured: promotion.isFeatured,
     isActive: promotion.isActive,
+    sortOrder: promotion.sortOrder,
     startsAt: promotion.startsAt?.toISOString(),
     endsAt: promotion.endsAt?.toISOString(),
     linkedProductId: promotion.linkedProductId ?? undefined,
@@ -48,7 +50,7 @@ export async function GET() {
   if (!db) return NextResponse.json({ promotions: [] });
   const promotions = await db.promotion.findMany({
     include: { _count: { select: { products: true } } },
-    orderBy: { updatedAt: "desc" },
+    orderBy: [{ sortOrder: "asc" }, { updatedAt: "desc" }],
   });
   return NextResponse.json(
     { promotions: promotions.map(mapPromotion) },
@@ -80,6 +82,7 @@ export async function POST(request: Request) {
       linkedCategory: data.linkedCategory,
       serviceSlug: data.serviceSlug,
       ctaLabel: data.ctaLabel,
+      sortOrder: data.sortOrder,
     },
     include: { _count: { select: { products: true } } },
   });

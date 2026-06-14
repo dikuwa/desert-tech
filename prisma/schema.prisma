@@ -275,28 +275,27 @@ model ProductImage {
   createdAt DateTime @default(now())
 
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-}
-
-model Promotion {
-  id             String   @id @default(cuid())
-  title          String
-  slug           String   @unique
-  description    String?
-  bannerImageUrl String?
-  discountLabel  String?
-  startsAt       DateTime?
-  endsAt         DateTime?
-  isActive       Boolean  @default(true)
-  isFeatured     Boolean  @default(true)
-  placement      String   @default("FeaturedSection")
-  type           String   @default("general")
-  images         Json?
+}model Promotion {
+  id              String    @id @default(cuid())
+  title           String
+  slug            String    @unique
+  description     String?
+  bannerImageUrl  String?
+  discountLabel   String?
+  startsAt        DateTime?
+  endsAt          DateTime?
+  isActive        Boolean   @default(true)
+  isFeatured      Boolean   @default(true)
+  placement       String    @default("FeaturedSection")
+  type            String    @default("general")
+  images          Json?
   linkedProductId String?
-  linkedCategory String?
-  serviceSlug    String?
-  ctaLabel       String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  linkedCategory  String?
+  serviceSlug     String?
+  ctaLabel        String?
+  sortOrder       Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   products PromotionProduct[]
 }

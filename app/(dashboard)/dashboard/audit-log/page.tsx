@@ -2,30 +2,43 @@
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import Link from "next/link";
-import { History, Search, ChevronLeft, ChevronRight, Clock, User, Copy, Check, ExternalLink, Download } from "lucide-react";
+import {
+  History,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  User,
+  Copy,
+  Check,
+  ExternalLink,
+  Download,
+  Filter,
+} from "lucide-react";
 import { FadeIn } from "@/components/ui/fade-in";
 import { cn } from "@/lib/utils";
 import type { AuditEntry } from "@/lib/dashboard-data";
 
 const ITEMS_PER_PAGE = 20;
 
+// ─── Entity colour palette (soft, readable) ───────────────────────────────
 const ENTITY_COLORS: Record<string, string> = {
-  order: "bg-blue-100 text-blue-700 border-blue-200",
-  quotation: "bg-purple-100 text-purple-700 border-purple-200",
-  product: "bg-green-100 text-green-700 border-green-200",
-  payment: "bg-amber-100 text-amber-700 border-amber-200",
-  customer: "bg-teal-100 text-teal-700 border-teal-200",
-  staff: "bg-rose-100 text-rose-700 border-rose-200",
-  category: "bg-orange-100 text-orange-700 border-orange-200",
-  promotion: "bg-pink-100 text-pink-700 border-pink-200",
-  backinstock: "bg-cyan-100 text-cyan-700 border-cyan-200",
-  brand: "bg-indigo-100 text-indigo-700 border-indigo-200",
-  notification: "bg-slate-100 text-slate-700 border-slate-200",
-  settings: "bg-gray-100 text-gray-700 border-gray-200",
+  order: "bg-blue-50 text-blue-700 border-blue-200",
+  quotation: "bg-purple-50 text-purple-700 border-purple-200",
+  product: "bg-green-50 text-green-700 border-green-200",
+  payment: "bg-amber-50 text-amber-700 border-amber-200",
+  customer: "bg-teal-50 text-teal-700 border-teal-200",
+  staff: "bg-rose-50 text-rose-700 border-rose-200",
+  category: "bg-orange-50 text-orange-700 border-orange-200",
+  promotion: "bg-pink-50 text-pink-700 border-pink-200",
+  backinstock: "bg-cyan-50 text-cyan-700 border-cyan-200",
+  brand: "bg-indigo-50 text-indigo-700 border-indigo-200",
+  notification: "bg-slate-50 text-slate-700 border-slate-200",
+  settings: "bg-gray-50 text-gray-700 border-gray-200",
 };
 
-// Map entity types to detail pages for clickable links
-const ENTITY_ROUTES: Record<string, (entityId: string) => string> = {
+// ─── Entity detail route map ──────────────────────────────────────────────
+const ENTITY_ROUTES: Record<string, (id: string) => string> = {
   order: (id) => `/dashboard/orders/${id}`,
   quotation: (id) => `/dashboard/quotations/${id}`,
   product: (id) => `/dashboard/products/${id}/edit`,
@@ -40,61 +53,96 @@ const ENTITY_ROUTES: Record<string, (entityId: string) => string> = {
   notification: () => `/dashboard/notifications`,
 };
 
+const ENTITY_TYPES = [
+  "all",
+  "order",
+  "quotation",
+  "product",
+  "payment",
+  "customer",
+  "staff",
+  "category",
+  "promotion",
+  "brand",
+  "backinstock",
+  "notification",
+  "settings",
+] as const;
+
+// ─── Helpers ──────────────────────────────────────────────────────────────
+
+/** Convert raw action strings into human-friendly labels.
+ *  "user.hard_deleted"  → "User Hard Deleted"
+ *  "order.created"      → "Order Created"
+ *  "signed_in"          → "Signed In"
+ */
+function formatAction(action: string): string {
+  return action
+    .replace(/_/g, " ") // underscores → spaces
+    .replace(/\b\w/g, (c) => c.toUpperCase()); // title case
+}
+
+/** Shorten a long ID for display, keeping first & last chars. */
+function shortenId(id: string, maxLen = 18): string {
+  if (id.length <= maxLen) return id;
+  return `${id.slice(0, 8)}…${id.slice(-6)}`;
+}
+
+// ─── Copy button component ───────────────────────────────────────────────
 function CopyButton({ text, label }: { text: string; label: string }) {
   const [copied, setCopied] = useState(false);
-
   const handleCopy = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-    } catch {}
+    } catch {
+      /* noop */
+    }
   }, [text]);
 
   return (
     <button
       onClick={handleCopy}
-      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground/60 hover:text-foreground hover:bg-muted transition-colors"
+      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground/50 hover:text-foreground hover:bg-muted transition-colors"
       title={`Copy ${label}`}
     >
       {copied ? (
-        <>
-          <Check className="h-2.5 w-2.5 text-green-500" />
-          <span className="text-green-500">Copied</span>
-        </>
+        <Check className="h-2.5 w-2.5 text-green-500" />
       ) : (
-        <>
-          <Copy className="h-2.5 w-2.5" />
-          <span className="truncate max-w-[80px]">{text}</span>
-        </>
+        <Copy className="h-2.5 w-2.5" />
       )}
+      <span className="truncate max-w-[80px]">{shortenId(text)}</span>
     </button>
   );
 }
 
-function EntityLabel({ entry }: { entry: { entityType: string; entityId: string; entityLabel: string } }) {
+// ─── Entity link component ────────────────────────────────────────────────
+function EntityLabel({ entry }: { entry: AuditEntry }) {
   const route = ENTITY_ROUTES[entry.entityType]?.(entry.entityId);
 
   return (
-    <div className="md:w-52 min-w-0 space-y-0.5">
+    <div className="min-w-0 space-y-0.5">
       <div className="flex items-center gap-1.5">
         {route ? (
           <Link
             href={route}
-            className="text-xs font-medium text-foreground hover:text-primary truncate flex items-center gap-1 transition-colors"
+            className="text-xs font-semibold text-foreground hover:text-primary truncate flex items-center gap-1 transition-colors"
             title={`View ${entry.entityType}: ${entry.entityLabel}`}
           >
             {entry.entityLabel}
             <ExternalLink className="h-2.5 w-2.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
           </Link>
         ) : (
-          <span className="text-xs font-medium text-foreground truncate">{entry.entityLabel}</span>
+          <span className="text-xs font-semibold text-foreground truncate">
+            {entry.entityLabel}
+          </span>
         )}
       </div>
       <div className="flex items-center gap-2">
         <CopyButton text={entry.entityId} label="Entity ID" />
-        {/* Quick link to search products by this entity label if it looks like a SKU */}
-        {(entry.entityType === "product" && entry.entityLabel.match(/DT-/)) && (
+        {/* Quick link to search products by entity label if it looks like a SKU */}
+        {entry.entityType === "product" && /DT-/i.test(entry.entityLabel) && (
           <Link
             href={`/dashboard/products?sku=${encodeURIComponent(entry.entityLabel)}`}
             className="text-[10px] text-primary/70 hover:text-primary font-mono underline underline-offset-2 transition-colors"
@@ -107,6 +155,7 @@ function EntityLabel({ entry }: { entry: { entityType: string; entityId: string;
   );
 }
 
+// ─── Main page component ──────────────────────────────────────────────────
 export default function AuditLogPage() {
   const [auditLogs, setAuditLogs] = useState<AuditEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -137,20 +186,25 @@ export default function AuditLogPage() {
     };
   }, []);
 
-  const entityTypes = ["all", "order", "quotation", "product", "payment", "customer", "staff", "category", "promotion", "brand", "backinstock", "notification", "settings"];
-
+  // ── Filtered & paginated data ──────────────────────────────────────────
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     const fromMs = dateFrom ? new Date(dateFrom).getTime() : 0;
-    const toMs = dateTo ? new Date(dateTo + "T23:59:59").getTime() : Infinity;
+    const toMs = dateTo
+      ? new Date(dateTo + "T23:59:59").getTime()
+      : Infinity;
 
     return auditLogs.filter((entry) => {
-      if (entityFilter !== "all" && entry.entityType !== entityFilter) return false;
+      if (entityFilter !== "all" && entry.entityType !== entityFilter)
+        return false;
+
       if (fromMs || toMs < Infinity) {
         const ts = new Date(entry.timestamp).getTime();
         if (ts < fromMs || ts > toMs) return false;
       }
+
       if (!q) return true;
+
       return (
         entry.action.toLowerCase().includes(q) ||
         entry.entityLabel.toLowerCase().includes(q) ||
@@ -166,204 +220,317 @@ export default function AuditLogPage() {
     currentPage * ITEMS_PER_PAGE,
   );
 
-  const onSearchChange = (val: string) => {
+  const handleSearchChange = (val: string) => {
     setSearch(val);
     setCurrentPage(1);
   };
 
+  // ── Export CSV ─────────────────────────────────────────────────────────
+  const handleExport = () => {
+    const headers = [
+      "Action",
+      "Entity Type",
+      "Entity Label",
+      "Entity ID",
+      "Performed By",
+      "Timestamp",
+      "Details",
+    ];
+    const rows = filtered.map((e) => [
+      e.action,
+      e.entityType,
+      e.entityLabel,
+      e.entityId,
+      e.performedBy,
+      new Date(e.timestamp).toISOString(),
+      e.details || "",
+    ]);
+    const csv = [
+      headers.join(","),
+      ...rows.map((r) =>
+        r.map((c) => `"${c.replace(/"/g, '""')}"`).join(","),
+      ),
+    ].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `audit-log-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const showFilters = dateFrom !== "" || dateTo !== "" || entityFilter !== "all" || search !== "";
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-          <History className="h-6 w-6 text-primary" />
-          Audit Log
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          {auditLogs.length} total entries &middot; Click entity labels to navigate &middot; Copy IDs with the copy button
-        </p>
-      </div>
-
-      {/* Export button */}
-      <div className="flex justify-end">
+      {/* ── Header ─────────────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+            <History className="h-6 w-6 text-primary" />
+            Audit Log
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Track important actions across the store.
+          </p>
+        </div>
         <button
-          onClick={() => {
-            const headers = ["Action","Entity Type","Entity Label","Entity ID","Performed By","Timestamp","Details"];
-            const rows = filtered.map((e) => [
-              e.action,
-              e.entityType,
-              e.entityLabel,
-              e.entityId,
-              e.performedBy,
-              new Date(e.timestamp).toISOString(),
-              e.details || "",
-            ]);
-            const csv = [headers.join(","), ...rows.map((r) => r.map((c) => `"${c.replace(/"/g, '""')}"`).join(","))].join("\n");
-            const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `audit-log-${new Date().toISOString().split("T")[0]}.csv`;
-            a.click();
-            URL.revokeObjectURL(url);
-          }}
-          className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          onClick={handleExport}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors self-start sm:self-auto"
         >
           <Download className="h-3.5 w-3.5" />
           Export CSV
         </button>
       </div>
 
-      {/* Search + Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search by action, entity, ID, or staff member..."
-            className="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-          />
+      {/* ── Controls card ──────────────────────────────────────────────── */}
+      <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+        {/* Search + date filters row */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={search}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder="Search by action, entity, ID, or staff member…"
+              aria-label="Search audit logs"
+              className="h-10 w-full rounded-lg border border-input bg-background pl-9 pr-3 text-sm placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => {
+                setDateFrom(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="h-10 rounded-lg border border-input bg-background px-3 text-xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors"
+              title="From date"
+            />
+            <span className="text-xs text-muted-foreground/50 hidden sm:inline">–</span>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => {
+                setDateTo(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="h-10 rounded-lg border border-input bg-background px-3 text-xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors"
+              title="To date"
+            />
+          </div>
         </div>
-        <div className="flex gap-2 overflow-x-auto flex-wrap">
-          <input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => { setDateFrom(e.target.value); setCurrentPage(1); }}
-            className="h-10 rounded-lg border border-border bg-background px-3 text-xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-            title="From date"
-          />
-          <input
-            type="date"
-            value={dateTo}
-            onChange={(e) => { setDateTo(e.target.value); setCurrentPage(1); }}
-            className="h-10 rounded-lg border border-border bg-background px-3 text-xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-            title="To date"
-          />
+
+        {/* Entity filter chips */}
+        <div className="flex gap-1.5 overflow-x-auto flex-wrap -mb-1">              {ENTITY_TYPES.map((type) => {
+            const isActive = entityFilter === type;
+            return (
+              <button
+                key={type}
+                onClick={() => {
+                  setEntityFilter(type);
+                  setCurrentPage(1);
+                }}
+                className={cn(
+                  "rounded-lg px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-all border",
+                  isActive
+                    ? type === "all"
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                      : `${ENTITY_COLORS[type]} border-current shadow-sm`
+                    : "bg-background text-muted-foreground border-border hover:bg-muted hover:text-foreground",
+                )}
+              >
+                {type === "all" ? "All" : type.charAt(0).toUpperCase() + type.slice(1)}
+              </button>
+            );
+          })}
         </div>
+
+        {/* Active filter summary */}
+        {showFilters && (
+          <div className="flex items-center gap-2 pt-1 border-t border-border">
+            <Filter className="h-3 w-3 text-muted-foreground/60" />
+            <span className="text-xs text-muted-foreground">
+              {filtered.length} result{filtered.length !== 1 ? "s" : ""}
+              {search && ` for "${search}"`}
+              {entityFilter !== "all" && ` · ${entityFilter}`}
+              {(dateFrom || dateTo) && ` · date filtered`}
+            </span>
+          </div>
+        )}
       </div>
 
-      {/* Entity type filters */}
-      <div className="flex gap-1.5 overflow-x-auto flex-wrap">
-        {entityTypes.map((type) => (
-          <button
-            key={type}
-            onClick={() => { setEntityFilter(type); setCurrentPage(1); }}
-            className={cn(
-              "rounded-lg px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors border",
-              entityFilter === type
-                ? type === "all"
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : `${ENTITY_COLORS[type]} border-current`
-                : "bg-muted text-muted-foreground border-border hover:bg-muted/80 hover:text-foreground",
-            )}
-          >
-            {type === "all" ? "All" : type.charAt(0).toUpperCase() + type.slice(1)}
-          </button>
-        ))}
-      </div>
-
-      {/* Audit log table */}
+      {/* ── Audit log list ─────────────────────────────────────────────── */}
       {paginated.length === 0 ? (
-        <div className="flex flex-col items-center py-16 text-center rounded-xl border border-dashed border-border">
-          <History className="h-10 w-10 text-muted-foreground/40 mb-3" />
-          <p className="text-sm font-medium text-foreground">
+        <div className="flex flex-col items-center py-16 text-center rounded-xl border border-dashed border-border bg-card">
+          <History className="h-10 w-10 text-muted-foreground/30 mb-3" />
+          <p className="text-sm font-semibold text-foreground">
             {loading
-              ? "Loading audit entries..."
-              : search || entityFilter !== "all"
+              ? "Loading audit entries…"
+              : showFilters
               ? "No matching audit entries"
               : "No audit entries yet"}
           </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            {search || entityFilter !== "all"
+          <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+            {showFilters
               ? "Try adjusting your search or filters."
-              : "Audit entries will appear here as you manage orders, quotations, products, and customers."}
+              : "Audit entries will appear here as orders, products, and other entities are managed."}
           </p>
         </div>
       ) : (
         <div className="rounded-xl border border-border bg-card overflow-hidden">
-          {/* Table header */}
-          <div className="hidden md:flex items-center gap-3 px-5 py-3 border-b border-border bg-muted/30 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            <span className="w-20">Entity</span>
-            <span className="flex-1">Action</span>
-            <span className="w-52">Entity</span>
-            <span className="w-32">Staff</span>
-            <span className="w-28 text-right">Timestamp</span>
+          {/* Table header — hidden on small screens */}
+          <div className="hidden md:grid grid-cols-[80px_1fr_180px_140px_120px] gap-3 px-5 py-3 border-b border-border bg-muted/40 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <span>Entity</span>
+            <span>Action &amp; Details</span>
+            <span>Entity Details</span>
+            <span>Staff</span>
+            <span className="text-right">Time</span>
           </div>
 
           {/* Table rows */}
           <div className="divide-y divide-border">
             {paginated.map((entry, i) => (
               <FadeIn key={entry.id} delay={i * 0.02}>
-              <div
-                className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 px-5 py-3 hover:bg-muted/20 transition-colors group"
-              >
-                {/* Entity type badge */}
-                <div className="md:w-20">
-                  <span className={cn(
-                    "inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-semibold",
-                    ENTITY_COLORS[entry.entityType] || "bg-gray-100 text-gray-700 border-gray-200",
-                  )}>
-                    {entry.entityType}
-                  </span>
-                </div>
+                <div className="grid grid-cols-1 md:grid-cols-[80px_1fr_180px_140px_120px] gap-2 md:gap-3 px-5 py-3.5 hover:bg-muted/20 transition-colors group">
+                  {/* Entity type badge */}
+                  <div>
+                    <span
+                      className={cn(
+                        "inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-semibold capitalize",
+                        ENTITY_COLORS[entry.entityType] ||
+                          "bg-gray-50 text-gray-700 border-gray-200",
+                      )}
+                    >
+                      {entry.entityType}
+                    </span>
+                  </div>
 
-                {/* Action */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground">{entry.action}</p>
-                  {entry.details && (
-                    <p className="text-xs text-muted-foreground mt-0.5">{entry.details}</p>
-                  )}
-                </div>
+                  {/* Action + details */}
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground leading-snug">
+                      {formatAction(entry.action)}
+                    </p>
+                    {entry.details && (
+                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 leading-relaxed">
+                        {entry.details}
+                      </p>
+                    )}
+                  </div>
 
-                {/* Entity label — clickable with copy */}
-                <EntityLabel entry={entry} />
+                  {/* Entity label + ID */}
+                  <EntityLabel entry={entry} />
 
-                {/* Staff */}
-                <div className="md:w-32 flex items-center gap-1.5">
-                  <User className="h-3 w-3 text-muted-foreground shrink-0" />
-                  <span className="text-xs text-foreground truncate">{entry.performedBy}</span>
-                </div>
+                  {/* Staff */}
+                  <div className="flex items-center gap-1.5">
+                    <User className="h-3 w-3 text-muted-foreground shrink-0" />
+                    <span className="text-xs text-foreground truncate">
+                      {entry.performedBy}
+                    </span>
+                  </div>
 
-                {/* Timestamp */}
-                <div className="md:w-28 text-right flex items-center justify-end gap-1.5">
-                  <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
-                  <time className="text-xs text-muted-foreground whitespace-nowrap">
-                    {new Date(entry.timestamp).toLocaleString("en-NA", {
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </time>
+                  {/* Timestamp */}
+                  <div className="flex items-center justify-start md:justify-end gap-1.5">
+                    <Clock className="h-3 w-3 text-muted-foreground shrink-0 md:hidden" />
+                    <time
+                      className="text-xs text-muted-foreground whitespace-nowrap"
+                      title={new Date(entry.timestamp).toLocaleString()}
+                    >
+                      {new Date(entry.timestamp).toLocaleString("en-NA", {
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </time>
+                    {/* Small clock icon on desktop */}
+                    <Clock className="h-3 w-3 text-muted-foreground/50 shrink-0 hidden md:inline" />
+                  </div>
                 </div>
-              </div>
               </FadeIn>
             ))}
           </div>
         </div>
       )}
 
-      {/* Pagination */}
+      {/* ── Pagination ─────────────────────────────────────────────────── */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          <button
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-            className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-40"
-          >
-            <ChevronLeft className="h-3.5 w-3.5" /> Previous
-          </button>
+        <div className="flex items-center justify-between gap-2 rounded-xl border border-border bg-card px-5 py-3">
           <span className="text-xs text-muted-foreground">
-            Page {currentPage} of {totalPages} &middot; {filtered.length} entries
+            Showing{" "}
+            <span className="font-semibold text-foreground">
+              {(currentPage - 1) * ITEMS_PER_PAGE + 1}
+            </span>{" "}
+            to{" "}
+            <span className="font-semibold text-foreground">
+              {Math.min(currentPage * ITEMS_PER_PAGE, filtered.length)}
+            </span>{" "}
+            of{" "}
+            <span className="font-semibold text-foreground">
+              {filtered.length}
+            </span>{" "}
+            {filtered.length === 1 ? "entry" : "entries"}
           </span>
-          <button
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages}
-            className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-40"
-          >
-            Next <ChevronRight className="h-3.5 w-3.5" />
-          </button>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-40 disabled:pointer-events-none transition-colors"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Previous</span>
+            </button>
+
+            {/* Page numbers — efficient: only iterate visible range */}
+            <div className="flex items-center gap-1">
+              {(() => {
+                const pages: (number | "ellipsis")[] = [];
+                for (let p = 1; p <= totalPages; p++) {
+                  if (
+                    p === 1 ||
+                    p === totalPages ||
+                    Math.abs(p - currentPage) <= 2
+                  ) {
+                    pages.push(p);
+                  } else if (pages[pages.length - 1] !== "ellipsis") {
+                    pages.push("ellipsis");
+                  }
+                }
+                return pages.map((pageOrEllipsis) =>
+                  pageOrEllipsis === "ellipsis" ? (
+                    <span key="e" className="text-xs text-muted-foreground/40 px-0.5">
+                      …
+                    </span>
+                  ) : (
+                    <button
+                      key={pageOrEllipsis}
+                      onClick={() => setCurrentPage(pageOrEllipsis)}
+                      className={cn(
+                        "min-w-[28px] h-7 rounded-lg text-xs font-semibold transition-colors",
+                        currentPage === pageOrEllipsis
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted",
+                      )}
+                    >
+                      {pageOrEllipsis}
+                    </button>
+                  ),
+                );
+              })()}
+            </div>
+
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-40 disabled:pointer-events-none transition-colors"
+            >
+              <span className="hidden sm:inline">Next</span>
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
       )}
     </div>

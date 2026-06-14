@@ -161,6 +161,10 @@ interface DashboardState {
   auditLogs: AuditEntry[];
   addAuditLog: (entry: Omit<AuditEntry, "id" | "timestamp" | "performedBy">) => void;
 
+  // Navigation order
+  navOrder: string[];
+  setNavOrder: (order: string[]) => void;
+
   // Invites
   addInvite: (invite: { token: string; email: string; name: string; role: string; createdAt: string }) => void;
   markInviteUsed: (token: string) => void;
@@ -254,6 +258,7 @@ export const useDashboardStore = create<DashboardState>()(
       currentUser: "Admin User",
       invites: [],
       auditLogs: [],
+      navOrder: ["/dashboard", "/dashboard/orders", "/dashboard/products", "/dashboard/categories", "/dashboard/promotions", "/dashboard/customers", "/dashboard/follow-ups", "/dashboard/receipts", "/dashboard/quotations", "/dashboard/notifications", "/dashboard/back-in-stock"],
 
       // === Settings ===
       syncSettings: (data) => set((s) => {
@@ -390,6 +395,9 @@ export const useDashboardStore = create<DashboardState>()(
         set((s) => ({
           paymentMethods: s.paymentMethods.filter((pm) => pm.id !== id),
         })),
+
+      // === Navigation Order ===
+      setNavOrder: (order) => set({ navOrder: order }),
 
       // === Staff ===
       updateStaff: (id, data) => {

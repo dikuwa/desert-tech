@@ -38,6 +38,7 @@ import {
   QrCode,
   Copy,
   AlertCircle,
+  Menu,
 } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard";
 import { cn, decodeHTMLEntities } from "@/lib/utils";
@@ -84,6 +85,32 @@ export default function SettingsPage() {
   const movePaymentMethod = useDashboardStore((s) => s.movePaymentMethod);
   const moveContactDetail = useDashboardStore((s) => s.moveContactDetail);
   const moveBankDetail = useDashboardStore((s) => s.moveBankDetail);
+  const navOrder = useDashboardStore((s) => s.navOrder);
+  const setNavOrder = useDashboardStore((s) => s.setNavOrder);
+
+  const NAV_ITEM_LABELS: Record<string, string> = {
+    "/dashboard": "Dashboard",
+    "/dashboard/orders": "Orders",
+    "/dashboard/products": "Products",
+    "/dashboard/categories": "Categories & Brands",
+    "/dashboard/promotions": "Promotions",
+    "/dashboard/customers": "Customers",
+    "/dashboard/follow-ups": "Follow-ups",
+    "/dashboard/receipts": "Receipts",
+    "/dashboard/quotations": "Quotations",
+    "/dashboard/notifications": "Notifications",
+    "/dashboard/back-in-stock": "Stock Requests",
+  };
+
+  const moveNavItem = (href: string, direction: "up" | "down") => {
+    const idx = navOrder.indexOf(href);
+    if (idx === -1) return;
+    const targetIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= navOrder.length) return;
+    const newOrder = [...navOrder];
+    [newOrder[idx], newOrder[targetIdx]] = [newOrder[targetIdx], newOrder[idx]];
+    setNavOrder(newOrder);
+  };
 
   const [userSession, setUserSession] = useState<{
     name: string;
@@ -849,6 +876,48 @@ export default function SettingsPage() {
               <div>
                 <label className="text-sm font-medium text-foreground">Currency</label>
                 <input value={form.currency} disabled className="mt-1.5 h-11 w-full rounded-lg border border-border bg-muted px-3 text-sm" />
+              </div>
+            </div>
+
+            {/* Navigation Order */}
+            <div className="pt-4 border-t border-border">
+              <div className="flex items-center gap-2 pb-3">
+                <Menu className="h-5 w-5 text-primary" />
+                <h3 className="text-sm font-semibold text-foreground">Sidebar Navigation Order</h3>
+              </div>
+              <p className="text-xs text-muted-foreground mb-3">Drag sidebar items or use arrows to reorder. Changes apply immediately.</p>
+              <div className="space-y-1.5 max-w-md">
+                {navOrder.map((href, idx) => {
+                  const label = NAV_ITEM_LABELS[href];
+                  if (!label) return null;
+                  return (
+                    <div
+                      key={href}
+                      className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Menu className="h-3.5 w-3.5 text-muted-foreground/40" />
+                        <span className="text-xs font-medium text-foreground">{label}</span>
+                      </div>
+                      <div className="flex items-center gap-0.5">
+                        <button
+                          onClick={() => moveNavItem(href, "up")}
+                          disabled={idx === 0}
+                          className="rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-20 disabled:pointer-events-none"
+                        >
+                          <ArrowUp className="h-3 w-3" />
+                        </button>
+                        <button
+                          onClick={() => moveNavItem(href, "down")}
+                          disabled={idx === navOrder.length - 1}
+                          className="rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-20 disabled:pointer-events-none"
+                        >
+                          <ArrowDown className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>

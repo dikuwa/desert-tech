@@ -345,6 +345,7 @@ export const PromotionScalarFieldEnum = {
   linkedCategory: 'linkedCategory',
   serviceSlug: 'serviceSlug',
   ctaLabel: 'ctaLabel',
+  sortOrder: 'sortOrder',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

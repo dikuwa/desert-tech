@@ -97,6 +97,14 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
     hasPermission(user.role, user.permissions, navPermissions[href] ?? Permissions.DASHBOARD_VIEW);
   const unreadNotifications = useDashboardStore((s) => s.notifications.filter(n => !n.isRead).length);
   const newStockRequests = useDashboardStore((s) => s.backInStockRequests.filter(r => r.status === "New").length);
+  const navOrder = useDashboardStore((s) => s.navOrder);
+
+  // Sort admin nav items by saved navOrder (fall back to default array order)
+  const sortedAdminNavItems = [...adminNavItems].sort((a, b) => {
+    const aIdx = navOrder.indexOf(a.href);
+    const bIdx = navOrder.indexOf(b.href);
+    return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
+  });
 
   const handleSignOut = async () => {
     setSigningOut(true);
@@ -175,7 +183,7 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-1">
-        {adminNavItems.filter((item) => canAccess(item.href)).map((item) => {
+        {sortedAdminNavItems.filter((item) => canAccess(item.href)).map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
           let count = 0;

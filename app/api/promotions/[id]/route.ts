@@ -14,6 +14,7 @@ const updateSchema = z.object({
   type: z.string().optional(),
   isFeatured: z.boolean().optional(),
   isActive: z.boolean().optional(),
+  sortOrder: z.number().int().optional(),
   linkedProductId: z.string().optional(),
   linkedCategory: z.string().optional(),
   serviceSlug: z.string().optional(),

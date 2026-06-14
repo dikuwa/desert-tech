@@ -2,7 +2,21 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, Save, ImagePlus, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, ImagePlus, Loader2, GripVertical } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  rectSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import Link from "next/link";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { MoneyInput } from "@/components/ui/money-input";
@@ -11,6 +25,86 @@ import { generateProductSku, getProductAvailability, resolveLowStockThreshold } 
 import { toast } from "sonner";
 import { ProductImage } from "@/components/ui/product-image";
 import { DesertCheckbox } from "@/components/ui/desert-checkbox";
+import { cn } from "@/lib/utils";
+
+function SortableProductThumbnail({
+  url,
+  idx,
+  isSelected,
+  onSelect,
+  onRemove,
+}: {
+  url: string;
+  idx: number;
+  isSelected: boolean;
+  onSelect: () => void;
+  onRemove: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: `img-${idx}`,
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={`relative group h-16 w-16 rounded-lg border-2 overflow-hidden ${isSelected ? "border-primary" : "border-border"} ${isDragging ? "z-50 shadow-lg opacity-90" : ""}`}
+    >
+      <button type="button" onClick={onSelect} className="h-full w-full">
+        <img src={url} alt={`Image ${idx + 1}`} className="h-full w-full object-cover" />
+      </button>
+      {/* Drag handle */}
+      <button
+        {...attributes}
+        {...listeners}
+        className="absolute inset-x-0 top-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity py-0.5 cursor-grab active:cursor-grabbing touch-none"
+        title="Drag to reorder"
+      >
+        <GripVertical className="h-3 w-3 text-white" />
+      </button>
+      <button type="button" onClick={(e) => { e.stopPropagation(); onRemove(); }}
+        className="absolute right-0 top-0 bg-black/60 px-1.5 py-0.5 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+        <span className="text-[10px] font-semibold">Remove</span>
+      </button>
+    </div>
+  );
+}
+
+function ImageDnDGrid({
+  images,
+  selectedImage,
+  onSelectImage,
+  onRemoveImage,
+  onDragEnd,
+  sensors,
+}: {
+  images: string[];
+  selectedImage: number;
+  onSelectImage: (idx: number) => void;
+  onRemoveImage: (idx: number) => void;
+  onDragEnd: (event: DragEndEvent) => void;
+  sensors: ReturnType<typeof useSensors>;
+}) {
+  const imageIds = images.map((_, idx) => `img-${idx}`);
+  return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+      <SortableContext items={imageIds} strategy={rectSortingStrategy}>
+        <div className="flex flex-wrap gap-2">
+          {images.map((url, idx) => (
+            <SortableProductThumbnail
+              key={`img-${idx}`}
+              url={url}
+              idx={idx}
+              isSelected={selectedImage === idx}
+              onSelect={() => onSelectImage(idx)}
+              onRemove={() => onRemoveImage(idx)}
+            />
+          ))}
+        </div>
+      </SortableContext>
+    </DndContext>
+  );
+}
 
 export default function EditProductPage() {
   const router = useRouter();
@@ -23,6 +117,38 @@ export default function EditProductPage() {
   const [images, setImages] = useState<string[]>(() => product?.images?.length ? product.images : product?.imageUrl ? [product.imageUrl] : []);
   const [selectedImage, setSelectedImage] = useState(0);
   const [uploading, setUploading] = useState(false);
+
+  const imageSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  );
+
+  const deleteImageFromStorage = async (url: string) => {
+    if (!url || url.startsWith("data:") || url.startsWith("/images/")) return;
+    try {
+      const urlParts = url.split("/");
+      const filename = urlParts[urlParts.length - 1];
+      await fetch("/api/upload/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: `images/${filename}` }),
+      });
+    } catch (err) {
+      console.error("Failed to delete image from storage:", err);
+    }
+  };
+
+  const handleImageDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIdx = parseInt(String(active.id).replace("img-", ""));
+    const newIdx = parseInt(String(over.id).replace("img-", ""));
+    if (isNaN(oldIdx) || isNaN(newIdx)) return;
+    const newImages = [...images];
+    const [moved] = newImages.splice(oldIdx, 1);
+    newImages.splice(newIdx, 0, moved);
+    setImages(newImages);
+    setSelectedImage(newIdx);
+  };
 
   const brands = useDashboardStore((s) => s.brands);
   const categories = useDashboardStore((s) => s.categories);
@@ -104,8 +230,10 @@ export default function EditProductPage() {
   };
 
   const removeImage = (idx: number) => {
+    const removedUrl = images[idx];
     setImages(prev => prev.filter((_, i) => i !== idx));
     setSelectedImage(prev => Math.max(0, Math.min(prev, images.length - 2)));
+    if (removedUrl) deleteImageFromStorage(removedUrl);
   };
 
   if (!product || !form) {
@@ -322,19 +450,14 @@ export default function EditProductPage() {
                   <div className="aspect-[4/3] overflow-hidden rounded-lg border border-border bg-muted">
                     <ProductImage src={images[selectedImage]} alt="Selected product preview" />
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                  {images.map((url, idx) => (
-                    <div key={url} className={`relative group h-16 w-16 rounded-lg border-2 overflow-hidden ${selectedImage === idx ? "border-primary" : "border-border"}`}>
-                      <button type="button" onClick={() => setSelectedImage(idx)} className="h-full w-full">
-                      <img src={url} alt={`New image ${idx + 1}`} className="h-full w-full object-cover" />
-                      </button>
-                      <button type="button" onClick={() => removeImage(idx)}
-                        className="absolute right-0 top-0 bg-black/60 px-1.5 py-0.5 text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                        <span className="text-[10px] font-semibold">Remove</span>
-                      </button>
-                    </div>
-                  ))}
-                  </div>
+                  <ImageDnDGrid
+                    images={images}
+                    selectedImage={selectedImage}
+                    onSelectImage={setSelectedImage}
+                    onRemoveImage={removeImage}
+                    onDragEnd={handleImageDragEnd}
+                    sensors={imageSensors}
+                  />
                 </div>
               )}
             </div>
