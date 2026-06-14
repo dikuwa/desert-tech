@@ -351,7 +351,7 @@ export function StorefrontHeader() {
               {megaMenuOpen && (
                 <div
                   id="storefront-shop-menu"
-                  className="absolute left-1/2 z-50 mt-0.5 w-[95vw] max-w-4xl lg:max-w-6xl -translate-x-1/2 rounded-b-xl border border-border bg-background p-4 sm:p-6 shadow-xl"
+                  className="absolute left-1/2 z-50 mt-0.5 w-[95vw] max-w-4xl lg:max-w-6xl -translate-x-1/2 rounded-xl border border-border bg-background p-4 sm:p-6 shadow-xl"
                 >
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 text-left">
                     {/* Column 1: Shop All */}
